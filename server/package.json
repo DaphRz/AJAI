@@ -1,0 +1,5 @@
+{
+  "//": "Só marca server/ como ES modules (import/export). As dependências ficam no package.json da raiz.",
+  "private": true,
+  "type": "module"
+}

@@ -18,7 +18,7 @@ export default function NivelamentoPergunta() {
   const perguntas = atividadesDoNivelamento();
   const [indice, setIndice] = useState(0);
   const [acertos, setAcertos] = useState<boolean[]>([]);
-  const [inicio, setInicio] = useState(Date.now());
+  const [inicio, setInicio] = useState(() => Date.now());
 
   const atual = perguntas[indice];
 

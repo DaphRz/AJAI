@@ -47,7 +47,33 @@ npm run db:reset
 
 Cria o arquivo `server/data/ajai.db` com as 13 tabelas e os dados de demonstração (5 níveis, 6 atividades, 4 alunos, 1 professor). Não precisa instalar nada além do Node. **Cada pessoa gera o seu**: o arquivo não vai para o git. Detalhes e comandos: [Banco de dados](#banco-de-dados-sqlite).
 
-### 5. Rodar
+### 5. Subir o servidor (API)
+
+A API fica em `server/src/` (Node.js + TypeScript + **Fastify**). Em um terminal:
+
+```bash
+cp server/.env.example server/.env   # só na primeira vez (no Windows: copy server\.env.example server\.env)
+npm run server:dev                   # sobe a API e reinicia sozinha ao salvar um arquivo
+```
+
+Confira abrindo <http://localhost:3333/health> no navegador. A resposta esperada é `{"status":"ok","banco":"ok",...}`. Se aparecer `"O banco de dados não abriu"`, rode `npm run db:reset`.
+
+| Comando | Para quê |
+|---|---|
+| `npm run server:dev` | Desenvolvimento: roda os `.ts` direto no Node e reinicia ao salvar |
+| `npm run server:build` | Gera o JavaScript em `server/dist/` (fora do git) |
+| `npm run server:start` | Roda a versão gerada pelo `server:build` (use na demo) |
+| `npm run server:typecheck` | Checagem de tipos só do servidor (`npm run typecheck` checa app + servidor) |
+
+Configuração em `server/.env` (fora do git; modelo em [`server/.env.example`](server/.env.example)): `PORT` (padrão 3333), `HOST` (padrão `0.0.0.0`, para os celulares da rede acessarem), `CORS_ORIGEM`, `LIMITE_REQUISICOES_POR_MINUTO` e, a partir do passo 3, `JWT_SECRET`. Toda resposta de erro da API tem o formato `{ "erro": "mensagem curta em português" }`.
+
+> **Node 22.14 a 22.17:** o `server:dev` funciona (o script já passa `--experimental-strip-types`), mas os scripts `db:*` não. Use `NODE_OPTIONS=--experimental-strip-types npm run db:reset`. O ideal é o 22.18+.
+
+> **Por enquanto o app ainda não usa a API** (isso começa no passo 3). Para ver as telas hoje, só o `npx expo start` basta; o servidor já pode ficar rodando em paralelo.
+
+### 6. Rodar o app
+
+Em **outro** terminal (o servidor continua rodando no primeiro):
 
 ```bash
 npx expo start
@@ -64,9 +90,28 @@ Vai aparecer um QR code no terminal. Depois:
 
 Se a rede da faculdade bloquear a conexão, use `npx expo start --tunnel`.
 
-### 6. Entrar no app (modo demonstração)
+#### Como o app encontra a API (`EXPO_PUBLIC_API_URL`)
 
-O app ainda não conversa com o servidor/banco, então o login aceita os usuários de teste de [`src/data/mock.ts`](src/data/mock.ts) (os mesmos que o `db:reset` grava no banco):
+O app vai ler o endereço da API da variável `EXPO_PUBLIC_API_URL`, num arquivo `.env.local` na **raiz** do projeto (fora do git). O app passa a usar essa variável no passo 3; já dá para deixar o arquivo pronto:
+
+```bash
+# .env.local (raiz do projeto)
+EXPO_PUBLIC_API_URL=http://192.168.0.10:3333
+```
+
+| Onde o app roda | Endereço |
+|---|---|
+| **Celular físico (Expo Go)** | IP do computador **na Wi-Fi**, nunca `localhost` (no celular, `localhost` é o próprio celular). Celular e computador na mesma rede |
+| Emulador Android | `http://10.0.2.2:3333` |
+| Simulador iOS ou navegador no mesmo computador | `http://localhost:3333` |
+
+Como descobrir o IP do computador: **macOS** `ipconfig getifaddr en0`; **Windows** `ipconfig` (linha "Endereço IPv4" da Wi-Fi); **Linux** `hostname -I`. O próprio `npm run server:dev` também mostra no terminal a linha `Server listening at http://192.168.x.x:3333`. Teste antes abrindo `http://<IP>:3333/health` no navegador do celular. Se não abrir: confira a mesma Wi-Fi e libere a porta 3333 no firewall (no Windows, aceite o aviso "Permitir acesso" do Node). Depois de mudar o `.env.local`, reinicie com `npx expo start -c`.
+
+> `EXPO_PUBLIC_*` vai para dentro do aplicativo e é público: só endereço, **nunca** senha ou chave.
+
+### 7. Entrar no app (modo demonstração)
+
+O app ainda não conversa com o servidor (isso começa no passo 3), então o login aceita os usuários de teste de [`src/data/mock.ts`](src/data/mock.ts) (os mesmos que o `db:reset` grava no banco):
 
 - **Aluno:** escolha "Aluno", deixe o e-mail **vazio** e toque em Entrar → entra como *Maria Silva*.
 - **Professor:** escolha "Professor/ Responsável", deixe o e-mail **vazio** → entra como *Rafael Costa*, com Ana, Bruno e Clara vinculados.
@@ -84,6 +129,8 @@ npx expo install <pacote>  # SEMPRE use isto para adicionar bibliotecas (não np
 
 npm run db:reset         # recria o banco do zero com os dados de demonstração
 npm run db:query         # lista as tabelas e quantas linhas cada uma tem
+npm run server:dev       # sobe a API (http://localhost:3333/health)
+npm run typecheck        # checagem de tipos do app e do servidor
 ```
 
 ### Problemas comuns
@@ -215,6 +262,14 @@ src/
     voz/                  ProvedorVoz: interface + provedores trocáveis
   theme/tokens.ts         Cores, fontes e tamanhos do Figma
 server/
+  src/                    API (Fastify + TypeScript)
+    index.ts              Sobe o servidor (npm run server:dev)
+    app.ts                Monta o Fastify: CORS, limite de requisições, erros, rotas
+    banco.ts              Conexão node:sqlite (mesmo arquivo dos scripts db:*)
+    config.ts             Lê server/.env
+    erros.ts              Erro padrão { erro: "..." } em português (ErroApi)
+    rotas/                Uma pasta de rotas por módulo (saude.ts = GET /health)
+  .env.example            Modelo do server/.env (o .env fica fora do git)
   db/                     Banco SQLite: migrations/*.sql, seed.mjs, scripts db:*
   data/                   ajai.db (gerado, fora do git)
   storage/audio/          Áudios de narração gerados (fora do git)
@@ -250,8 +305,8 @@ O roteiro completo até a entrega, com prazo, critério de pronto e **um prompt 
 | # | Passo | Prazo |
 |---|---|---|
 | 0 | Instalar e validar o esqueleto | 05/11 |
-| 1 | Aprovar o framework da API (banco e voz já decididos) | 05/11 |
-| 2 | Criar o servidor (API) sobre o banco SQLite (tabelas e seed já prontos) | 07/11 |
+| 1 | Decisões de stack (SQLite, Fastify, Piper) — ✅ | 05/11 |
+| 2 | Criar o servidor (API) sobre o banco SQLite — ✅ | 07/11 |
 | 3 | Cadastro e login de verdade | 08/11 |
 | 4 | Atividades e níveis vindos da API | 09/11 |
 | 5 | Respostas, progressão e histórico no servidor | 10/11 |
@@ -280,6 +335,7 @@ Legenda: ✅ feito · 🟡 esqueleto/parcial (só no app, com dados em memória)
 - 🟡 Cadastro e autenticação (RF01, RF02): telas prontas, mas sem servidor, sem senha com hash e sem guardar a sessão
 - 🟡 Nivelamento inicial (RF03): fluxo e regra provisória (para no primeiro erro); faltam as perguntas definitivas validadas pela equipe/profissionais da EJA
 - ⬜ Testes do fluxo de acesso
+- ✅ Passo 0 (esqueleto): lint, tsc e expo-doctor passam, o banco recria e o fluxo foi validado no Expo Go. Node 22.18+ é necessário para `npm run db:*` (em 22.14 use `NODE_OPTIONS=--experimental-strip-types`)
 
 **Sprint 2 – Atividades Básicas (27/10 – 03/11)** — *atrasada*
 - 🟡 Atividades de letras e sílabas (RF04, RF06): só 3 atividades de exemplo
@@ -305,7 +361,7 @@ Legenda: ✅ feito · 🟡 esqueleto/parcial (só no app, com dados em memória)
 ### Backend e dados (bloqueia quase tudo acima)
 - ✅ **Banco decidido: SQLite em arquivo** (`server/data/ajai.db`), ver [ADR-001](docs/decisoes/ADR-001-stack.md)
 - ✅ Tabelas do diagrama de classes criadas (Usuario, Aluno, Professor, Administrador, Turma, Matricula, Nivel, Atividade, Alternativa, AudioCache, Resposta, DesempenhoConteudo, HistoricoNivel) + dados iniciais
-- ⬜ **Decidir o framework da API** (Node.js + TypeScript; Fastify ou Express) e criar o servidor em `server/src/`
+- ✅ **Servidor da API criado** com Fastify em `server/src/` (`npm run server:dev`, `GET /health`, erros padronizados em `{ erro }`, CORS e limite de requisições). `@fastify/jwt` já instalado, registrado no passo 3
 - ⬜ API para as funções contadas na APF (Incluir/Editar/Excluir/Listar/Visualizar de cada módulo)
 - ⬜ Trocar `src/data/mock.ts` pelas chamadas à API dentro de `src/services/` (as telas não precisam mudar)
 - ⬜ Guardar o token de login no aparelho (`expo-secure-store`)
@@ -338,7 +394,7 @@ Legenda: ✅ feito · 🟡 esqueleto/parcial (só no app, com dados em memória)
 
 ### Documentação
 - ⬜ Atualizar a seção 15 (Prototipação) do PDF: ela diz que o protótipo tem 9 telas e que cadastro e nivelamento seriam feitos depois, mas o Figma já tem 15 telas, incluindo cadastro, nivelamento, formar palavra e ler frase
-- ⬜ Registrar no documento as decisões de stack (banco SQLite já decidido; servidor e voz pendentes) e as 2 colunas extras do esquema (`Atividade.ordemNivelamento`, `AudioCache.provedor`)
+- ⬜ Registrar no documento as decisões de stack (SQLite, API com Fastify, voz com Piper + `expo-speech`) e as 2 colunas extras do esquema (`Atividade.ordemNivelamento`, `AudioCache.provedor`)
 - ⬜ Manter o quadro Kanban (Trello) alinhado com esta lista
 
 ---

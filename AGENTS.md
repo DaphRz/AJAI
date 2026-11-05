@@ -23,7 +23,8 @@ Fontes de verdade, nesta ordem:
 - Expo **SDK 58**, React Native, React 19, TypeScript estrito, React Compiler ligado (`app.json › experiments.reactCompiler`).
 - Expo Router (rotas por arquivo em `src/app/`), typed routes ligado.
 - **Banco: SQLite em arquivo** (`server/data/ajai.db`), já criado com as 13 tabelas e seed (ver [Banco de dados](#banco-de-dados-sqlite)). Decisão em `docs/decisoes/ADR-001-stack.md`.
-- **Ainda sem API**: o app não fala com o banco; os serviços leem/gravam `src/data/mock.ts` em memória. O servidor será Node.js + TypeScript com **Fastify** (validação de entrada com esquemas JSON em toda rota).
+- **API:** Node.js + TypeScript com **Fastify** em `server/src/` (`npm run server:dev`). Validação de entrada com esquemas JSON em **toda** rota; erros sempre `{ erro: string }` em português (lance `ErroApi` de `server/src/erros.ts`). O app **ainda não chama a API** (começa no passo 3): os serviços leem/gravam `src/data/mock.ts` em memória.
+- O servidor roda `.ts` direto no Node (type stripping): **sem `enum`/`namespace`** e imports relativos **com `.ts`** (ex.: `import { banco } from "../banco.ts"`). Rota nova = arquivo em `server/src/rotas/` registrado em `server/src/app.ts`. Typecheck do servidor: `npm run server:typecheck` (`npm run typecheck` faz app + servidor).
 - **Voz trocável**: o app usa a interface `ProvedorVoz` (`src/services/voz/`). Padrão previsto: **Piper** (áudio gerado no servidor); `expo-speech` como alternativa e reserva. Ver [Narração por voz](#narração-por-voz-provedorvoz).
 
 ## Arquitetura e onde colocar cada coisa
@@ -38,6 +39,7 @@ Fontes de verdade, nesta ordem:
 | `src/data/mock.ts` | Dados de demonstração. Não importe direto nas telas; passe por `services/`. |
 | `src/theme/tokens.ts` | Cores, fontes e tamanhos do Figma. **Não use cor ou tamanho "solto"** nas telas. |
 | `src/services/narracao.ts` + `src/services/voz/` | Fachada de voz (`falar`/`pararFala`) e provedores (`ProvedorVoz`). **Telas nunca importam um provedor direto.** |
+| `server/src/` | API Fastify: `app.ts` (plugins e rotas), `banco.ts` (conexão `node:sqlite`, use `banco()`), `config.ts` (`server/.env`), `erros.ts`, `rotas/*.ts`. |
 | `server/db/` | Banco SQLite: `migrations/*.sql` (esquema), `seed.mjs` (dados iniciais, lê `src/data/mock.ts`), scripts `db:*`. |
 | `server/data/` e `server/storage/` | Arquivo do banco e áudios gerados. **Ignorados pelo git**; nunca versionar. |
 
@@ -50,6 +52,10 @@ Fontes de verdade, nesta ordem:
 - Mensagens curtas, positivas e sem jargão: "Muito bem!", "Vamos tentar de novo?" (RNF06, RNF15). Nunca "Erro", "Inválido", "Falha".
 - Use `accessibilityRole` e `accessibilityLabel` em elementos tocáveis.
 - Interface, textos, nomes de variáveis de domínio e comentários em **português**.
+
+## Registro do andamento dos passos
+
+Em `docs/PROXIMOS_PASSOS.md`: passo **concluído** (✅) = apagar o prompt, "Prazo" e "Pronto quando" e deixar um parágrafo "**Feito em DD/MM.**" com o que foi feito, o que mudou e observações (modelo: Passo 1). Passo **parcial** (🟡) = acrescentar "O que falta / o que fazer" e, se necessário, um prompt novo só com o que falta.
 
 ## Regras de código
 
@@ -110,6 +116,8 @@ npx tsc --noEmit            # typecheck
 npx expo-doctor             # diagnosticar configuração
 npm run db:reset            # recriar o banco SQLite com os dados de demonstração
 npm run db:query            # tabelas e contagens (aceita SQL: ver seção Banco de dados)
+npm run server:dev          # sobe a API (GET http://localhost:3333/health)
+npm run typecheck           # tipos do app + servidor
 ```
 
 Antes de dizer que uma tarefa terminou: rode **lint e typecheck** (e `npm run db:reset` se mexeu em banco ou seed) e abra o fluxo afetado no app (login de demonstração: e-mail vazio).

@@ -1,6 +1,6 @@
 # ADR-001 · Stack de dados, servidor e voz
 
-Data: 05/11/2026 · Situação: **quase decidido** (banco, arquitetura de voz e provedor de voz decididos; falta aprovar o framework da API)
+Data: 05/11/2026 · Situação: **decidido** (banco, API com Fastify, arquitetura e provedor de voz)
 
 ## Contexto
 
@@ -29,11 +29,15 @@ Entrega final em 17/11/2026. O app (Expo SDK 58) só tem dados de demonstração
 - No servidor, a geração de áudio seguirá a mesma ideia: uma interface `SintetizadorVoz` (texto + voz + velocidade → arquivo de áudio) com um arquivo por serviço (Google, Polly, Piper...), e o resultado guardado em `AudioCache` (tabela) + `server/storage/audio/` (arquivos, fora do git).
 - `AudioCache.provedor` evita misturar áudios de vozes diferentes ao trocar de serviço.
 
-## Decisão em aberto (resolver no passo 1 do roteiro)
+### 3. API: Node.js + TypeScript com **Fastify** — **DECIDIDO** (implementado no passo 2, 05/11)
 
-| Item | Opções | Situação |
-|---|---|---|
-| Framework da API | Fastify ou Express (TypeScript) | **PROPOSTA: Fastify** — validação de entrada embutida, TypeScript melhor, plugins oficiais de JWT/CORS/limite de requisições. Express só se a maioria já dominar e usar zod para validar |
+- Por quê: validação de entrada embutida (esquemas JSON por rota), TypeScript melhor que o Express, plugins oficiais de JWT/CORS/limite de requisições.
+- Versões instaladas (05/11/2026, compatíveis com Node 20+): `fastify` 5.12, `@fastify/cors` 11.4, `@fastify/rate-limit` 11.2, `@fastify/jwt` 10.2 (registrado no passo 3). Todos são JavaScript puro, sem compilação nativa. `@types/node` 22 (devDependency).
+- **Sem `tsx`/`ts-node`/`nodemon`:** em desenvolvimento o próprio Node roda os `.ts` (type stripping, nativo no 22.18+; os scripts passam `--experimental-strip-types` para funcionar também no 22.14+) e reinicia com `--watch`. Consequência: no servidor só se usa TypeScript "apagável" (sem `enum`, sem `namespace`, imports com extensão `.ts`), o que o `server/tsconfig.json` (`erasableSyntaxOnly`) confere. `npm run server:build` gera `server/dist/` com o `tsc`.
+- `server/package.json` existe só para marcar a pasta como ES modules; as dependências ficam no `package.json` da raiz. O `tsconfig.json` do app exclui `server/` (o servidor tem o seu).
+- Ajv configurado com `removeAdditional: "all"`: campos fora do esquema da rota são descartados.
+- Erros sempre em `{ erro: string }`, curtos e em português (`server/src/erros.ts`); mensagens próprias só via `ErroApi`, o resto vira mensagem padrão por código HTTP (não vaza detalhe interno).
+- `.env` lido com `process.loadEnvFile` (nativo), sem `dotenv`.
 
 ### Comparativo de voz (preços consultados nas páginas oficiais em 05/11/2026; confira antes de assinar)
 

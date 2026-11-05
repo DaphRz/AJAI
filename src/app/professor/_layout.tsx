@@ -3,15 +3,20 @@ import { Text } from "react-native";
 import { useSessao } from "@/context/sessao";
 import { cores } from "@/theme/tokens";
 
+// TODO: trocar os emojis pelos ícones do Figma.
+function icone(simbolo: string) {
+  function IconeAba() {
+    return <Text style={{ fontSize: 22 }}>{simbolo}</Text>;
+  }
+  return IconeAba;
+}
+
 /** Área do professor (RF20): abas Acompanhamento / Relatórios / Conta, como no Figma. */
 export default function ProfessorLayout() {
   const { usuario } = useSessao();
   if (!usuario || usuario.perfil !== "PROFESSOR") {
     return <Redirect href="/login" />;
   }
-
-  // TODO: trocar os emojis pelos ícones do Figma.
-  const icone = (simbolo: string) => () => <Text style={{ fontSize: 22 }}>{simbolo}</Text>;
 
   return (
     <Tabs

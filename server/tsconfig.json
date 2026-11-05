@@ -1,0 +1,22 @@
+{
+  // Servidor (API Fastify). Separado do tsconfig do app (Expo).
+  // Em desenvolvimento o Node roda os .ts direto (type stripping); por isso só sintaxe
+  // "apagável" (sem enum, sem namespace) e imports com extensão .ts.
+  "compilerOptions": {
+    "target": "ES2023",
+    "lib": ["ES2023"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "types": ["node"],
+    "strict": true,
+    "verbatimModuleSyntax": true,
+    "erasableSyntaxOnly": true,
+    "allowImportingTsExtensions": true,
+    "rewriteRelativeImportExtensions": true,
+    "rootDir": "src",
+    "outDir": "dist",
+    "skipLibCheck": true,
+    "sourceMap": true
+  },
+  "include": ["src/**/*.ts"]
+}

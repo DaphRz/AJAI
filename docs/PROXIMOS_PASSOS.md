@@ -21,6 +21,9 @@ O `CLAUDE.md` da raiz carrega automaticamente `AGENTS.md`, o ADR-001 e este arqu
 3. **Regras de acessibilidade do AGENTS.md** em toda tela nova ou alterada (botão de áudio, texto nos botões, fonte e toque mínimos, mensagens positivas).
 4. **Banco:** mudou estrutura → migração nova (`npm run db:migrate`); mudou dados de exemplo → `src/data/mock.ts` + `npm run db:seed`; atualize `src/domain/modelos.ts`.
 5. **Ao terminar:** rode `npx expo lint`, `npx tsc --noEmit`, os testes que existirem e, se mexeu em banco, `npm run db:reset`; marque o passo neste arquivo (⬜ → 🟡 → ✅) e atualize "Pendências" no README.
+7. **Como registrar o andamento de um passo neste arquivo:**
+   - **Concluído (✅):** **apague o prompt** (o bloco `text`, "Pronto quando" e "Prazo") e deixe só um parágrafo "**Feito em DD/MM.**" explicando o que foi feito, o que mudou e qualquer observação importante, como o Passo 1.
+   - **Parcial (🟡):** mantenha o passo e acrescente **"O que falta / o que fazer"** (lista objetiva, dizendo o que a pessoa precisa fazer) e, se necessário, **troque o prompt por um novo** só com o que falta. Remova do prompt o que já foi feito.
 6. Dependências: `npx expo install` no app; no servidor, liste os pacotes para instalar na máquina de quem vai rodar (nunca copie `node_modules` entre sistemas).
 
 Legenda: ⬜ a fazer · 🟡 em andamento · ✅ feito
@@ -31,7 +34,7 @@ Legenda: ⬜ a fazer · 🟡 em andamento · ✅ feito
 |---|---|---|---|
 | 0 | Instalar e validar o esqueleto | 05/11 | — |
 | 1 | Decisões de stack (SQLite, Fastify, Piper) — feito | 05/11 | — |
-| 2 | Criar o servidor (API) sobre o banco SQLite (banco, tabelas e seed já prontos) | 07/11 | 1 |
+| 2 | Criar o servidor (API) sobre o banco SQLite — feito | 07/11 | 1 |
 | 3 | Cadastro e login de verdade | 08/11 | 2 |
 | 4 | Atividades e níveis vindos da API | 09/11 | 2 |
 | 5 | Respostas, progressão e histórico no servidor | 10/11 | 3, 4 |
@@ -48,70 +51,26 @@ Legenda: ⬜ a fazer · 🟡 em andamento · ✅ feito
 | 16 | Documentação final (PDF, APF, README) | 16/11 | 15 |
 | 17 | Preparar a apresentação e a demo | 17/11 | 16 |
 
-Sprints da documentação: **Sprint 3** vai até 10/11 (passos 0–7), **Sprint 4** de 10/11 a 17/11 (passos 8–17). Os passos 0 a 2 estão atrasados em relação ao cronograma original (eram da Sprint 1) e são os mais urgentes.
+Sprints da documentação: **Sprint 3** vai até 10/11 (passos 0–7), **Sprint 4** de 10/11 a 17/11 (passos 8–17). Os passos 0 a 2 estavam atrasados em relação ao cronograma original (eram da Sprint 1) e foram concluídos em 05/11.
 
 ---
 
-## ⬜ Passo 0 — Instalar e validar o esqueleto
+## ✅ Passo 0 — Instalar e validar o esqueleto
 
-**Prazo:** 05/11
-**Pronto quando:** `npm install`, `npm run db:reset`, `npx expo lint` e `npx tsc --noEmit` passam sem erro e o fluxo de demonstração abre no celular (aluno: login → atividade → acerto; professor: dashboard → métricas).
-
-```text
-Leia AGENTS.md e README.md. O esqueleto em src/ foi escrito sem conseguir instalar
-as dependências, então nunca foi compilado de verdade.
-
-1. Rode `npm install`, depois `npx expo lint` e `npx tsc --noEmit`.
-2. Corrija todos os erros de tipo e de lint SEM mudar o comportamento das telas.
-   Atenção a: rotas tipadas do Expo Router (typedRoutes), props do Tabs
-   (sceneStyle, href: null) e tipos de useLocalSearchParams. Confira na documentação
-   do SDK 58 (https://docs.expo.dev/versions/v58.0.0/) antes de mudar qualquer API.
-3. Rode `npx expo-doctor` e resolva o que ele apontar com `npx expo install --fix`.
-4. Confirme o banco: `npm run db:reset` e depois `npm run db:query` (deve listar as 13
-   tabelas e a view vw_aluno, com 5 níveis, 6 atividades e 4 alunos). Exige Node 22.18+;
-   se falhar, diga a versão do Node e o erro.
-5. Me diga como testar no Expo Go e liste qualquer coisa que você teve de mudar.
-Não adicione bibliotecas novas neste passo.
-```
+**Feito em 05/11.** `npm install`, `npx expo lint`, `npx tsc --noEmit`, `npx expo-doctor` e `db:reset`/`db:query` passam, e o fluxo de aluno e professor foi testado no Expo Go. Foram corrigidos 3 erros de lint (`Date.now()` no render do React Compiler em `aluno/atividade/[id].tsx` e `aluno/nivelamento/index.tsx`; ícone sem nome em `professor/_layout.tsx`) e adicionados `eslint` e `eslint-config-expo` (devDependencies) com o `eslint.config.js`. O `tsc` e o `expo-doctor` já passavam. Observação: o `db:*` exige Node 22.18+ (em 22.14 use `NODE_OPTIONS=--experimental-strip-types`).
 
 ---
 
 ## ✅ Passo 1 — Decisões de stack
 
 **Feito em 05/11.** Banco = SQLite em arquivo; API = **Fastify** (Node.js + TypeScript); voz = interface `ProvedorVoz` com **Piper como padrão** e `expo-speech` como alternativa e reserva. Tudo registrado em [`decisoes/ADR-001-stack.md`](decisoes/ADR-001-stack.md).
+
 ---
 
-## 🟡 Passo 2 — Criar o servidor (API) com Fastify sobre o banco SQLite
+## ✅ Passo 2 — Criar o servidor (API) com Fastify sobre o banco SQLite
 
-**Prazo:** 07/11 · **Depende de:** passo 1 (feito)
-**Já feito:** banco, 13 tabelas, migração e seed (`npm run db:reset`). **Falta:** a API.
-**Pronto quando:** `npm run server:dev` sobe a API, `GET /health` responde, e o README explica como subir app + servidor juntos.
+**Feito em 05/11.** API em `server/src/` com **Fastify 5** (`@fastify/cors`, `@fastify/rate-limit`; `@fastify/jwt` instalado para o passo 3). `banco.ts` abre o mesmo arquivo dos scripts `db:*` (`caminhoBanco` de `server/db/conectar.mjs`, variável `AJAI_DB`) com `node:sqlite`, `PRAGMA foreign_keys = ON`, e avisa para rodar `db:reset` se o arquivo não existir. `GET /health` confere o banco (503 com mensagem amigável se não abrir). Erros sempre `{ erro }` em português (`erros.ts`, classe `ErroApi`), inclusive 404, JSON inválido/validação (400) e limite de requisições (429). Scripts: `server:dev` (Node roda o `.ts` direto com `--watch`, sem `tsx`), `server:build` (`tsc` → `server/dist/`, fora do git), `server:start`, `server:typecheck`; `npm run typecheck` agora checa app + servidor. `server/.env.example` criado; README ganhou "Subir o servidor" e "Como o app encontra a API" (`EXPO_PUBLIC_API_URL`, IP da Wi-Fi no celular). Nenhuma migração nova; telas do app não mudaram. Observações: servidor só com TypeScript "apagável" (sem `enum`, imports com `.ts`); decisões no ADR-001 §3. Testado no Node 22.14.
 
-```text
-Leia AGENTS.md, docs/decisoes/ADR-001-stack.md, server/db/ (conectar.mjs, migrar.mjs,
-migrations/001_esquema_inicial.sql), src/domain/modelos.ts e src/data/mock.ts.
-
-O banco SQLite já existe (`npm run db:reset` cria server/data/ajai.db com as 13 tabelas
-e os dados de src/data/mock.ts). NÃO recrie o esquema. Crie a API em server/src/
-(TypeScript) com FASTIFY (decisão do ADR-001): validação de entrada com os esquemas JSON do
-Fastify em toda rota, e plugins oficiais @fastify/cors, @fastify/jwt (passo 3) e
-@fastify/rate-limit. Confira as versões atuais e a compatibilidade com Node 22.
-
-1. Acesse o banco com node:sqlite (módulo nativo), num arquivo server/src/banco.ts que
-   reutilize o caminho de server/db/conectar.mjs (variável AJAI_DB). Ative
-   PRAGMA foreign_keys = ON. Nada de ORM novo.
-2. Scripts no package.json: `server:dev` (reinicia ao salvar), `server:build`,
-   `server:start`. Se precisar de pacotes, liste-os para eu instalar com npm install
-   na MINHA máquina (não instale por conta própria binários nativos).
-3. Rota GET /health (confere que o banco abre) e tratamento de erro padrão em JSON
-   { erro: string } com mensagens curtas em português.
-4. server/.env.example com PORT e, quando existirem, os segredos (JWT_SECRET etc.);
-   o arquivo server/.env já está no .gitignore.
-5. No README, seção "Como executar": como subir o servidor e como o app encontra a URL
-   (EXPO_PUBLIC_API_URL; no celular físico use o IP do computador na Wi-Fi, não localhost).
-Se algo exigir mudar o esquema, crie server/db/migrations/002_*.sql em vez de editar a 001.
-Não mexa nas telas do app neste passo.
-```
 ---
 
 ## ⬜ Passo 3 — Cadastro e login de verdade (RF01, RF02)

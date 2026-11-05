@@ -52,5 +52,8 @@ server/storage/audio/*
 # variáveis do servidor
 server/.env
 
+# build do servidor (npm run server:build)
+server/dist/
+
 # modelos de voz do Piper (baixados por cada pessoa)
 server/voz-modelos/

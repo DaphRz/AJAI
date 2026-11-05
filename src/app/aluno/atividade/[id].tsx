@@ -16,7 +16,7 @@ export default function TelaAtividade() {
   const aluno = useAluno();
   const { entrar } = useSessao();
   const atividade = visualizarAtividade(Number(id));
-  const [inicio] = useState(Date.now());
+  const [inicio] = useState(() => Date.now());
 
   if (!atividade) {
     return (
