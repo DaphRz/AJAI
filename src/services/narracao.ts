@@ -1,22 +1,17 @@
 /**
- * Narração por voz (RNF04): AudioCache.GerarNarracao → ServicoTTS.Sintetizar.
+ * Narração por voz (RNF04). Fachada usada por telas e componentes (BotaoAudio...).
  *
- * ESQUELETO: ainda não fala nada, só registra no console.
- * Pendência (ver README): decidir entre
- *   a) expo-speech (voz do próprio aparelho, grátis e offline): `npx expo install expo-speech`
- *   b) API externa de voz humanizada (ServicoTTS do diagrama) com cache em AudioCache.
- * A interface `falar()` abaixo não muda em nenhum dos dois casos.
+ * Quem de fato fala é o ProvedorVoz ativo (ver src/services/voz/). Esta fachada não
+ * muda quando trocamos expo-speech por uma API de voz: só o provedor muda.
  */
+import { provedorAtual, type OpcoesFala } from "./voz";
 
-export interface OpcoesFala {
-  voz?: string;
-  velocidade?: number;
-}
+export type { OpcoesFala };
 
 export async function falar(texto: string, opcoes: OpcoesFala = {}): Promise<void> {
-  console.log(`[narracao] (TODO TTS) "${texto}"`, opcoes);
+  await provedorAtual().falar(texto, opcoes);
 }
 
 export function pararFala(): void {
-  // TODO: parar a reprodução atual.
+  provedorAtual().parar();
 }

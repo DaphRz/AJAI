@@ -37,7 +37,14 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "db:migrate": "node --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON server/db/migrar.mjs",
+    "db:seed": "node --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON server/db/seed.mjs",
+    "db:reset": "node --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON server/db/reset.mjs",
+    "db:query": "node --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON server/db/consultar.mjs"
   },
-  "private": true
+  "private": true,
+  "engines": {
+    "node": ">=22.18"
+  }
 }

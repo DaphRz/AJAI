@@ -90,6 +90,8 @@ export interface Atividade {
   enunciado: string;
   urlImagem?: string;
   respostaCorreta: string;
+  /** EXTRA (fora do diagrama): posição no nivelamento inicial; ausente = fora do nivelamento. */
+  ordemNivelamento?: number;
   status: StatusAtividade;
   alternativas: Alternativa[]; // composição
   criadoEm: string;
@@ -102,6 +104,8 @@ export interface AudioCache {
   voz: string;
   velocidade: number;
   caminhoArquivo: string;
+  /** EXTRA (fora do diagrama): provedor que gerou o áudio, ex.: "google", "piper". */
+  provedor: string;
 }
 
 export interface Resposta {

@@ -1,7 +1,7 @@
 # AGENTS.md – AJAI
 
 Instruções para agentes de IA (Claude, Copilot, Cursor etc.) e para quem chega agora no código.
-Leia também o [README](README.md), principalmente a seção **Pendências**.
+Leia também o [README](README.md), principalmente a seção **Pendências**, o roteiro [`docs/PROXIMOS_PASSOS.md`](docs/PROXIMOS_PASSOS.md) e as decisões em [`docs/decisoes/ADR-001-stack.md`](docs/decisoes/ADR-001-stack.md). O `CLAUDE.md` importa esses arquivos para o Claude Code a cada sessão.
 
 ## Contexto do produto
 
@@ -22,7 +22,9 @@ Fontes de verdade, nesta ordem:
 
 - Expo **SDK 58**, React Native, React 19, TypeScript estrito, React Compiler ligado (`app.json › experiments.reactCompiler`).
 - Expo Router (rotas por arquivo em `src/app/`), typed routes ligado.
-- Ainda **sem backend**: os serviços leem/gravam `src/data/mock.ts` em memória. O servidor previsto é Node.js (stack ainda não decidida).
+- **Banco: SQLite em arquivo** (`server/data/ajai.db`), já criado com as 13 tabelas e seed (ver [Banco de dados](#banco-de-dados-sqlite)). Decisão em `docs/decisoes/ADR-001-stack.md`.
+- **Ainda sem API**: o app não fala com o banco; os serviços leem/gravam `src/data/mock.ts` em memória. O servidor será Node.js + TypeScript com **Fastify** (validação de entrada com esquemas JSON em toda rota).
+- **Voz trocável**: o app usa a interface `ProvedorVoz` (`src/services/voz/`). Padrão previsto: **Piper** (áudio gerado no servidor); `expo-speech` como alternativa e reserva. Ver [Narração por voz](#narração-por-voz-provedorvoz).
 
 ## Arquitetura e onde colocar cada coisa
 
@@ -35,6 +37,9 @@ Fontes de verdade, nesta ordem:
 | `src/domain/modelos.ts` | Tipos do diagrama de classes. Mudou o diagrama? Mude aqui também. |
 | `src/data/mock.ts` | Dados de demonstração. Não importe direto nas telas; passe por `services/`. |
 | `src/theme/tokens.ts` | Cores, fontes e tamanhos do Figma. **Não use cor ou tamanho "solto"** nas telas. |
+| `src/services/narracao.ts` + `src/services/voz/` | Fachada de voz (`falar`/`pararFala`) e provedores (`ProvedorVoz`). **Telas nunca importam um provedor direto.** |
+| `server/db/` | Banco SQLite: `migrations/*.sql` (esquema), `seed.mjs` (dados iniciais, lê `src/data/mock.ts`), scripts `db:*`. |
+| `server/data/` e `server/storage/` | Arquivo do banco e áudios gerados. **Ignorados pelo git**; nunca versionar. |
 
 ## Regras obrigatórias de acessibilidade (o público depende disso)
 
@@ -54,6 +59,37 @@ Fontes de verdade, nesta ordem:
 - Marque o que é provisório com `// TODO:` explicando o que falta.
 - Nenhuma senha, token ou chave no código. Variáveis em `.env.local` (ignorado pelo git).
 
+## Banco de dados (SQLite)
+
+Arquivo: `server/data/ajai.db`. Acesso por `node:sqlite` (Node 22.18+), **sem instalar nada**. Tudo se faz pelos scripts npm; não precisa do programa `sqlite3`.
+
+| Para... | Comando |
+|---|---|
+| Criar/recriar o banco do zero com os dados de demonstração | `npm run db:reset` |
+| Ver tabelas e contagem de linhas | `npm run db:query` |
+| Consultar (use `--json` para ler a saída) | `npm run db:query -- --json "SELECT ..."` |
+| Alterar dados (precisa de `--escrever`) | `npm run db:query -- --escrever "UPDATE ..."` |
+| Aplicar migrações novas | `npm run db:migrate` |
+| Recarregar só os dados | `npm run db:seed` |
+
+Regras para agentes:
+- **Mudou a estrutura?** Crie `server/db/migrations/00N_descricao.sql` e rode `npm run db:migrate`. **Nunca edite uma migração já aplicada** e nunca use `db:query` para `CREATE/ALTER/DROP` (o script recusa).
+- **Mudou os dados de exemplo?** Edite `src/data/mock.ts` (é a fonte do seed) e rode `npm run db:seed`. Depois de mudar o esquema, atualize também `src/domain/modelos.ts`.
+- Nomes de tabela e coluna são os do diagrama de classes (`Usuario`, `Atividade`, `HistoricoNivel`...). `Aluno.idNivelAtual` não é coluna: use a view `vw_aluno`.
+- Antes de qualquer `UPDATE`/`DELETE` em massa, rode o `SELECT` equivalente e mostre o resultado. Em dúvida, `db:reset` é seguro: o banco é local e descartável.
+- **Nunca** versione o `.db`, nem coloque segredo ou senha real no seed. Chaves de API ficam em `server/.env` (ignorado pelo git).
+- Instale dependências (`npm install`) sempre na máquina de quem vai rodar o projeto; `node_modules` de outro sistema operacional quebra os módulos nativos.
+
+## Narração por voz (`ProvedorVoz`)
+
+O app **não pode depender de uma API de voz específica**. Regras:
+- Telas e componentes só chamam `falar()` / `pararFala()` de `@/services/narracao`.
+- Quem fala é o provedor ativo de `src/services/voz/index.ts` (`PROVEDOR_PADRAO`). Cada provedor implementa `ProvedorVoz` (`nome`, `falar`, `parar`) em um arquivo próprio (`provedorExpoSpeech.ts`, `provedorServidor.ts`...).
+- **Trocar de voz = criar o provedor, registrá-lo em `index.ts` e mudar `PROVEDOR_PADRAO`.** Se uma troca exigir mexer em tela ou em `BotaoAudio`, a abstração foi violada: corrija o provedor, não a tela.
+- Provedores do app: `servidor` (padrão: toca áudio gerado com Piper) e `expo-speech` (alternativa e reserva quando o servidor falha). O Piper só roda no servidor/geração, nunca no celular.
+- No servidor, a mesma ideia: interface `SintetizadorVoz`, um arquivo por serviço (Piper primeiro; Google, Polly... se um dia forem necessários), escolhido por variável de ambiente; resultado em `AudioCache` (tabela, com a coluna `provedor`) e `server/storage/audio/`.
+- Chaves de API só em `server/.env`, nunca no app (`EXPO_PUBLIC_*` vai para dentro do aplicativo e é público).
+
 ## Expo mudou — não confie na memória
 
 O Expo muda APIs a cada SDK. Antes de usar uma API do Expo/React Native:
@@ -72,9 +108,11 @@ npx expo install <pacote>   # SEMPRE use isto para adicionar bibliotecas
 npx expo lint               # lint
 npx tsc --noEmit            # typecheck
 npx expo-doctor             # diagnosticar configuração
+npm run db:reset            # recriar o banco SQLite com os dados de demonstração
+npm run db:query            # tabelas e contagens (aceita SQL: ver seção Banco de dados)
 ```
 
-Antes de dizer que uma tarefa terminou: rode **lint e typecheck** e abra o fluxo afetado no app (login de demonstração: e-mail vazio).
+Antes de dizer que uma tarefa terminou: rode **lint e typecheck** (e `npm run db:reset` se mexeu em banco ou seed) e abra o fluxo afetado no app (login de demonstração: e-mail vazio).
 
 ## Regras do Expo
 
@@ -90,5 +128,5 @@ Uma tarefa só vai para **Concluído** quando:
 2. Segue a tela do Figma (ou a tela nova foi aprovada pelo UX/UI).
 3. Passa nas regras de acessibilidade acima.
 4. Lint e typecheck sem erros.
-5. Foi testada por outra pessoa da equipe (Giovanna/testes).
+5. Foi testada por outra pessoa da equipe (quem não escreveu o código).
 6. A seção **Pendências** do README foi atualizada.

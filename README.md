@@ -3,7 +3,7 @@
 Aplicativo mobile de apoio à alfabetização, complementar à EJA, com área de acompanhamento para professores.
 Projeto da disciplina de Gestão de Projetos – Universidade de Vila Velha, 2026 (turma CC6M, equipe 4).
 
-> **Situação em 04/11/2026 (Sprint 3 de 4):** existe um **esqueleto navegável** com as telas do Figma, regras de correção e progressão e dados de demonstração **em memória**. Ainda **não há backend nem banco de dados**: tudo some ao recarregar o app. Veja [Pendências](#pendências).
+> **Situação em 05/11/2026 (Sprint 3 de 4):** existe um **esqueleto navegável** com as telas do Figma, regras de correção e progressão e dados de demonstração **em memória**. O **banco SQLite** (13 tabelas + dados iniciais) já existe em `server/`, mas o app ainda **não está ligado a ele**: falta a API e trocar o mock. Veja [Pendências](#pendências) e [Banco de dados](#banco-de-dados-sqlite).
 
 - Protótipo no Figma: <https://www.figma.com/design/hXu6QCdfo7r7Qau5Rbia8M/AJAI>
 - Diagrama de classes: [`docs/diagrama-classes.png`](docs/diagrama-classes.png)
@@ -17,7 +17,7 @@ Projeto da disciplina de Gestão de Projetos – Universidade de Vila Velha, 202
 
 | O quê | Versão | Como conferir |
 |---|---|---|
-| [Node.js](https://nodejs.org) | 20 LTS ou mais novo (testado com 22) | `node -v` |
+| [Node.js](https://nodejs.org) | **22.18 ou mais novo** (22 LTS). O banco usa o módulo `node:sqlite`, que só existe no Node 22+ | `node -v` |
 | npm | vem com o Node | `npm -v` |
 | Git | qualquer | `git --version` |
 | Celular com **Expo Go** | versão compatível com o **SDK 58** | Play Store / App Store |
@@ -39,7 +39,15 @@ cd AJAI
 npm install
 ```
 
-### 4. Rodar
+### 4. Criar o banco de dados
+
+```bash
+npm run db:reset
+```
+
+Cria o arquivo `server/data/ajai.db` com as 13 tabelas e os dados de demonstração (5 níveis, 6 atividades, 4 alunos, 1 professor). Não precisa instalar nada além do Node. **Cada pessoa gera o seu**: o arquivo não vai para o git. Detalhes e comandos: [Banco de dados](#banco-de-dados-sqlite).
+
+### 5. Rodar
 
 ```bash
 npx expo start
@@ -56,9 +64,9 @@ Vai aparecer um QR code no terminal. Depois:
 
 Se a rede da faculdade bloquear a conexão, use `npx expo start --tunnel`.
 
-### 5. Entrar no app (modo demonstração)
+### 6. Entrar no app (modo demonstração)
 
-Não há servidor ainda, então o login aceita os usuários de teste de [`src/data/mock.ts`](src/data/mock.ts):
+O app ainda não conversa com o servidor/banco, então o login aceita os usuários de teste de [`src/data/mock.ts`](src/data/mock.ts) (os mesmos que o `db:reset` grava no banco):
 
 - **Aluno:** escolha "Aluno", deixe o e-mail **vazio** e toque em Entrar → entra como *Maria Silva*.
 - **Professor:** escolha "Professor/ Responsável", deixe o e-mail **vazio** → entra como *Rafael Costa*, com Ana, Bruno e Clara vinculados.
@@ -73,6 +81,9 @@ npx expo-doctor          # diagnostica problemas de configuração
 npx expo lint            # lint
 npx tsc --noEmit         # checagem de tipos
 npx expo install <pacote>  # SEMPRE use isto para adicionar bibliotecas (não npm install <pacote>)
+
+npm run db:reset         # recria o banco do zero com os dados de demonstração
+npm run db:query         # lista as tabelas e quantas linhas cada uma tem
 ```
 
 ### Problemas comuns
@@ -80,6 +91,99 @@ npx expo install <pacote>  # SEMPRE use isto para adicionar bibliotecas (não np
 - **"Project is incompatible with this version of Expo Go"** → atualize o Expo Go no celular.
 - **QR code não conecta** → mesma Wi-Fi ou `--tunnel`.
 - **Erro estranho depois de trocar de branch** → `npx expo start -c`; se não resolver, apague `node_modules` e rode `npm install` de novo.
+
+---
+
+## Banco de dados (SQLite)
+
+Decisão registrada em [`docs/decisoes/ADR-001-stack.md`](docs/decisoes/ADR-001-stack.md): **SQLite em um arquivo dentro do projeto**, sem servidor de banco, sem conta e sem senha.
+
+| O quê | Onde | Vai para o git? |
+|---|---|---|
+| Arquivo do banco | `server/data/ajai.db` | **Não** (cada pessoa gera o seu) |
+| Esquema (tabelas) | `server/db/migrations/001_esquema_inicial.sql` e as próximas | Sim |
+| Dados iniciais (seed) | `server/db/seed.mjs`, que lê [`src/data/mock.ts`](src/data/mock.ts) | Sim |
+| Áudios gerados (futuro) | `server/storage/audio/` | Não |
+
+### Carregar o banco (passo a passo)
+
+1. Tenha o **Node 22.18+** (`node -v`). Se estiver abaixo, atualize em <https://nodejs.org>.
+2. Na raiz do projeto: `npm install` (só na primeira vez).
+3. Rode **`npm run db:reset`**. Resultado esperado:
+   ```
+   Banco recriado em .../AJAI/server/data/ajai.db
+     5 níveis, 6 atividades, 4 alunos de demonstração.
+   ```
+4. Confira com **`npm run db:query`**: deve listar as 13 tabelas, a view `vw_aluno` e a tabela interna `_migracoes`.
+
+Pronto. Se algum dia o banco estragar ou você quiser voltar aos dados iniciais, repita o `npm run db:reset` (ele apaga o arquivo e recria tudo).
+
+### Comandos
+
+| Comando | O que faz |
+|---|---|
+| `npm run db:reset` | **Apaga** o arquivo, recria o esquema e carrega os dados de demonstração |
+| `npm run db:migrate` | Aplica as migrações novas (arquivos `.sql` ainda não aplicados), sem apagar dados |
+| `npm run db:seed` | Apaga os **dados** (mantém as tabelas) e recarrega o seed |
+| `npm run db:query` | Lista as tabelas e a contagem de linhas |
+| `npm run db:query -- "SELECT * FROM Nivel"` | Consulta (só leitura) |
+| `npm run db:query -- --json "SELECT ..."` | Mesma consulta, resultado em JSON |
+| `npm run db:query -- --escrever "UPDATE ..."` | Permite `INSERT`/`UPDATE`/`DELETE` (use com cuidado) |
+
+Exemplos úteis:
+
+```bash
+npm run db:query -- "SELECT idUsuario, nome, idNivelAtual FROM vw_aluno"
+npm run db:query -- "SELECT conteudo, totalTentativas, taxaAcerto FROM DesempenhoConteudo WHERE idAluno = 2"
+npm run db:query -- "SELECT a.enunciado, al.texto, al.correta FROM Atividade a JOIN Alternativa al USING (idAtividade) WHERE a.idAtividade = 1"
+```
+
+### Como mudar o banco
+
+- **Mudar os dados de exemplo** (atividades, níveis, alunos): edite `src/data/mock.ts` e rode `npm run db:seed`.
+- **Mudar a estrutura** (nova tabela ou coluna): crie um arquivo novo `server/db/migrations/002_descricao.sql` (depois `003_...`) e rode `npm run db:migrate`. **Nunca edite uma migração que já foi aplicada**; avise o grupo para cada um rodar `npm run db:migrate` depois do `git pull`.
+- Quando mudar o esquema, atualize também `src/domain/modelos.ts` e o diagrama de classes.
+- **Nunca** coloque o arquivo `.db` no git nem senhas reais nos dados de exemplo.
+
+### Para ver o banco em uma tela
+
+Qualquer programa que abra SQLite serve: [DB Browser for SQLite](https://sqlitebrowser.org) (grátis, Windows/Mac/Linux) ou a extensão *SQLite Viewer* do VS Code. Abra `server/data/ajai.db`. Para só olhar, prefira abrir como somente leitura.
+
+### Como o esquema se liga ao diagrama de classes
+
+Os nomes de tabelas e colunas são os do diagrama. Diferenças (registrar na documentação final):
+
+- `Aluno.idNivelAtual` **não é coluna**: é o registro mais recente de `HistoricoNivel`. A view `vw_aluno` já devolve o aluno com esse campo calculado.
+- Colunas extras: `Atividade.ordemNivelamento` (ordem das perguntas do nivelamento; vazio = fora do nivelamento) e `AudioCache.provedor` (qual serviço gerou o áudio).
+- Booleanos são `0`/`1`; datas são texto ISO 8601; enums são texto com `CHECK`.
+
+### Problemas comuns
+
+- **`No such built-in module: node:sqlite`** ou **`ERR_UNKNOWN_FILE_EXTENSION ... .ts`** → Node antigo. Atualize para o 22.18+.
+- **`FOREIGN KEY constraint failed`** → você apagou/inseriu uma linha que depende de outra (ex.: apagar um `Nivel` que tem `Atividade`). Apague os filhos antes, ou use `npm run db:reset`.
+- **`disk I/O error`** → o SQLite não funciona bem em pasta sincronizada ou de rede (iCloud/Mesa, OneDrive, Dropbox, Google Drive). Guarde o banco numa pasta local: `AJAI_DB=$HOME/ajai.db npm run db:reset` (no Windows PowerShell: `$env:AJAI_DB="$HOME\ajai.db"; npm run db:reset`) e use a mesma variável nos demais comandos `db:*`. Se o projeto estiver numa pasta sincronizada, prefira mover o projeto para fora dela.
+- **`database is locked`** → outro programa (DB Browser) está com o arquivo aberto para escrita. Feche-o.
+- **Banco diferente do dos colegas** → normal: cada um tem o seu. Rode `npm run db:migrate` depois de cada `git pull` e `npm run db:reset` se quiser os dados iniciais de novo.
+
+### Trabalhando com um agente de IA (Claude Code etc.)
+
+O agente consulta e altera o banco pelos mesmos comandos (`npm run db:query -- --json "..."`), sem programa extra. Regras para ele estão no [`AGENTS.md`](AGENTS.md#banco-de-dados-sqlite).
+
+---
+
+## Narração por voz: `ProvedorVoz`
+
+O app **não depende de nenhuma API de voz específica**. Telas e componentes chamam só `falar()` / `pararFala()` (`src/services/narracao.ts`), que repassam ao **provedor ativo** (`src/services/voz/`). Cada forma de falar é um provedor que segue a interface `ProvedorVoz`:
+
+| Provedor | Situação | O que é |
+|---|---|---|
+| `console` | ✅ existe (padrão até o passo 6) | Só registra no console; para desenvolver sem áudio |
+| `servidor` | ⬜ passo 6 — **será o padrão** | Toca o áudio gerado no servidor com o **Piper** (voz pt-BR, grátis, sem conta) e guardado em `AudioCache`; se o servidor falhar, cai para o `expo-speech` |
+| `expo-speech` | ⬜ passo 6 — implementado como alternativa | Voz do próprio aparelho: grátis, sem conta, offline |
+
+**Para trocar de voz:** crie o arquivo do provedor em `src/services/voz/`, registre-o em `src/services/voz/index.ts` e mude `PROVEDOR_PADRAO`. Nenhuma tela muda.
+
+No servidor, a geração de áudio segue a mesma ideia (interface `SintetizadorVoz`, um arquivo por serviço: **Piper** é o primeiro; Google, Polly etc. entrariam como arquivos novos). O Piper só precisa estar instalado no computador que **gera** os áudios; depois de gerados, a API apenas serve os arquivos. Chaves de API ficam só em `server/.env`, **nunca no app**. Comparativo de opções e custos: [ADR-001](docs/decisoes/ADR-001-stack.md).
 
 ---
 
@@ -107,8 +211,17 @@ src/
   data/mock.ts            Dados de demonstração (níveis, atividades, alunos, respostas)
   domain/modelos.ts       Tipos espelhando o diagrama de classes
   services/               Regras e acesso a dados (hoje sobre o mock; amanhã sobre a API)
+    narracao.ts           Fachada da voz (falar / pararFala)
+    voz/                  ProvedorVoz: interface + provedores trocáveis
   theme/tokens.ts         Cores, fontes e tamanhos do Figma
-docs/diagrama-classes.png
+server/
+  db/                     Banco SQLite: migrations/*.sql, seed.mjs, scripts db:*
+  data/                   ajai.db (gerado, fora do git)
+  storage/audio/          Áudios de narração gerados (fora do git)
+docs/
+  diagrama-classes.png
+  PROXIMOS_PASSOS.md      Roteiro até a entrega, com prompts
+  decisoes/ADR-001-stack.md  Decisões de banco, servidor e voz
 ```
 
 ### Telas do Figma × código
@@ -130,6 +243,31 @@ docs/diagrama-classes.png
 
 ---
 
+## Próximos passos
+
+O roteiro completo até a entrega, com prazo, critério de pronto e **um prompt pronto para cada passo**, está em [`docs/PROXIMOS_PASSOS.md`](docs/PROXIMOS_PASSOS.md). Resumo:
+
+| # | Passo | Prazo |
+|---|---|---|
+| 0 | Instalar e validar o esqueleto | 05/11 |
+| 1 | Aprovar o framework da API (banco e voz já decididos) | 05/11 |
+| 2 | Criar o servidor (API) sobre o banco SQLite (tabelas e seed já prontos) | 07/11 |
+| 3 | Cadastro e login de verdade | 08/11 |
+| 4 | Atividades e níveis vindos da API | 09/11 |
+| 5 | Respostas, progressão e histórico no servidor | 10/11 |
+| 6 | Narração por voz e preferências | 10/11 |
+| 7 | Conteúdo pedagógico completo | 10/11 |
+| 8 | Telas e recursos visuais que faltam no Figma | 11/11 |
+| 9 | Home do aluno: ofensiva e progresso | 12/11 |
+| 10 | Área do professor completa | 13/11 |
+| 11 | Cadastro de atividades e níveis (admin) | 13/11 |
+| 12 | Testes automatizados | 13/11 |
+| 13 | Segurança e privacidade (LGPD) | 13/11 |
+| 14 | Testes integrados e de usabilidade | 15/11 |
+| 15 | Correção de bugs e polimento | 16/11 |
+| 16 | Documentação final | 16/11 |
+| 17 | Apresentação e demo | 17/11 |
+
 ## Pendências
 
 Legenda: ✅ feito · 🟡 esqueleto/parcial (só no app, com dados em memória) · ⬜ não começado
@@ -138,7 +276,7 @@ Legenda: ✅ feito · 🟡 esqueleto/parcial (só no app, com dados em memória)
 
 **Sprint 1 – Setup, Acesso e Nivelamento (20/10 – 27/10)** — *atrasada*
 - ✅ Projeto Expo (React Native + TypeScript) criado e organizado
-- ⬜ Configurar o banco de dados
+- ✅ Banco de dados configurado: SQLite com as 13 tabelas e seed (`npm run db:reset`) — falta ligar o app a ele pela API
 - 🟡 Cadastro e autenticação (RF01, RF02): telas prontas, mas sem servidor, sem senha com hash e sem guardar a sessão
 - 🟡 Nivelamento inicial (RF03): fluxo e regra provisória (para no primeiro erro); faltam as perguntas definitivas validadas pela equipe/profissionais da EJA
 - ⬜ Testes do fluxo de acesso
@@ -165,8 +303,9 @@ Legenda: ✅ feito · 🟡 esqueleto/parcial (só no app, com dados em memória)
 - ⬜ Documentação final e preparação da apresentação (entrega **17/11**)
 
 ### Backend e dados (bloqueia quase tudo acima)
-- ⬜ **Decidir a stack do servidor** (a documentação prevê Node.js) e o banco (ex.: PostgreSQL, SQLite ou um serviço como Supabase/Firebase)
-- ⬜ Criar as tabelas do diagrama de classes: Usuario, Aluno, Professor, Administrador, Turma, Matricula, Nivel, Atividade, Alternativa, AudioCache, Resposta, DesempenhoConteudo, HistoricoNivel
+- ✅ **Banco decidido: SQLite em arquivo** (`server/data/ajai.db`), ver [ADR-001](docs/decisoes/ADR-001-stack.md)
+- ✅ Tabelas do diagrama de classes criadas (Usuario, Aluno, Professor, Administrador, Turma, Matricula, Nivel, Atividade, Alternativa, AudioCache, Resposta, DesempenhoConteudo, HistoricoNivel) + dados iniciais
+- ⬜ **Decidir o framework da API** (Node.js + TypeScript; Fastify ou Express) e criar o servidor em `server/src/`
 - ⬜ API para as funções contadas na APF (Incluir/Editar/Excluir/Listar/Visualizar de cada módulo)
 - ⬜ Trocar `src/data/mock.ts` pelas chamadas à API dentro de `src/services/` (as telas não precisam mudar)
 - ⬜ Guardar o token de login no aparelho (`expo-secure-store`)
@@ -179,11 +318,9 @@ Legenda: ✅ feito · 🟡 esqueleto/parcial (só no app, com dados em memória)
 - ⬜ Trocar/recuperar senha (APF 18)
 
 ### Acessibilidade e conteúdo
-- ⬜ **Narração por voz (RNF04)** — hoje o botão "Ouvir ajuda" só escreve no console. Decidir entre:
-  - `expo-speech` (voz do aparelho, grátis e offline), ou
-  - API externa de voz humanizada (o `ServicoTTS` do diagrama) com cache (`AudioCache`).
-  
-  ⚠️ Se a escolha for `expo-speech`, a APF precisa ser revista: o `ServicoTTS` deixa de ser um AIE (−5 PF) e o item 44 muda.
+- 🟡 **Narração por voz (RNF04)** — a arquitetura trocável (`ProvedorVoz`) já existe, mas o único provedor é o `console` (o botão "Ouvir ajuda" só escreve no console). Decidido: **Piper como padrão** (áudios gerados no servidor e guardados em `AudioCache`) e **`expo-speech` implementado** como alternativa e reserva. Falta implementar os dois provedores e o gerador (passo 6).
+
+  ⚠️ Conferir a licença da voz `pt_BR-faber-medium` e revisar na APF o `ServicoTTS`.
 - ⬜ Banco real de atividades (letras, sílabas, palavras, frases, escrita, interpretação, cotidiano), validado com os profissionais da EJA
 - ⬜ O enum `TipoAtividade` do diagrama não tem tipos para **letra-som** (RF05) nem **cotidiano** (RF11): incluir ou explicar no documento que entram como `conteudo` de outros tipos
 - ⬜ Imagens das alternativas (o Figma usa fotos; o app usa emojis provisórios)
@@ -201,7 +338,7 @@ Legenda: ✅ feito · 🟡 esqueleto/parcial (só no app, com dados em memória)
 
 ### Documentação
 - ⬜ Atualizar a seção 15 (Prototipação) do PDF: ela diz que o protótipo tem 9 telas e que cadastro e nivelamento seriam feitos depois, mas o Figma já tem 15 telas, incluindo cadastro, nivelamento, formar palavra e ler frase
-- ⬜ Registrar no documento as decisões de stack (servidor, banco, voz) quando forem tomadas
+- ⬜ Registrar no documento as decisões de stack (banco SQLite já decidido; servidor e voz pendentes) e as 2 colunas extras do esquema (`Atividade.ordemNivelamento`, `AudioCache.provedor`)
 - ⬜ Manter o quadro Kanban (Trello) alinhado com esta lista
 
 ---
@@ -215,5 +352,7 @@ Legenda: ✅ feito · 🟡 esqueleto/parcial (só no app, com dados em memória)
 | Maria Carla dos Santos Bellote | Desenvolvimento |
 | Brenno Gomes Breda | UX/UI Design |
 | Giovanna Rocha Santana | Testes e documentação |
+
+Os papéis acima são os formais da documentação do projeto; no desenvolvimento **todos contribuem** e as tarefas não têm dono fixo (veja [`docs/PROXIMOS_PASSOS.md`](docs/PROXIMOS_PASSOS.md)).
 
 Orientadora: Susiléa Abreu dos Santos Lima. Metodologia: Scrum com Kanban (4 Sprints, quadro no Trello).

@@ -40,3 +40,17 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# banco SQLite local (cada pessoa gera o seu com `npm run db:reset`)
+server/data/*
+!server/data/.gitkeep
+
+# áudios de narração gerados pelo servidor (AudioCache)
+server/storage/audio/*
+!server/storage/audio/.gitkeep
+
+# variáveis do servidor
+server/.env
+
+# modelos de voz do Piper (baixados por cada pessoa)
+server/voz-modelos/
