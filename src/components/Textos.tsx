@@ -34,7 +34,27 @@ export function Cartao({ children, destaque = false }: { children: ReactNode; de
   return <View style={[styles.cartao, destaque && styles.cartaoDestaque]}>{children}</View>;
 }
 
+/**
+ * Mensagem curta para o usuário (ex.: resposta do servidor). O leitor de tela anuncia sozinho.
+ * "atencao" para pedir que confira algo (nunca chame de "erro" na tela); "sucesso" para confirmar.
+ */
+export function Aviso({ children, tipo = "atencao" }: { children: ReactNode; tipo?: "atencao" | "sucesso" }) {
+  return (
+    <View
+      accessibilityRole="alert"
+      accessibilityLiveRegion="polite"
+      style={[styles.aviso, tipo === "sucesso" ? styles.avisoSucesso : styles.avisoAtencao]}
+    >
+      <Text style={[styles.avisoTexto, { color: tipo === "sucesso" ? cores.sucesso : cores.erro }]}>{children}</Text>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
+  aviso: { borderRadius: raios.md, borderWidth: 2, padding: 12 },
+  avisoAtencao: { backgroundColor: cores.superficie, borderColor: cores.erro },
+  avisoSucesso: { backgroundColor: cores.superficieSuave, borderColor: cores.sucesso },
+  avisoTexto: { fontSize: fontes.corpo, fontWeight: "600" },
   titulo: { fontSize: fontes.tituloGrande, fontWeight: "800", color: cores.texto },
   subtitulo: { fontSize: fontes.subtitulo, color: cores.textoSuave },
   corpo: { fontSize: fontes.corpo, color: cores.texto },

@@ -6,6 +6,7 @@
  * Pendência: substituir por chamadas à API (ver README › Pendências).
  */
 import type {
+  Administrador,
   Aluno,
   Atividade,
   Matricula,
@@ -128,8 +129,24 @@ export const professores: Professor[] = [
     idUsuario: 100,
     nome: "Rafael Costa",
     email: "rafael@ajai.app",
-    senhaHash: "demo",
+    telefone: "11900000100",
     perfil: "PROFESSOR",
+    ativo: true,
+    criadoEm: agora,
+    atualizadoEm: agora,
+  },
+];
+
+/**
+ * Administrador (cadastra atividades e níveis – passo 11; redefine senha de professor).
+ * A senha de TODOS os usuários de demonstração é a do seed (server/db/seed.mjs, SENHA_DEMO).
+ */
+export const administradores: Administrador[] = [
+  {
+    idUsuario: 900,
+    nome: "Administração AJAI",
+    email: "admin@ajai.app",
+    perfil: "ADMINISTRADOR",
     ativo: true,
     criadoEm: agora,
     atualizadoEm: agora,
@@ -140,8 +157,9 @@ function alunoDemo(idUsuario: number, nome: string, idNivelAtual: number): Aluno
   return {
     idUsuario,
     nome,
-    email: `${nome.split(" ")[0].toLowerCase()}@ajai.app`,
-    senhaHash: "demo",
+    // Aluno entra com nome de usuário (sem e-mail), e quem criou a conta foi o professor Rafael.
+    nomeUsuario: nome.toLowerCase().replace(" ", "."),
+    idCriador: 100,
     perfil: "ALUNO",
     ativo: true,
     criadoEm: agora,

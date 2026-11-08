@@ -3,9 +3,13 @@
 import cors from "@fastify/cors";
 import rateLimit from "@fastify/rate-limit";
 import Fastify, { type FastifyInstance } from "fastify";
+import { registrarAutenticacao } from "./autenticacao.ts";
 import { config } from "./config.ts";
 import { registrarTratamentoDeErros } from "./erros.ts";
+import { rotasAuth } from "./rotas/auth.ts";
+import { rotasProfessorAlunos } from "./rotas/professorAlunos.ts";
 import { rotasSaude } from "./rotas/saude.ts";
+import { rotasSenhaProvisoria } from "./rotas/senhaProvisoria.ts";
 
 export async function construirApp(opcoes: { log?: boolean } = {}): Promise<FastifyInstance> {
   const app = Fastify({
@@ -39,9 +43,12 @@ export async function construirApp(opcoes: { log?: boolean } = {}): Promise<Fast
     }),
   });
 
-  // TODO: registrar @fastify/jwt (já instalado) no passo 3, com config.jwtSegredo vindo de JWT_SECRET.
+  await registrarAutenticacao(app);
 
   await app.register(rotasSaude);
+  await app.register(rotasAuth);
+  await app.register(rotasProfessorAlunos);
+  await app.register(rotasSenhaProvisoria);
 
   return app;
 }

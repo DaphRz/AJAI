@@ -2,7 +2,7 @@
 import { router } from "expo-router";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { Campo, Logo, Subtitulo, Tela, Titulo } from "@/components";
+import { Botao, Campo, Logo, Subtitulo, Tela, Titulo } from "@/components";
 import { useSessao } from "@/context/sessao";
 import { visualizarPainel, type ResumoAluno, type Situacao } from "@/services/relatorios";
 import { cores, fontes, raios } from "@/theme/tokens";
@@ -33,6 +33,7 @@ export default function DashboardProfessor() {
         <Subtitulo>Olá, {usuario?.nome.split(" ")[0]}. Veja como seus alunos estão.</Subtitulo>
       </View>
       {/* TODO: seletor de período ("Últimos 7 dias") */}
+      <Botao titulo="Cadastrar aluno" variante="secundario" onPress={() => router.push("/professor/contas/nova")} />
 
       <View style={styles.resumo}>
         <Text style={styles.resumoTitulo}>RESUMO DOS ALUNOS</Text>

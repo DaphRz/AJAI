@@ -12,3 +12,4 @@ Este arquivo é lido pelo Claude Code a cada sessão. Os arquivos abaixo são **
 - Respeite o ADR-001 (SQLite, Fastify, `ProvedorVoz` com Piper padrão). Se a tarefa pedir o contrário, pare e pergunte.
 - Ao terminar: marque o passo (⬜ → 🟡 → ✅) em `docs/PROXIMOS_PASSOS.md`. Passo **concluído**: apague o prompt e deixe só "Feito em DD/MM" com o que foi feito (como o Passo 1). Passo **parcial**: diga "O que falta / o que fazer" e, se preciso, troque o prompt por um novo só com o que falta. Depois, atualize "Pendências" no `README.md` e registre no ADR qualquer decisão nova.
 - Para detalhes de execução e do banco, consulte o `README.md` (não é importado por ser longo).
+- **Nunca use emojis** na interface: use ícones de `@expo/vector-icons` (ou `lucide-react-native`). `react-icons` não funciona em React Native. Detalhes em AGENTS.md › Acessibilidade.

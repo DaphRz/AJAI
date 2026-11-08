@@ -18,9 +18,18 @@ export function migrar(db) {
   for (const arquivo of readdirSync(pastaMigracoes).filter((f) => f.endsWith(".sql")).sort()) {
     if (aplicadas.has(arquivo)) continue;
     const sql = readFileSync(join(pastaMigracoes, arquivo), "utf8");
+    // Migrações que RECRIAM uma tabela (o SQLite não muda NOT NULL/UNIQUE com ALTER) começam
+    // com a linha "-- ajai: sem-chaves-estrangeiras". Sem isso, apagar a tabela antiga
+    // apagaria em cascata as linhas que apontam para ela. As chaves são conferidas antes do COMMIT.
+    const semChaves = sql.startsWith("-- ajai: sem-chaves-estrangeiras");
+    if (semChaves) db.exec("PRAGMA foreign_keys = OFF"); // só tem efeito fora de transação
     db.exec("BEGIN");
     try {
       db.exec(sql);
+      if (semChaves) {
+        const quebradas = db.prepare("PRAGMA foreign_key_check").all();
+        if (quebradas.length) throw new Error(`chaves estrangeiras quebradas: ${JSON.stringify(quebradas)}`);
+      }
       db.prepare("INSERT INTO _migracoes (nome, aplicadaEm) VALUES (?, ?)").run(
         arquivo,
         new Date().toISOString(),
@@ -30,6 +39,8 @@ export function migrar(db) {
     } catch (erro) {
       db.exec("ROLLBACK");
       throw new Error(`Falha na migração ${arquivo}: ${erro.message}`);
+    } finally {
+      if (semChaves) db.exec("PRAGMA foreign_keys = ON");
     }
   }
   return novas;

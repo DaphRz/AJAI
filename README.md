@@ -92,7 +92,7 @@ Se a rede da faculdade bloquear a conexão, use `npx expo start --tunnel`.
 
 #### Como o app encontra a API (`EXPO_PUBLIC_API_URL`)
 
-O app vai ler o endereço da API da variável `EXPO_PUBLIC_API_URL`, num arquivo `.env.local` na **raiz** do projeto (fora do git). O app passa a usar essa variável no passo 3; já dá para deixar o arquivo pronto:
+O app lê o endereço da API da variável `EXPO_PUBLIC_API_URL`, num arquivo `.env.local` na **raiz** do projeto (fora do git). **Sem ela**, o app tenta o mesmo computador que roda o `npx expo start`, na porta 3333 (no Expo Go isso já costuma funcionar na mesma Wi-Fi). Para fixar o endereço:
 
 ```bash
 # .env.local (raiz do projeto)
@@ -109,13 +109,25 @@ Como descobrir o IP do computador: **macOS** `ipconfig getifaddr en0`; **Windows
 
 > `EXPO_PUBLIC_*` vai para dentro do aplicativo e é público: só endereço, **nunca** senha ou chave.
 
-### 7. Entrar no app (modo demonstração)
+### 7. Entrar no app
 
-O app ainda não conversa com o servidor (isso começa no passo 3), então o login aceita os usuários de teste de [`src/data/mock.ts`](src/data/mock.ts) (os mesmos que o `db:reset` grava no banco):
+O login é de verdade desde o passo 3: **o servidor precisa estar rodando** (passo 5) e o banco criado (`npm run db:reset`). Sem servidor, o app mostra "Não conseguimos falar com o servidor".
 
-- **Aluno:** escolha "Aluno", deixe o e-mail **vazio** e toque em Entrar → entra como *Maria Silva*.
-- **Professor:** escolha "Professor/ Responsável", deixe o e-mail **vazio** → entra como *Rafael Costa*, com Ana, Bruno e Clara vinculados.
-- **Aluno novo:** "Não tem conta? Cadastre-se" → cadastro → nivelamento → home.
+**Senha de todos os usuários de demonstração: `demo1234`** (gravada com hash pelo seed; nunca use em servidor de verdade). Na tela de login há **um campo só**: o aluno digita o **nome de usuário**; professor e administrador, o **e-mail ou o telefone**. O app descobre o perfil pela conta.
+
+| Perfil | Entra com | Vai para |
+|---|---|---|
+| Aluno | `maria.silva` (também `ana.souza`, `bruno.lima`, `clara.santos`) | home do aluno |
+| Professor/Responsável | `rafael@ajai.app` ou `11900000100` | Acompanhamento, com os 4 alunos (criados por ele) na turma "EJA – Noite" |
+| Administrador | `admin@ajai.app` | área do administrador (por enquanto só conta) |
+
+- **Professor novo:** no login, "Professor ou responsável? Crie sua conta" → nome, e-mail, telefone e senha. É o **único cadastro público**.
+- **Aluno novo:** o professor cadastra, na conta dele: **Acompanhamento › Cadastrar aluno** ou **Conta › Contas dos alunos › Cadastrar aluno** → nome, nome de usuário (sugerido a partir do nome) e senha. O aluno entra na turma do professor. Anote e entregue usuário e senha ao aluno.
+- **Senha do aluno:** o aluno **não troca** a própria senha. Só o professor que criou a conta: **Conta › Contas dos alunos › Mudar senha**.
+- **Senha do professor/administrador:** Conta › Trocar minha senha (administrador: na tela inicial dele). Esqueceu? O administrador gera uma provisória (`POST /admin/usuarios/:id/senha-provisoria`), ou, no computador do servidor, `npm run usuario:senha -- rafael@ajai.app`.
+- O login fica guardado no aparelho (`expo-secure-store`): fechar e abrir o app volta logado. Para sair: aluno em **Minha conta › Sair**; professor em **Conta › Sair**.
+
+Rotas da API: `POST /auth/cadastro` (professor), `POST /auth/login`, `GET /auth/eu`, `PATCH /auth/senha` (professor/admin), `GET`/`POST /professor/alunos`, `PATCH /professor/alunos/:id/senha`, `POST /admin/usuarios/:id/senha-provisoria` (detalhes em [ADR-001 §4](docs/decisoes/ADR-001-stack.md)).
 
 ### Comandos úteis
 
@@ -131,6 +143,7 @@ npm run db:reset         # recria o banco do zero com os dados de demonstração
 npm run db:query         # lista as tabelas e quantas linhas cada uma tem
 npm run server:dev       # sobe a API (http://localhost:3333/health)
 npm run typecheck        # checagem de tipos do app e do servidor
+npm run usuario:senha -- <e-mail ou telefone>   # senha provisória de professor/administrador
 ```
 
 ### Problemas comuns
@@ -284,9 +297,9 @@ docs/
 | Tela no Figma | Rota | Situação |
 |---|---|---|
 | Splash | `/` | esqueleto |
-| Login | `/login` | esqueleto (login de demonstração) |
-| Cadastro de aluno | `/cadastro/aluno` | esqueleto – conferir campos com o Figma |
-| Cadastro de professor ou responsável | `/cadastro/professor` | esqueleto – conferir campos com o Figma |
+| Login | `/login` | ✅ pela API; **sem "Quem você é?" e sem "Ouvir ajuda"** (diferente do Figma: atualizar o frame) |
+| Cadastro de aluno | `/professor/contas/nova` | ✅ dentro da conta do professor: nome, **nome de usuário**, senha (sem o telefone do professor do Figma) |
+| Cadastro de professor ou responsável | `/cadastro` | ✅ campos do Figma (nome, e-mail, telefone, senha), sem "Ouvir ajuda" |
 | Nivelamento · Pergunta | `/aluno/nivelamento` | esqueleto |
 | Nivelamento · Resultado | `/aluno/nivelamento/resultado` | esqueleto |
 | Home do aluno | `/aluno` | esqueleto ("Ofensiva" sem cálculo) |
@@ -295,6 +308,7 @@ docs/
 | Dashboard do professor | `/professor` | esqueleto (sem filtro de período) |
 | Métricas de Ana Souza | `/professor/aluno/[id]` | esqueleto (sem gráfico) |
 | *(sem tela no Figma)* | `/aluno/progresso`, `/professor/relatorios`, `/professor/conta` | provisórias |
+| *(sem tela no Figma)* | `/esqueci-senha`, `/aluno/conta`, `/professor/contas` (lista e mudar senha), `/professor/senha`, `/admin`, `/admin/senha` | provisórias (passo 3) – desenhar no passo 8 |
 
 ---
 
@@ -307,7 +321,7 @@ O roteiro completo até a entrega, com prazo, critério de pronto e **um prompt 
 | 0 | Instalar e validar o esqueleto | 05/11 |
 | 1 | Decisões de stack (SQLite, Fastify, Piper) — ✅ | 05/11 |
 | 2 | Criar o servidor (API) sobre o banco SQLite — ✅ | 07/11 |
-| 3 | Cadastro e login de verdade | 08/11 |
+| 3 | Cadastro e login de verdade — ✅ | 08/11 |
 | 4 | Atividades e níveis vindos da API | 09/11 |
 | 5 | Respostas, progressão e histórico no servidor | 10/11 |
 | 6 | Narração por voz e preferências | 10/11 |
@@ -332,7 +346,8 @@ Legenda: ✅ feito · 🟡 esqueleto/parcial (só no app, com dados em memória)
 **Sprint 1 – Setup, Acesso e Nivelamento (20/10 – 27/10)** — *atrasada*
 - ✅ Projeto Expo (React Native + TypeScript) criado e organizado
 - ✅ Banco de dados configurado: SQLite com as 13 tabelas e seed (`npm run db:reset`) — falta ligar o app a ele pela API
-- 🟡 Cadastro e autenticação (RF01, RF02): telas prontas, mas sem servidor, sem senha com hash e sem guardar a sessão
+- ✅ Cadastro e autenticação (RF01, RF02): pela API, senha com hash (scrypt), token JWT guardado no aparelho. Professor se cadastra sozinho; **aluno é cadastrado pelo professor** e entra com nome de usuário. Testado no Expo Go em 08/11 (a parte de contas de aluno criadas pelo professor foi testada só pela API)
+- 🟡 Aluno novo: o nível do nivelamento ainda fica só na memória do app (vai para o servidor no passo 5); ao reabrir o app, o aluno novo refaz o nivelamento
 - 🟡 Nivelamento inicial (RF03): fluxo e regra provisória (para no primeiro erro); faltam as perguntas definitivas validadas pela equipe/profissionais da EJA
 - ⬜ Testes do fluxo de acesso
 - ✅ Passo 0 (esqueleto): lint, tsc e expo-doctor passam, o banco recria e o fluxo foi validado no Expo Go. Node 22.18+ é necessário para `npm run db:*` (em 22.14 use `NODE_OPTIONS=--experimental-strip-types`)
@@ -364,14 +379,17 @@ Legenda: ✅ feito · 🟡 esqueleto/parcial (só no app, com dados em memória)
 - ✅ **Servidor da API criado** com Fastify em `server/src/` (`npm run server:dev`, `GET /health`, erros padronizados em `{ erro }`, CORS e limite de requisições). `@fastify/jwt` já instalado, registrado no passo 3
 - ⬜ API para as funções contadas na APF (Incluir/Editar/Excluir/Listar/Visualizar de cada módulo)
 - ⬜ Trocar `src/data/mock.ts` pelas chamadas à API dentro de `src/services/` (as telas não precisam mudar)
-- ⬜ Guardar o token de login no aparelho (`expo-secure-store`)
+- ✅ Guardar o token de login no aparelho (`expo-secure-store`; `localStorage` no navegador)
+- ✅ API de autenticação (`/auth/*`), "middleware" `exigirLogin(perfil)` e cliente `src/services/api.ts`
+- ✅ Migrações 002 e 003: `Usuario.telefone`, `Usuario.email` opcional, `Usuario.nomeUsuario` (login do aluno) e `Aluno.idCriador` (extras em relação ao diagrama: registrar na documentação)
 
 ### Funcionalidades previstas na APF sem tela no app nem no Figma
 - ⬜ Administrador: incluir/editar/inativar atividades e níveis (APF itens 25–31) — definir se será tela no app, painel web ou carga direta no banco
-- ⬜ Professor: criar/editar turma, incluir/excluir aluno da turma (APF 20–24)
+- 🟡 Professor: ✅ cadastrar aluno (já entra na turma dele) e mudar a senha do aluno; ⬜ criar/editar turma, mover/excluir aluno da turma (APF 20–24)
+- ⬜ O painel de Acompanhamento ainda lê `mock.ts`: aluno cadastrado pelo professor só aparece em Conta › Contas dos alunos até o passo 10
 - ⬜ Professor: corrigir manualmente uma resposta (APF 35)
 - ⬜ Aluno: editar preferências de voz, velocidade e tamanho da fonte (APF 17)
-- ⬜ Trocar/recuperar senha (APF 18)
+- 🟡 Trocar/recuperar senha (APF 18): ✅ professor/admin trocam a própria; ✅ senha do aluno só pelo professor que criou a conta; ✅ senha provisória de professor pelo administrador/script. Faltam as telas no Figma
 
 ### Acessibilidade e conteúdo
 - 🟡 **Narração por voz (RNF04)** — a arquitetura trocável (`ProvedorVoz`) já existe, mas o único provedor é o `console` (o botão "Ouvir ajuda" só escreve no console). Decidido: **Piper como padrão** (áudios gerados no servidor e guardados em `AudioCache`) e **`expo-speech` implementado** como alternativa e reserva. Falta implementar os dois provedores e o gerador (passo 6).
@@ -380,13 +398,16 @@ Legenda: ✅ feito · 🟡 esqueleto/parcial (só no app, com dados em memória)
 - ⬜ Banco real de atividades (letras, sílabas, palavras, frases, escrita, interpretação, cotidiano), validado com os profissionais da EJA
 - ⬜ O enum `TipoAtividade` do diagrama não tem tipos para **letra-som** (RF05) nem **cotidiano** (RF11): incluir ou explicar no documento que entram como `conteudo` de outros tipos
 - ⬜ Imagens das alternativas (o Figma usa fotos; o app usa emojis provisórios)
-- ⬜ Ícones do Figma (alto-falante, livro, abas) e fonte Inter (`expo-font`)
+- ⬜ Trocar **todos os emojis** por ícones de `@expo/vector-icons` (regra no AGENTS.md; `react-icons` não roda em React Native) e carregar a fonte Inter (`expo-font`)
 - ⬜ Ícone do app e splash com a identidade do AJAI (hoje são os do Expo)
 - ⬜ Revisar com leitor de tela (TalkBack/VoiceOver) e tamanho de fonte do sistema aumentado
 
 ### Qualidade, segurança e privacidade
 - ⬜ Testes automatizados (ex.: `jest-expo`), começando por `services/progressao.ts` e `services/respostas.ts`
-- ⬜ Senha com hash no servidor e comunicação só por HTTPS (RNF11)
+- 🟡 Senha com hash no servidor (✅ scrypt) e comunicação só por HTTPS (⬜ RNF11; na demo é HTTP na rede local)
+- ⬜ Invalidar tokens antigos depois de troca/redefinição de senha (hoje valem até vencer, 30 dias) — passo 13
+- ⬜ Forçar troca da senha provisória do professor no primeiro login
+- ⬜ Se o professor que criou o aluno sair do projeto, ninguém muda a senha desse aluno: definir como transferir (passo 10/13)
 - ⬜ Coletar só o necessário e escrever termo de uso/privacidade (RNF12, LGPD)
 
 ### Design (UX/UI)

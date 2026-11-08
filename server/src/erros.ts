@@ -30,6 +30,31 @@ const mensagensPadrao: Record<number, string> = {
   503: "O servidor está indisponível agora. Tente de novo em instantes.",
 };
 
+/**
+ * Mensagem por campo quando a validação do esquema da rota recusa a entrada.
+ * O Fastify só diz QUAL campo falhou; aqui vira uma frase curta e positiva para o usuário.
+ * Campo novo com regra própria? Acrescente aqui.
+ */
+const mensagensPorCampo: Record<string, string> = {
+  nome: "Escreva o nome, com pelo menos 2 letras.",
+  email: "Confira o e-mail. Exemplo: maria@email.com",
+  telefone: "Confira o telefone. Escreva com DDD, só números.",
+  nomeUsuario: "O nome de usuário usa só letras sem acento, números e ponto. Exemplo: maria.silva",
+  identificador: "Escreva seu usuário, e-mail ou telefone.",
+  senha: "A senha precisa ter pelo menos 6 letras ou números.",
+  senhaAtual: "Escreva a senha que você usa hoje.",
+  senhaNova: "A senha nova precisa ter pelo menos 6 letras ou números.",
+  dataNascimento: "Confira a data de nascimento.",
+};
+
+function mensagemDeValidacao(erro: FastifyError): string | undefined {
+  const primeiro = erro.validation?.[0];
+  if (!primeiro) return undefined;
+  const params = primeiro.params as { missingProperty?: string } | undefined;
+  const campo = params?.missingProperty ?? primeiro.instancePath.split("/").filter(Boolean)[0];
+  return campo ? mensagensPorCampo[campo] : undefined;
+}
+
 function mensagemPara(status: number): string {
   return mensagensPadrao[status] ?? (status >= 500 ? mensagensPadrao[500] : mensagensPadrao[400]);
 }
@@ -47,7 +72,10 @@ export function registrarTratamentoDeErros(app: FastifyInstance): void {
 
     // Mensagem própria só quando a rota a escreveu (ErroApi); o resto vira mensagem padrão,
     // para não vazar detalhes internos nem textos em inglês.
-    const mensagem = erro instanceof ErroApi ? erro.message : mensagemPara(status);
+    const mensagem =
+      erro instanceof ErroApi
+        ? erro.message
+        : ((status === 400 && mensagemDeValidacao(erro as FastifyError)) || mensagemPara(status));
     resposta.code(status).send({ erro: mensagem });
   });
 }

@@ -1,6 +1,7 @@
 import { Redirect, Tabs } from "expo-router";
 import { Text } from "react-native";
 import { useSessao } from "@/context/sessao";
+import { rotaInicial } from "@/services/auth";
 import { cores } from "@/theme/tokens";
 
 // TODO: trocar os emojis pelos ícones do Figma.
@@ -13,10 +14,11 @@ function icone(simbolo: string) {
 
 /** Área do professor (RF20): abas Acompanhamento / Relatórios / Conta, como no Figma. */
 export default function ProfessorLayout() {
-  const { usuario } = useSessao();
-  if (!usuario || usuario.perfil !== "PROFESSOR") {
-    return <Redirect href="/login" />;
-  }
+  const { usuario, carregando } = useSessao();
+  if (carregando) return null;
+  if (!usuario) return <Redirect href="/login" />;
+  // Perfil errado: manda para a área certa (cada perfil só vê a sua).
+  if (usuario.perfil !== "PROFESSOR") return <Redirect href={rotaInicial(usuario)} />;
 
   return (
     <Tabs
@@ -33,6 +35,10 @@ export default function ProfessorLayout() {
       <Tabs.Screen name="relatorios" options={{ title: "Relatórios", tabBarIcon: icone("📊") }} />
       <Tabs.Screen name="conta" options={{ title: "Conta", tabBarIcon: icone("👤") }} />
       <Tabs.Screen name="aluno/[id]" options={{ href: null }} />
+      <Tabs.Screen name="senha" options={{ href: null }} />
+      <Tabs.Screen name="contas/index" options={{ href: null }} />
+      <Tabs.Screen name="contas/nova" options={{ href: null }} />
+      <Tabs.Screen name="contas/[id]" options={{ href: null }} />
     </Tabs>
   );
 }

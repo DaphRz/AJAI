@@ -1,6 +1,7 @@
 // Configuração do servidor, lida de variáveis de ambiente.
 // Os valores ficam em server/.env (fora do git); modelo em server/.env.example.
-import { existsSync } from "node:fs";
+import { randomBytes } from "node:crypto";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -19,6 +20,29 @@ function numero(nome: string, padrao: number): number {
   return n;
 }
 
+const ambiente = process.env.NODE_ENV || "development";
+
+/**
+ * Segredo que assina os tokens de login (JWT_SECRET em server/.env).
+ * Em produção é obrigatório. Em desenvolvimento, se faltar, é gerado uma vez e guardado em
+ * server/data/jwt-segredo.local (fora do git), para os logins sobreviverem aos reinícios.
+ */
+function segredoJwt(): string {
+  const doAmbiente = process.env.JWT_SECRET?.trim();
+  if (doAmbiente) {
+    if (doAmbiente.length < 32) throw new Error("JWT_SECRET precisa ter pelo menos 32 caracteres.");
+    return doAmbiente;
+  }
+  if (ambiente === "production") throw new Error("Defina JWT_SECRET em server/.env (veja server/.env.example).");
+  const arquivo = resolve(pastaServidor, "data", "jwt-segredo.local");
+  if (existsSync(arquivo)) return readFileSync(arquivo, "utf8").trim();
+  const novo = randomBytes(48).toString("hex");
+  mkdirSync(dirname(arquivo), { recursive: true });
+  writeFileSync(arquivo, novo, { mode: 0o600 });
+  console.warn(`JWT_SECRET não definido: gerei um segredo de desenvolvimento em ${arquivo}.`);
+  return novo;
+}
+
 export const config = {
   /** Porta HTTP da API. */
   porta: numero("PORT", 3333),
@@ -28,6 +52,11 @@ export const config = {
   origensCors: (process.env.CORS_ORIGEM || "*").split(",").map((o) => o.trim()),
   /** Máximo de requisições por IP por minuto (proteção simples contra abuso). */
   limiteRequisicoesPorMinuto: numero("LIMITE_REQUISICOES_POR_MINUTO", 300),
-  ambiente: process.env.NODE_ENV || "development",
-  // TODO: JWT_SECRET (passo 3) — obrigatório quando o login de verdade existir.
+  ambiente,
+  /** Segredo dos tokens de login (JWT). */
+  jwtSegredo: segredoJwt(),
+  /** Validade do token de login (formato do @fastify/jwt: "30d", "12h"...). */
+  jwtValidade: process.env.JWT_VALIDADE || "30d",
+  /** Tentativas de login/cadastro por IP por minuto (proteção contra adivinhar senha). */
+  limiteLoginPorMinuto: numero("LIMITE_LOGIN_POR_MINUTO", 10),
 } as const;

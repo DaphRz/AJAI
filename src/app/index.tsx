@@ -1,10 +1,16 @@
 // Figma: "AJAI · Splash"
-import { router } from "expo-router";
+import { Redirect, router } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 import { Botao, Tela } from "@/components";
+import { useSessao } from "@/context/sessao";
+import { rotaInicial } from "@/services/auth";
 import { cores, fontes } from "@/theme/tokens";
 
 export default function Splash() {
+  const { usuario, carregando } = useSessao();
+  if (carregando) return null; // a splash do sistema continua na tela
+  if (usuario) return <Redirect href={rotaInicial(usuario)} />; // login guardado: vai direto
+
   return (
     <Tela rolavel={false}>
       <View style={styles.centro}>

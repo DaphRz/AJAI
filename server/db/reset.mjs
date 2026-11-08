@@ -2,7 +2,7 @@
 // Use quando quiser começar do zero (ou se o banco estragar). Só mexe no seu arquivo local.
 import { existsSync, rmSync } from "node:fs";
 import { abrirBanco, caminhoBanco } from "./conectar.mjs";
-import { semear } from "./seed.mjs";
+import { SENHA_DEMO, semear } from "./seed.mjs";
 
 for (const sufixo of ["", "-journal", "-wal", "-shm"]) {
   if (existsSync(caminhoBanco + sufixo)) rmSync(caminhoBanco + sufixo);
@@ -17,3 +17,4 @@ db.close();
 
 console.log(`Banco recriado em ${caminhoBanco}`);
 console.log(`  ${niveis} níveis, ${atividades} atividades, ${alunos} alunos de demonstração.`);
+console.log(`  Senha de todos os usuários de demonstração: ${SENHA_DEMO}`);

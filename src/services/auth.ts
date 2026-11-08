@@ -1,73 +1,98 @@
 /**
- * Usuario.Autenticar / Usuario.Incluir (RF01, RF02).
- *
- * ESQUELETO: valida contra os dados de demonstração em memória.
- * Pendências:
- * - chamar a API (POST /auth/login, POST /usuarios) quando o backend existir;
- * - senha com hash no servidor (nunca comparar senha no app);
- * - guardar o token com expo-secure-store.
+ * Usuario.Autenticar / Usuario.Incluir / Usuario.EditarSenha (RF01, RF02, APF 18).
+ * Tudo passa pela API (server/src/rotas/auth.ts). A senha só vai para o servidor, que guarda
+ * o hash; o app guarda apenas o token (expo-secure-store, ver armazenamento.ts).
+ * Cadastro público: só professor/responsável. Aluno é criado pelo professor (contasAlunos.ts).
  */
-import { alunos, professores } from "@/data/mock";
-import type { Aluno, Perfil, Professor } from "@/domain/modelos";
+import type { Administrador, Aluno, Professor } from "@/domain/modelos";
+import { chamarApi, definirToken, ErroDaApi } from "./api";
+import { apagarLogin, guardarLogin, lerLogin } from "./armazenamento";
 
-export type UsuarioSessao = Aluno | Professor;
+export type UsuarioSessao = Aluno | Professor | Administrador;
 
-export async function autenticar(
-  identificador: string,
-  _senha: string,
-  perfil: Exclude<Perfil, "ADMINISTRADOR">,
-): Promise<UsuarioSessao> {
-  const lista: UsuarioSessao[] = perfil === "ALUNO" ? alunos : professores;
-  const termo = identificador.trim().toLowerCase();
-
-  // Modo demonstração: campo vazio entra com o primeiro usuário do perfil.
-  const usuario = termo === "" ? lista[0] : lista.find((u) => u.email === termo);
-
-  if (!usuario) {
-    throw new Error("Não encontramos essa conta. Confira o e-mail ou telefone.");
-  }
-  return usuario;
+interface RespostaLogin {
+  token: string;
+  usuario: UsuarioSessao;
 }
 
-export interface DadosCadastro {
+async function iniciarSessao(resposta: RespostaLogin): Promise<UsuarioSessao> {
+  definirToken(resposta.token);
+  await guardarLogin(resposta.token, resposta.usuario);
+  return resposta.usuario;
+}
+
+/**
+ * Entra com nome de usuário (aluno), e-mail ou telefone (professor/administrador) e senha.
+ * O perfil vem da própria conta, então a tela de login não pergunta "quem é você".
+ */
+export async function autenticar(identificador: string, senha: string): Promise<UsuarioSessao> {
+  if (!identificador.trim() || !senha) {
+    throw new ErroDaApi(400, "Escreva seu usuário e sua senha.");
+  }
+  const resposta = await chamarApi<RespostaLogin>("/auth/login", {
+    metodo: "POST",
+    corpo: { identificador: identificador.trim(), senha },
+  });
+  return iniciarSessao(resposta);
+}
+
+export interface DadosCadastroProfessor {
   nome: string;
   email: string;
+  telefone: string;
   senha: string;
-  dataNascimento?: string;
 }
 
-export async function cadastrarAluno(dados: DadosCadastro): Promise<Aluno> {
-  const agora = new Date().toISOString();
-  const novo: Aluno = {
-    idUsuario: Date.now(),
-    nome: dados.nome.trim(),
-    email: dados.email.trim().toLowerCase(),
-    senhaHash: "TODO-hash-no-servidor",
-    perfil: "ALUNO",
-    dataNascimento: dados.dataNascimento,
-    ativo: true,
-    criadoEm: agora,
-    atualizadoEm: agora,
-    vozPreferida: "pt-BR",
-    velocidadeVoz: 0.9,
-    tamanhoFonte: 20,
-  };
-  alunos.push(novo);
-  return novo;
+export async function cadastrarProfessor(dados: DadosCadastroProfessor): Promise<Professor> {
+  const resposta = await chamarApi<RespostaLogin>("/auth/cadastro", {
+    metodo: "POST",
+    corpo: {
+      nome: dados.nome,
+      email: dados.email.trim() || undefined,
+      telefone: dados.telefone.trim() || undefined,
+      senha: dados.senha,
+    },
+  });
+  return (await iniciarSessao(resposta)) as Professor;
 }
 
-export async function cadastrarProfessor(dados: DadosCadastro): Promise<Professor> {
-  const agora = new Date().toISOString();
-  const novo: Professor = {
-    idUsuario: Date.now(),
-    nome: dados.nome.trim(),
-    email: dados.email.trim().toLowerCase(),
-    senhaHash: "TODO-hash-no-servidor",
-    perfil: "PROFESSOR",
-    ativo: true,
-    criadoEm: agora,
-    atualizadoEm: agora,
-  };
-  professores.push(novo);
-  return novo;
+/**
+ * Restaura o login guardado ao abrir o app. Sem internet, usa a cópia guardada do usuário;
+ * token recusado pelo servidor (vencido) apaga o login.
+ */
+export async function restaurarSessao(): Promise<UsuarioSessao | null> {
+  const guardado = await lerLogin<UsuarioSessao>();
+  if (!guardado) return null;
+  definirToken(guardado.token);
+  try {
+    const { usuario } = await chamarApi<{ usuario: UsuarioSessao }>("/auth/eu");
+    await guardarLogin(guardado.token, usuario);
+    return usuario;
+  } catch (erro) {
+    if (erro instanceof ErroDaApi && erro.status === 0) return guardado.usuario; // sem conexão
+    await encerrarSessao();
+    return null;
+  }
+}
+
+/** Sai da conta neste aparelho. */
+export async function encerrarSessao(): Promise<void> {
+  definirToken(null);
+  await apagarLogin();
+}
+
+/** Professor/administrador troca a própria senha (o aluno não pode). Devolve a confirmação. */
+export async function trocarSenha(senhaAtual: string, senhaNova: string): Promise<string> {
+  const { mensagem } = await chamarApi<{ mensagem: string }>("/auth/senha", {
+    metodo: "PATCH",
+    corpo: { senhaAtual, senhaNova },
+  });
+  return mensagem;
+}
+
+/** Primeira tela de cada perfil depois de entrar. */
+export function rotaInicial(usuario: UsuarioSessao) {
+  if (usuario.perfil === "PROFESSOR") return "/professor" as const;
+  if (usuario.perfil === "ADMINISTRADOR") return "/admin" as const;
+  return usuario.idNivelInicial === undefined ? ("/aluno/nivelamento" as const) : ("/aluno" as const);
 }

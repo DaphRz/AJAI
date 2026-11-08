@@ -2,7 +2,6 @@
 import { router } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 import { Botao, BotaoAudio, Cartao, Logo, Subtitulo, Tela, Titulo } from "@/components";
-import { useSessao } from "@/context/sessao";
 import { useAluno } from "@/hooks/useAluno";
 import { buscarNivel, listarAtividadesDoNivel, listarTrilha } from "@/services/atividades";
 import { listarRespostasDoAluno } from "@/services/respostas";
@@ -10,7 +9,6 @@ import { cores, fontes } from "@/theme/tokens";
 
 export default function HomeAluno() {
   const aluno = useAluno();
-  const { sair } = useSessao();
   const nivel = buscarNivel(aluno.idNivelAtual) ?? listarTrilha()[0];
   const etapasConcluidas = listarTrilha().filter((n) => n.ordem < nivel.ordem).length;
   const primeiroNome = aluno.nome.split(" ")[0];
@@ -52,14 +50,7 @@ export default function HomeAluno() {
       </Cartao>
 
       <Botao titulo="Ver meu progresso" variante="secundario" onPress={() => router.push("/aluno/progresso")} />
-      <Botao
-        titulo="Sair"
-        variante="link"
-        onPress={() => {
-          sair();
-          router.replace("/login");
-        }}
-      />
+      <Botao titulo="Minha conta" variante="link" onPress={() => router.push("/aluno/conta")} />
     </Tela>
   );
 }

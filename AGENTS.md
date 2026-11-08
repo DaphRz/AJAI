@@ -7,6 +7,7 @@ Leia também o [README](README.md), principalmente a seção **Pendências**, o 
 
 AJAI é um app mobile de alfabetização para **jovens, adultos e idosos** (público da EJA), muitos com pouca leitura e pouca familiaridade com celular. Tem duas áreas:
 
+- **Contas:** só o **professor/responsável** se cadastra sozinho (nome, e-mail, telefone, senha). O **aluno é cadastrado pelo professor**, dentro da conta dele, e já entra na turma dele. O aluno **não tem e-mail nem telefone**: entra com **nome de usuário** (ex.: `maria.silva`) e senha, e **não troca a própria senha**; só o professor que criou a conta (`Aluno.idCriador`) muda. O login tem um campo só (usuário, e-mail ou telefone) e o perfil vem da conta.
 - **Aluno:** nivelamento inicial → atividades graduais (letra, sílaba, palavra, frase, escrita, interpretação) → correção imediata → progressão de nível → histórico.
 - **Professor/responsável:** acompanha frequência, taxa de acerto, nível e conteúdos de maior dificuldade dos alunos vinculados. O app **complementa** o professor, não o substitui.
 
@@ -23,7 +24,7 @@ Fontes de verdade, nesta ordem:
 - Expo **SDK 58**, React Native, React 19, TypeScript estrito, React Compiler ligado (`app.json › experiments.reactCompiler`).
 - Expo Router (rotas por arquivo em `src/app/`), typed routes ligado.
 - **Banco: SQLite em arquivo** (`server/data/ajai.db`), já criado com as 13 tabelas e seed (ver [Banco de dados](#banco-de-dados-sqlite)). Decisão em `docs/decisoes/ADR-001-stack.md`.
-- **API:** Node.js + TypeScript com **Fastify** em `server/src/` (`npm run server:dev`). Validação de entrada com esquemas JSON em **toda** rota; erros sempre `{ erro: string }` em português (lance `ErroApi` de `server/src/erros.ts`). O app **ainda não chama a API** (começa no passo 3): os serviços leem/gravam `src/data/mock.ts` em memória.
+- **API:** Node.js + TypeScript com **Fastify** em `server/src/` (`npm run server:dev`). Validação de entrada com esquemas JSON em **toda** rota; erros sempre `{ erro: string }` em português (lance `ErroApi` de `server/src/erros.ts`). O app chama a API **só** por `src/services/api.ts` (`chamarApi`, token no cabeçalho, erros já em mensagem amigável); login, cadastro e senha já vêm da API (passo 3). O resto (atividades, respostas, painel) ainda lê/grava `src/data/mock.ts` em memória até os passos 4, 5 e 10. Rota que exige login: `preHandler: exigirLogin("PROFESSOR")` de `server/src/autenticacao.ts` (`req.user` = `{ idUsuario, perfil }`).
 - O servidor roda `.ts` direto no Node (type stripping): **sem `enum`/`namespace`** e imports relativos **com `.ts`** (ex.: `import { banco } from "../banco.ts"`). Rota nova = arquivo em `server/src/rotas/` registrado em `server/src/app.ts`. Typecheck do servidor: `npm run server:typecheck` (`npm run typecheck` faz app + servidor).
 - **Voz trocável**: o app usa a interface `ProvedorVoz` (`src/services/voz/`). Padrão previsto: **Piper** (áudio gerado no servidor); `expo-speech` como alternativa e reserva. Ver [Narração por voz](#narração-por-voz-provedorvoz).
 
@@ -45,8 +46,9 @@ Fontes de verdade, nesta ordem:
 
 ## Regras obrigatórias de acessibilidade (o público depende disso)
 
-- Toda tela do **aluno** tem um `BotaoAudio` ("Ouvir ajuda"/"Ouvir instrução") com o texto da tela (RNF04).
+- Toda tela do **aluno** tem um `BotaoAudio` ("Ouvir ajuda"/"Ouvir instrução") com o texto da tela (RNF04). **Exceção:** as telas de login e cadastro **não** têm "Ouvir ajuda" (decisão da equipe, 08/11).
 - Botões com **texto escrito**, nunca só ícone (RNF03). Área de toque ≥ `toqueMinimo` (64).
+- **Não use emojis** na interface (nem como ícone, ilustração ou enfeite). Use ícones de biblioteca: **`@expo/vector-icons`** (padrão; instale com `npx expo install @expo/vector-icons`; Ionicons, MaterialIcons, Feather...) ou `lucide-react-native`. O `react-icons` **não serve**: é só para web (DOM) e não roda no React Native. Ícone decorativo ao lado de texto: `accessibilityElementsHidden` / `importantForAccessibility="no"`. Os emojis que ainda existem (`BotaoAudio`, `Logo`, splash, abas do professor, alternativas do `mock.ts`) são provisórios e saem no passo 8.
 - Texto do aluno com no mínimo `fontes.corpo` (20). Títulos e enunciados maiores.
 - Poucos elementos por tela, uma ação principal clara (RNF05, RNF07).
 - Mensagens curtas, positivas e sem jargão: "Muito bem!", "Vamos tentar de novo?" (RNF06, RNF15). Nunca "Erro", "Inválido", "Falha".
@@ -64,6 +66,7 @@ Em `docs/PROXIMOS_PASSOS.md`: passo **concluído** (✅) = apagar o prompt, "Pra
 - Áreas protegidas: o `_layout.tsx` de `aluno/` e `professor/` redireciona quem não tem o perfil certo.
 - Marque o que é provisório com `// TODO:` explicando o que falta.
 - Nenhuma senha, token ou chave no código. Variáveis em `.env.local` (ignorado pelo git).
+- Senha: só o servidor vê, e guarda o hash (scrypt, `server/db/senha.mjs`). O app guarda só o token (`services/armazenamento.ts`, `expo-secure-store`). Nunca envie `senhaHash` para o app. Contas de aluno: `services/contasAlunos.ts` ↔ `server/src/rotas/professorAlunos.ts`.
 
 ## Banco de dados (SQLite)
 
@@ -120,7 +123,7 @@ npm run server:dev          # sobe a API (GET http://localhost:3333/health)
 npm run typecheck           # tipos do app + servidor
 ```
 
-Antes de dizer que uma tarefa terminou: rode **lint e typecheck** (e `npm run db:reset` se mexeu em banco ou seed) e abra o fluxo afetado no app (login de demonstração: e-mail vazio).
+Antes de dizer que uma tarefa terminou: rode **lint e typecheck** (e `npm run db:reset` se mexeu em banco ou seed) e abra o fluxo afetado no app (usuários de demonstração no README, senha `demo1234`; o servidor precisa estar rodando).
 
 ## Regras do Expo
 

@@ -1,86 +1,73 @@
 // Figma: "AJAI · Login"  |  RF02 – Autenticação e acesso
+// Diferenças do Figma (decisão da equipe, 08/11): sem "Quem você é?" (o perfil vem da conta) e
+// sem "Ouvir ajuda" nas telas de login e cadastro. Aluno entra com nome de usuário (ex.: maria.silva);
+// professor/responsável e administrador, com e-mail ou telefone.
 import { router } from "expo-router";
 import { useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
-import { Botao, BotaoAudio, Campo, Logo, Subtitulo, Tela, Titulo } from "@/components";
+import { View } from "react-native";
+import { Aviso, Botao, Campo, Logo, Subtitulo, Tela, Titulo } from "@/components";
 import { useSessao } from "@/context/sessao";
-import { autenticar } from "@/services/auth";
-import { cores, fontes } from "@/theme/tokens";
-
-type Papel = "ALUNO" | "PROFESSOR";
+import { mensagemDeErro } from "@/services/api";
+import { autenticar, rotaInicial } from "@/services/auth";
 
 export default function Login() {
   const { entrar } = useSessao();
-  const [papel, setPapel] = useState<Papel>("ALUNO");
   const [identificador, setIdentificador] = useState("");
   const [senha, setSenha] = useState("");
   const [erro, setErro] = useState<string | null>(null);
+  const [enviando, setEnviando] = useState(false);
 
   async function aoEntrar() {
     setErro(null);
+    setEnviando(true);
     try {
-      const usuario = await autenticar(identificador, senha, papel);
+      const usuario = await autenticar(identificador, senha);
       entrar(usuario);
-      if (usuario.perfil === "PROFESSOR") {
-        router.replace("/professor");
-      } else if (usuario.idNivelInicial === undefined) {
-        router.replace("/aluno/nivelamento");
-      } else {
-        router.replace("/aluno");
-      }
+      router.replace(rotaInicial(usuario));
     } catch (e) {
-      setErro(e instanceof Error ? e.message : "Não foi possível entrar.");
+      setErro(mensagemDeErro(e));
+    } finally {
+      setEnviando(false);
     }
   }
 
   return (
-    <Tela rodape={<BotaoAudio texto="Escolha se você é aluno ou professor. Depois digite seu e-mail e sua senha e toque em Entrar." />}>
+    <Tela>
       <Logo />
       <View>
         <Titulo>Vamos começar?</Titulo>
         <Subtitulo>É bom ter você aqui.</Subtitulo>
       </View>
 
-      <Text style={styles.rotulo}>Quem você é?</Text>
-      <View style={styles.papeis}>
-        <View style={{ flex: 1 }}>
-          <Botao titulo="Aluno" variante={papel === "ALUNO" ? "primario" : "secundario"} onPress={() => setPapel("ALUNO")} />
-        </View>
-        <View style={{ flex: 1 }}>
-          <Botao
-            titulo="Professor/ Responsável"
-            variante={papel === "PROFESSOR" ? "primario" : "secundario"}
-            onPress={() => setPapel("PROFESSOR")}
-          />
-        </View>
-      </View>
-
       <Campo
-        rotulo="Seu email ou telefone"
-        placeholder="Digite aqui"
+        rotulo="Seu usuário ou e-mail"
+        placeholder="Exemplo: maria.silva"
         autoCapitalize="none"
+        autoCorrect={false}
+        autoComplete="username"
         keyboardType="email-address"
         value={identificador}
         onChangeText={setIdentificador}
       />
-      <Campo rotulo="Senha" placeholder="Digite sua senha" secureTextEntry value={senha} onChangeText={setSenha} />
-
-      {erro ? <Text style={styles.erro}>{erro}</Text> : null}
-
-      <Botao titulo="Entrar →" onPress={aoEntrar} />
-      <Botao
-        titulo="Não tem conta? Cadastre-se"
-        variante="link"
-        onPress={() => router.push(papel === "ALUNO" ? "/cadastro/aluno" : "/cadastro/professor")}
+      <Campo
+        rotulo="Senha"
+        placeholder="Digite sua senha"
+        secureTextEntry
+        autoComplete="current-password"
+        value={senha}
+        onChangeText={setSenha}
+        onSubmitEditing={aoEntrar}
       />
-      <Text style={styles.dica}>Modo demonstração: deixe o e-mail vazio para entrar com um usuário de teste.</Text>
+
+      {erro ? <Aviso>{erro}</Aviso> : null}
+
+      <Botao titulo={enviando ? "Entrando..." : "Entrar →"} desabilitado={enviando} onPress={aoEntrar} />
+      <Botao titulo="Esqueci minha senha" variante="link" onPress={() => router.push("/esqueci-senha")} />
+      <Botao
+        titulo="Professor ou responsável? Crie sua conta"
+        variante="link"
+        onPress={() => router.push("/cadastro")}
+      />
     </Tela>
   );
 }
-
-const styles = StyleSheet.create({
-  rotulo: { fontSize: fontes.subtitulo, fontWeight: "700", color: cores.texto },
-  papeis: { flexDirection: "row", gap: 12 },
-  erro: { fontSize: fontes.corpo, color: cores.erro, fontWeight: "600" },
-  dica: { fontSize: fontes.legenda, color: cores.textoSuave, textAlign: "center" },
-});

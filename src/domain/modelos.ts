@@ -22,8 +22,17 @@ export type TipoAtividade =
 export interface Usuario {
   idUsuario: number;
   nome: string;
-  email: string;
-  senhaHash: string;
+  /**
+   * EXTRA (fora do diagrama, migração 003): login do ALUNO, ex.: "maria.silva".
+   * Só aluno tem; aluno NÃO tem e-mail nem telefone.
+   */
+  nomeUsuario?: string;
+  /** Só professor/administrador (opcional desde a migração 002). */
+  email?: string;
+  /** EXTRA (fora do diagrama, migração 002): só professor/administrador; dígitos com DDD. */
+  telefone?: string;
+  /** Só existe no servidor: a API nunca envia a senha nem o hash para o app. */
+  senhaHash?: string;
   perfil: Perfil;
   dataNascimento?: string; // ISO (Date)
   ativo: boolean;
@@ -33,6 +42,9 @@ export interface Usuario {
 
 export interface Aluno extends Usuario {
   perfil: "ALUNO";
+  nomeUsuario: string;
+  /** EXTRA (fora do diagrama, migração 003): professor que criou a conta; só ele muda a senha. */
+  idCriador?: number;
   vozPreferida: string;
   velocidadeVoz: number; // 0.5 a 1.5
   tamanhoFonte: number;

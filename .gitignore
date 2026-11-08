@@ -57,3 +57,6 @@ server/dist/
 
 # modelos de voz do Piper (baixados por cada pessoa)
 server/voz-modelos/
+
+# vs code
+.vscode

@@ -4,6 +4,13 @@
 // Requer Node 22.18+ (importa o .ts direto, sem compilar).
 import { abrirBanco, caminhoBanco, executadoDireto } from "./conectar.mjs";
 import { migrar } from "./migrar.mjs";
+import { gerarHashSenhaSync } from "./senha.mjs";
+
+/**
+ * Senha de TODOS os usuários de demonstração (documentada no README, "Entrar no app").
+ * Só para a demo local: nunca use em um servidor de verdade.
+ */
+export const SENHA_DEMO = "demo1234";
 
 const bool = (v) => (v ? 1 : 0);
 
@@ -42,14 +49,20 @@ export async function semear(db) {
     }
 
     const inserirUsuario = db.prepare(
-      `INSERT INTO Usuario (idUsuario, nome, email, senhaHash, perfil, dataNascimento, ativo, criadoEm, atualizadoEm)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO Usuario (idUsuario, nome, nomeUsuario, email, telefone, senhaHash, perfil, dataNascimento, ativo, criadoEm, atualizadoEm)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     );
+    // Cada usuário ganha o próprio hash (sal diferente), todos da SENHA_DEMO.
     const inserirUsuarioBase = (u) =>
       inserirUsuario.run(
-        u.idUsuario, u.nome, u.email, u.senhaHash, u.perfil,
-        u.dataNascimento ?? null, bool(u.ativo), u.criadoEm, u.atualizadoEm,
+        u.idUsuario, u.nome, u.nomeUsuario ?? null, u.email?.toLowerCase() ?? null, u.telefone ?? null, gerarHashSenhaSync(SENHA_DEMO),
+        u.perfil, u.dataNascimento ?? null, bool(u.ativo), u.criadoEm, u.atualizadoEm,
       );
+
+    for (const adm of mock.administradores) {
+      inserirUsuarioBase(adm);
+      db.prepare("INSERT INTO Administrador (idUsuario) VALUES (?)").run(adm.idUsuario);
+    }
 
     for (const p of mock.professores) {
       inserirUsuarioBase(p);
@@ -58,9 +71,9 @@ export async function semear(db) {
     for (const a of mock.alunos) {
       inserirUsuarioBase(a);
       db.prepare(
-        `INSERT INTO Aluno (idUsuario, vozPreferida, velocidadeVoz, tamanhoFonte, idNivelInicial)
-         VALUES (?, ?, ?, ?, ?)`,
-      ).run(a.idUsuario, a.vozPreferida, a.velocidadeVoz, a.tamanhoFonte, a.idNivelInicial ?? null);
+        `INSERT INTO Aluno (idUsuario, vozPreferida, velocidadeVoz, tamanhoFonte, idNivelInicial, idCriador)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+      ).run(a.idUsuario, a.vozPreferida, a.velocidadeVoz, a.tamanhoFonte, a.idNivelInicial ?? null, a.idCriador ?? null);
     }
 
     for (const t of mock.turmas) {
@@ -138,9 +151,10 @@ if (executadoDireto(import.meta.url)) {
   const db = abrirBanco();
   await semear(db);
   console.log(`Banco: ${caminhoBanco}`);
-  for (const t of ["Nivel", "Usuario", "Aluno", "Professor", "Turma", "Matricula", "Atividade", "Alternativa", "Resposta", "DesempenhoConteudo", "HistoricoNivel"]) {
+  for (const t of ["Nivel", "Usuario", "Aluno", "Professor", "Administrador", "Turma", "Matricula", "Atividade", "Alternativa", "Resposta", "DesempenhoConteudo", "HistoricoNivel"]) {
     const { total } = db.prepare(`SELECT COUNT(*) AS total FROM ${t}`).get();
     console.log(`  ${t.padEnd(20)} ${total}`);
   }
   db.close();
+  console.log(`Senha de todos os usuários de demonstração: ${SENHA_DEMO}`);
 }

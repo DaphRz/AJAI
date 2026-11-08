@@ -35,7 +35,7 @@ Legenda: ⬜ a fazer · 🟡 em andamento · ✅ feito
 | 0 | Instalar e validar o esqueleto | 05/11 | — |
 | 1 | Decisões de stack (SQLite, Fastify, Piper) — feito | 05/11 | — |
 | 2 | Criar o servidor (API) sobre o banco SQLite — feito | 07/11 | 1 |
-| 3 | Cadastro e login de verdade | 08/11 | 2 |
+| 3 | Cadastro e login de verdade — feito | 08/11 | 2 |
 | 4 | Atividades e níveis vindos da API | 09/11 | 2 |
 | 5 | Respostas, progressão e histórico no servidor | 10/11 | 3, 4 |
 | 6 | Narração por voz e preferências de acessibilidade | 10/11 | 1 |
@@ -73,46 +73,29 @@ Sprints da documentação: **Sprint 3** vai até 10/11 (passos 0–7), **Sprint 
 
 ---
 
-## ⬜ Passo 3 — Cadastro e login de verdade (RF01, RF02)
+## ✅ Passo 3 — Cadastro e login de verdade (RF01, RF02)
 
-**Prazo:** 08/11 · **Depende de:** passo 2
-**Pronto quando:** cadastrar aluno/professor grava no banco, login devolve token, a sessão sobrevive a fechar e abrir o app, senha nunca trafega nem fica salva em texto puro.
+**Feito em 08/11.** Login, cadastro e senha passam pela API, com senha em **scrypt** (`server/db/senha.mjs`, sem módulo nativo) e token **JWT** de 30 dias guardado no `expo-secure-store` (no navegador, `localStorage`). A sessão é restaurada ao abrir o app, com a splash, e funciona sem internet usando a cópia guardada. O "modo demonstração" saiu e o seed grava o hash da senha `demo1234` para todos, incluindo um administrador (`admin@ajai.app`). Modelo de contas decidido pela equipe:
+- só o **professor/responsável** se cadastra sozinho, em `/cadastro` (nome, e-mail, telefone, senha);
+- o **aluno** é cadastrado **pelo professor** (`/professor/contas/nova`), entra na turma dele, **não tem e-mail nem telefone** e entra com **nome de usuário** (`maria.silva`);
+- o aluno **não troca a própria senha**: só o professor que criou a conta (`Aluno.idCriador`) muda;
+- o login tem **um campo só** (usuário, e-mail ou telefone), sem "Quem você é?", e login/cadastro **não têm "Ouvir ajuda"**.
 
-```text
-Leia AGENTS.md, src/services/auth.ts, src/context/sessao.tsx, src/app/login.tsx,
-src/app/cadastro/* e o código do servidor em server/.
+**Servidor:**
+- rotas: `POST /auth/cadastro` (professor), `POST /auth/login`, `GET /auth/eu`, `PATCH /auth/senha` (professor/admin), `GET`/`POST /professor/alunos`, `PATCH /professor/alunos/:id/senha` e `POST /admin/usuarios/:id/senha-provisoria` (não vale para aluno);
+- `exigirLogin(...perfis)` em `server/src/autenticacao.ts`, mensagens por campo em `erros.ts` e limite de 10 tentativas/min nas rotas com senha;
+- script `npm run usuario:senha` para professor/admin.
 
-No SERVIDOR:
-- POST /auth/cadastro (aluno ou professor; senha com bcrypt/argon2 → senhaHash),
-- POST /auth/login (e-mail + senha + perfil → token JWT com idUsuario e perfil),
-- GET /auth/eu (dados do usuário do token),
-- middleware que exige token e checa perfil.
-O seed hoje grava senhaHash = "demo" (texto puro). Troque server/db/seed.mjs para gravar
-um hash de verdade de uma senha de demonstração (ex.: "demo1234") e documente-a no README.
-Mensagens de erro curtas e amigáveis em português.
+**Banco:** migrações **002** (`Usuario.telefone`, `email` opcional) e **003** (`Usuario.nomeUsuario`, `Aluno.idCriador`, com `CHECK` por perfil). O `migrar.mjs` ganhou o marcador `-- ajai: sem-chaves-estrangeiras` para recriar tabelas sem apagar em cascata.
 
-No APP:
-- crie src/services/api.ts (fetch com EXPO_PUBLIC_API_URL, token no header,
-  erros convertidos em mensagens simples);
-- troque autenticar/cadastrarAluno/cadastrarProfessor para usar a API, mantendo as
-  mesmas assinaturas para as telas não mudarem;
-- guarde o token com expo-secure-store (instale com `npx expo install expo-secure-store`)
-  e restaure a sessão ao abrir o app (mostre a splash enquanto carrega);
-- remova o "modo demonstração com e-mail vazio" do login e da tela.
-Também neste passo (APF 18 e RF01):
-- Compare os campos das telas de cadastro de aluno e de professor com os frames do Figma
-  (nome, e-mail, senha, data de nascimento etc.) e ajuste; valide cada campo no servidor
-  com esquemas do Fastify (e-mail único, senha mínima simples, mensagens amigáveis).
-- Trocar senha (logado): PATCH /auth/senha e tela simples em Conta (aluno e professor).
-- Recuperar senha SEM serviço de e-mail: proponha e implemente a opção mais simples e
-  segura (por exemplo, o professor redefine a senha do aluno e vê uma senha provisória;
-  para o professor/administrador, redefinição por script/administrador). Explique a escolha.
-- O administrador também precisa conseguir entrar: o seletor de perfil do login passa a
-  ter Aluno, Professor/Responsável e Administrador (ou o perfil vem do próprio usuário).
-- Redirecione cada perfil para a sua área e bloqueie as demais (layouts protegidos).
-Siga as regras de acessibilidade do AGENTS.md nas mensagens de erro.
-Ao final, atualize README (Pendências e "Entrar no app").
-```
+**App:** `services/api.ts` (endereço por `EXPO_PUBLIC_API_URL` ou IP do Metro), `services/armazenamento.ts`, `services/contasAlunos.ts`; telas `/esqueci-senha`, `/aluno/conta`, `/professor/contas` (lista, cadastrar, mudar senha), `/professor/senha`, `/admin`. Os layouts protegidos mandam cada perfil para a sua área.
+
+**Testes:** login e cadastro testados no Expo Go pela equipe. O modelo de contas de aluno foi testado pela API (`app.inject`), junto com lint e typecheck (app e servidor). Decisões no ADR-001 §4 e §5 (ícones).
+
+**Observações:**
+- o painel de Acompanhamento ainda lê `mock.ts`, então o aluno novo só aparece em Conta › Contas dos alunos até o passo 10;
+- o nível do aluno novo só vai para o servidor no passo 5;
+- depois de trocar a senha, os tokens antigos continuam valendo até vencer (passo 13).
 
 ---
 
@@ -294,7 +277,7 @@ Depois de revisado pela equipe: <colar aqui as correções>, atualize o mock.ts 
 
 **Pronto quando:** o Figma tem as telas que faltam, os ícones e imagens foram exportados para `assets/`, a fonte Inter está carregada e o ícone/splash do app são do AJAI.
 
-Telas a desenhar no Figma: progresso do aluno, preferências de acessibilidade, relatórios do professor, conta do professor, gestão de turma (criar turma, vincular aluno), correção manual de resposta, recuperação de senha, estados "carregando" / "sem internet" / "nível sem atividades" / "subiu de nível".
+Telas a desenhar no Figma: progresso do aluno, preferências de acessibilidade, relatórios do professor, conta do professor, **contas dos alunos** (lista, mudar senha, "aluno cadastrado" com usuário e senha), gestão de turma, correção manual de resposta, "esqueceu a senha?", "minha conta" do aluno, estados "carregando" / "sem internet" / "nível sem atividades" / "subiu de nível". Atualizar no Figma: **Login** sem "Quem você é?" e sem "Ouvir ajuda", campo "Seu usuário ou e-mail"; **Cadastro de aluno** passa a ser tela do professor (nome, nome de usuário, senha; sem telefone do professor); **Cadastro de professor** sem "Ouvir ajuda".
 
 ```text
 Leia AGENTS.md, src/theme/tokens.ts, src/components/** e as telas em src/app/.
@@ -307,8 +290,11 @@ Arquivo do Figma: https://www.figma.com/design/hXu6QCdfo7r7Qau5Rbia8M/AJAI
    do Figma.
 3. Carregue a fonte Inter com expo-font (`npx expo install expo-font @expo-google-fonts/inter`)
    e aplique nos componentes de texto.
-4. Substitua os emojis provisórios (🔊, 📖, ícones das abas, ilustrações das
-   alternativas) pelos ícones/imagens exportados em assets/ (<listar arquivos>).
+4. Substitua TODOS os emojis provisórios (alto-falante do BotaoAudio, livro do Logo e da
+   splash, ícones das abas do professor, ilustrações das alternativas no mock.ts) por ícones
+   de @expo/vector-icons (`npx expo install @expo/vector-icons`; NÃO use react-icons, que só
+   roda na web) e pelas imagens exportadas em assets/ (<listar arquivos>). Procure com
+   `grep -rnP "[\x{1F300}-\x{1FAFF}\x{2600}-\x{27BF}]" src` e não deixe nenhum emoji.
 5. Configure ícone do app, ícone adaptativo do Android e splash em app.json com os
    arquivos <listar arquivos>.
 6. Implemente as telas novas desenhadas: <listar frames/links>.
@@ -358,7 +344,8 @@ No SERVIDOR (todas exigem perfil PROFESSOR e só retornam alunos das turmas dele
 - GET /professor/alunos/:id?inicio&fim → relatório individual + série diária de taxa
   de acerto + histórico de níveis;
 - GET /professor/relatorios/frequencia e /professor/relatorios/dificuldades (por turma);
-- CRUD de turma e POST/DELETE de matrícula (vincular aluno por e-mail ou código);
+- CRUD de turma e mover aluno entre as turmas DO PRÓPRIO professor (o aluno já é criado pelo
+  professor em POST /professor/alunos e entra na turma ativa dele; o aluno não tem e-mail);
 - PATCH /respostas/:id/correcao (correção manual: muda `correta`, grava
   correcaoProfessor e recalcula DesempenhoConteudo).
 
@@ -369,7 +356,8 @@ correção manual na tela de métricas. Recarregue os dados ao focar a aba
 (useFocusEffect). Mostre o aviso "Os dados complementam a avaliação do professor".
 A aba Conta mostra os dados do professor (editar nome), trocar senha (passo 3) e sair.
 Cobertura: confira que TODA tela do professor da tabela do README existe e funciona
-com dados reais (dashboard, métricas do aluno, relatórios, conta, gestão de turma).
+com dados reais (dashboard, métricas do aluno, relatórios, conta, contas dos alunos, gestão
+de turma). O dashboard deve listar também os alunos cadastrados pelo professor (hoje lê o mock).
 ```
 
 ---
@@ -418,10 +406,13 @@ Escreva testes para:
 4. identificarDificuldades (ordenação, sem respostas);
 5. ofensiva (dias seguidos, quebra, fuso);
 6. API: professor NÃO vê aluno de outra turma; aluno não acessa rotas de professor;
+   aluno NÃO troca a própria senha; professor só muda a senha de aluno que ELE criou;
+   login por nome de usuário, e-mail e telefone; cadastro público só cria professor;
    resposta não expõe a alternativa correta antes de responder;
 7. um teste de tela: tocar na alternativa certa leva à tela "Muito bem!".
 Gere também docs/testes/casos-de-teste.md com os casos manuais dos fluxos principais
-(cadastro, login, nivelamento, atividade, progressão, área do professor) no formato
+(cadastro de professor, professor cadastra aluno, login do aluno por usuário, nivelamento,
+atividade, progressão, área do professor) no formato
 ID | pré-condição | passos | resultado esperado | resultado obtido.
 ```
 
@@ -436,7 +427,8 @@ ID | pré-condição | passos | resultado esperado | resultado obtido.
 ```text
 Leia AGENTS.md, src/domain/modelos.ts, src/app/cadastro/* e server/.
 Faça uma revisão de segurança e privacidade do AJAI e corrija o que for simples:
-- senhas só com hash; JWT com expiração; segredo em variável de ambiente;
+- senhas só com hash; JWT com expiração; segredo em variável de ambiente; invalidar tokens
+  antigos quando a senha muda; o que fazer com a senha do aluno se o professor que o criou sair;
 - nenhuma chave/segredo no repositório (procure no histórico do git também);
 - todas as rotas checam perfil e posse do dado (aluno só vê o próprio; professor só
   os alunos das suas turmas);
@@ -445,8 +437,9 @@ Faça uma revisão de segurança e privacidade do AJAI e corrija o que for simpl
   usado para quê?). Proponha remover o que não for.
 Escreva docs/privacidade.md: termo de uso e privacidade em linguagem MUITO simples
 (frases curtas, para quem está aprendendo a ler), dizendo que dados coletamos, por
-quê, quem vê (o professor vinculado) e como pedir para apagar. Adicione no cadastro
-um aceite "Li e concordo" com botão de ouvir o termo.
+quê, quem vê (o professor vinculado) e como pedir para apagar. Adicione um aceite
+"Li e concordo" no cadastro do professor e, para o aluno, um termo que o professor
+confirma ter lido com ele ao cadastrá-lo (com botão de ouvir o termo na primeira entrada).
 Liste o que ficou pendente.
 ```
 
@@ -540,7 +533,8 @@ Prepare a apresentação final do AJAI (<N> minutos no total, 5 integrantes):
    que ela mudou no produto, solução, demonstração, métricas para o professor,
    gestão do projeto (Scrum + Kanban, APF, custos, riscos), resultados dos testes de
    usabilidade, limitações e próximos passos. Indique quem fala cada parte.
-2. Roteiro da demo ao vivo (máx. 5 min): aluno novo → cadastro → nivelamento →
+2. Roteiro da demo ao vivo (máx. 5 min): professor cadastra um aluno novo (usuário e
+   senha) → aluno entra com o usuário → nivelamento →
    atividade com áudio → erro e "tentar de novo" → acerto → sobe de nível;
    professor → dashboard → aluno com dificuldade → métricas.
    Liste os dados que precisam estar preparados no banco antes.
