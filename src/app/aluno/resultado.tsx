@@ -5,7 +5,6 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Aviso, Botao, BotaoAudio, Tela } from "@/components";
-import { useAluno } from "@/hooks/useAluno";
 import { mensagemDeErro } from "@/services/api";
 import { escolherProximaAtividade, fimDaSessao } from "@/services/sessaoDeEstudo";
 import { cores, fontes } from "@/theme/tokens";
@@ -17,7 +16,6 @@ export default function Resultado() {
     subiu?: string;
     concluidas?: string;
   }>();
-  const aluno = useAluno();
   const [indo, setIndo] = useState(false);
   const [aviso, setAviso] = useState<string>();
   const acertou = correta === "1";
@@ -37,7 +35,7 @@ export default function Resultado() {
     setIndo(true);
     setAviso(undefined);
     try {
-      const proxima = await escolherProximaAtividade(aluno, Number(id));
+      const proxima = await escolherProximaAtividade(Number(id));
       if (proxima === undefined) {
         router.replace("/aluno");
         return;

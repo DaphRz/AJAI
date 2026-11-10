@@ -3,7 +3,7 @@
 Aplicativo mobile de apoio à alfabetização, complementar à EJA, com área de acompanhamento para professores.
 Projeto da disciplina de Gestão de Projetos – Universidade de Vila Velha, 2026 (turma CC6M, equipe 4).
 
-> **Situação em 09/11/2026 (Sprint 3 de 4):** o app já usa a **API** (Fastify sobre o banco SQLite) para login, contas, níveis, atividades e nivelamento, e a correção das respostas é feita no servidor. Ainda ficam **em memória** no app as respostas, a subida de nível (passo 5) e o painel do professor (passo 10). Veja [Pendências](#pendências) e [Banco de dados](#banco-de-dados-sqlite).
+> **Situação em 09/11/2026 (Sprint 3 de 4):** o app já usa a **API** (Fastify sobre o banco SQLite) para login, contas, níveis, atividades, nivelamento, **respostas, progressão e histórico** (passo 5): a correção e a subida de nível são do servidor, e o aluno continua de onde parou ao reabrir o app. Ainda fica **em memória** no app só o painel do professor (passo 10). Veja [Pendências](#pendências) e [Banco de dados](#banco-de-dados-sqlite).
 
 - Protótipo no Figma: <https://www.figma.com/design/hXu6QCdfo7r7Qau5Rbia8M/AJAI>
 - Diagrama de classes: [`docs/diagrama-classes.png`](docs/diagrama-classes.png)
@@ -127,7 +127,9 @@ O login é de verdade desde o passo 3: **o servidor precisa estar rodando** (pas
 - **Senha do professor/administrador:** Conta › Trocar minha senha (administrador: na tela inicial dele). Esqueceu? O administrador gera uma provisória (`POST /admin/usuarios/:id/senha-provisoria`), ou, no computador do servidor, `npm run usuario:senha -- rafael@ajai.app`.
 - O login fica guardado no aparelho (`expo-secure-store`): fechar e abrir o app volta logado. Para sair: aluno em **Minha conta › Sair**; professor em **Conta › Sair**.
 
-Rotas da API: `POST /auth/cadastro` (professor), `POST /auth/login`, `GET /auth/eu`, `PATCH /auth/senha` (professor/admin), `GET`/`POST /professor/alunos`, `PATCH /professor/alunos/:id/senha`, `POST /admin/usuarios/:id/senha-provisoria` (detalhes em [ADR-001 §4](docs/decisoes/ADR-001-stack.md)). Atividades (passo 4, qualquer perfil logado): `GET /niveis`, `GET /niveis/:id/atividades`, `GET /atividades/:id`, `GET /nivelamento` (sem o gabarito) e `POST /atividades/:id/corrigir` (a correção é do servidor; ver [ADR-001 §6](docs/decisoes/ADR-001-stack.md)).
+Rotas da API: `POST /auth/cadastro` (professor), `POST /auth/login`, `GET /auth/eu`, `PATCH /auth/senha` (professor/admin), `GET`/`POST /professor/alunos`, `PATCH /professor/alunos/:id/senha`, `POST /admin/usuarios/:id/senha-provisoria` (detalhes em [ADR-001 §4](docs/decisoes/ADR-001-stack.md)). Atividades (passo 4, qualquer perfil logado): `GET /niveis`, `GET /niveis/:id/atividades`, `GET /atividades/:id`, `GET /nivelamento` (sem o gabarito) e `POST /atividades/:id/corrigir` (só perguntas do nivelamento; ver [ADR-001 §6](docs/decisoes/ADR-001-stack.md)). Respostas e progresso (passo 5, só aluno, sobre ele mesmo): `POST /respostas`, `POST /nivelamento/concluir` e `GET /alunos/eu/progresso` (ver [ADR-001 §7](docs/decisoes/ADR-001-stack.md)).
+
+**Testes do servidor:** `npm test` (ou `npm run server:test`) roda os testes com o executor nativo do Node (`node --test`, sem instalar nada): regras de progressão (`server/src/progressao.test.ts`) e rotas de respostas/nivelamento/progresso (`server/src/rotas/progresso.test.ts`, num banco temporário: o seu `ajai.db` não é tocado).
 
 ### Comandos úteis
 
@@ -324,7 +326,7 @@ O roteiro completo até a entrega, com prazo, critério de pronto e **um prompt 
 | 2 | Criar o servidor (API) sobre o banco SQLite — ✅ | 07/11 |
 | 3 | Cadastro e login de verdade — ✅ | 08/11 |
 | 4 | Atividades e níveis vindos da API — ✅ | 09/11 |
-| 5 | Respostas, progressão e histórico no servidor | 10/11 |
+| 5 | Respostas, progressão e histórico no servidor — ✅ | 10/11 |
 | 6 | Narração por voz e preferências | 10/11 |
 | 7 | Conteúdo pedagógico completo | 10/11 |
 | 8 | Telas e recursos visuais que faltam no Figma | 11/11 |
@@ -348,8 +350,8 @@ Legenda: ✅ feito · 🟡 esqueleto/parcial (só no app, com dados em memória)
 - ✅ Projeto Expo (React Native + TypeScript) criado e organizado
 - ✅ Banco de dados configurado: SQLite com as 13 tabelas e seed (`npm run db:reset`) — falta ligar o app a ele pela API
 - ✅ Cadastro e autenticação (RF01, RF02): pela API, senha com hash (scrypt), token JWT guardado no aparelho. Professor se cadastra sozinho; **aluno é cadastrado pelo professor** e entra com nome de usuário. Testado no Expo Go em 08/11 (a parte de contas de aluno criadas pelo professor foi testada só pela API)
-- 🟡 Aluno novo: o nível do nivelamento ainda fica só na memória do app (vai para o servidor no passo 5); ao reabrir o app, o aluno novo refaz o nivelamento
-- 🟡 Nivelamento inicial (RF03): perguntas vêm da API (`GET /nivelamento`, hoje 5, uma por nível) e o fluxo tem barra de progresso; a regra ainda é provisória (para no primeiro erro) e faltam as perguntas definitivas validadas pela equipe/profissionais da EJA
+- ✅ Aluno novo: o nivelamento é gravado no servidor (`POST /nivelamento/concluir`: respostas, nível inicial e HistoricoNivel); ao reabrir o app, o aluno continua na etapa dele
+- 🟡 Nivelamento inicial (RF03): perguntas vêm da API (`GET /nivelamento`, hoje 5, uma por nível), com barra de progresso, e o nível é decidido no servidor (que corrige de novo e só aceita as perguntas na ordem, sem pular); a regra ainda é provisória (para no primeiro erro) e faltam as perguntas definitivas validadas pela equipe/profissionais da EJA
 - ⬜ Testes do fluxo de acesso
 - ✅ Passo 0 (esqueleto): lint, tsc e expo-doctor passam, o banco recria e o fluxo foi validado no Expo Go. Node 22.18+ é necessário para `npm run db:*` (em 22.14 use `NODE_OPTIONS=--experimental-strip-types`)
 
@@ -357,19 +359,19 @@ Legenda: ✅ feito · 🟡 esqueleto/parcial (só no app, com dados em memória)
 - 🟡 Atividades de letras e sílabas (RF04, RF06): telas prontas e vindas da API (passo 4, testado no Expo Go em 09/11); só 3 atividades de exemplo (conteúdo no passo 7)
 - ⬜ Associação letra-som (RF05): depende da narração por voz
 - ✅ Correção automática (RF12) **no servidor** desde o passo 4 (o app não recebe o gabarito) e feedback de acerto/erro (RF13)
-- ⬜ Registro das respostas **no banco** (RF14) — hoje fica só na memória (passo 5)
+- ✅ Registro das respostas **no banco** (RF14): `POST /respostas` grava a Resposta e atualiza o DesempenhoConteudo (passo 5, testado no Expo Go em 09/11)
 
 **Sprint 3 – Atividades Avançadas e Progressão (03/11 – 10/11)** — *em andamento*
 - 🟡 Palavras, leitura de frases e escrita (RF07, RF08, RF09): telas de cada tipo prontas (montar palavra com sílabas e "Apagar", frase em destaque com "Ouvir frase", escrita tolerante a acentos); só 1 exemplo de cada (conteúdo no passo 7)
 - 🟡 Interpretação de textos simples (RF10): tela com o texto visível e "Ouvir texto", 1 exemplo (consulta no posto); atividades do cotidiano (RF11) no passo 7
-- 🟡 Progressão entre níveis (RF16): regra provisória = acertar ≥ `criterioAcerto` do nível nas últimas 5 respostas daquele nível ([`services/progressao.ts`](src/services/progressao.ts)). **A equipe precisa validar essa regra.**
+- 🟡 Progressão entre níveis (RF16): **no servidor** desde o passo 5, com HistoricoNivel (testado no Expo Go em 09/11). Regra provisória = taxa de acerto ≥ `criterioAcerto` do nível nas últimas 5 respostas daquele nível, conferida só depois de um acerto numa atividade da etapa atual ([`server/src/progressao.ts`](server/src/progressao.ts), com testes). **A equipe precisa validar essa regra.** Atenção na demo: pelos dados de exemplo, Ana e Clara sobem de etapa logo no primeiro acerto
 
 **Sprint 4 – Métricas, Área do Professor e Finalização (10/11 – 17/11)**
-- 🟡 Histórico e evolução do aluno (RF18, RF19): tela simples, **sem desenho no Figma**
+- 🟡 Histórico e evolução do aluno (RF18, RF19): dados reais de `GET /alunos/eu/progresso` (trilha, atividades feitas, acertos, "Vale a pena treinar"); tela simples, **sem desenho no Figma**
 - 🟡 Área do professor (RF20, RF21): dashboard e métricas por aluno; faltam filtro de período, gráfico de evolução, aba Relatórios
 - 🟡 Identificação de dificuldades (RF17): calculada por conteúdo
 - ⬜ Registro de frequência / "Ofensiva – dias seguidos" (RF15)
-- 🟡 Continuidade do aprendizado (RF22): o CONTINUAR abre uma **sessão de 5 atividades** seguidas (acertos); depois de um acerto vai direto para a próxima, e só no fim do bloco oferece "Voltar ao início" ou "Continuar treinando" (`services/sessaoDeEstudo.ts`, `ATIVIDADES_POR_SESSAO`). Entre aberturas do app depende da persistência do passo 5
+- 🟡 Continuidade do aprendizado (RF22): o CONTINUAR abre uma **sessão de 5 atividades** seguidas (acertos); depois de um acerto vai direto para a próxima, e só no fim do bloco oferece "Voltar ao início" ou "Continuar treinando" (`services/sessaoDeEstudo.ts`, `ATIVIDADES_POR_SESSAO`). A próxima atividade vem do servidor (`GET /alunos/eu/progresso`), então continua certa entre aberturas do app
 - ⬜ Testes integrados e testes de usabilidade com o público-alvo
 - ⬜ Correção de bugs residuais
 - ⬜ Documentação final e preparação da apresentação (entrega **17/11**)
@@ -379,7 +381,7 @@ Legenda: ✅ feito · 🟡 esqueleto/parcial (só no app, com dados em memória)
 - ✅ Tabelas do diagrama de classes criadas (Usuario, Aluno, Professor, Administrador, Turma, Matricula, Nivel, Atividade, Alternativa, AudioCache, Resposta, DesempenhoConteudo, HistoricoNivel) + dados iniciais
 - ✅ **Servidor da API criado** com Fastify em `server/src/` (`npm run server:dev`, `GET /health`, erros padronizados em `{ erro }`, CORS e limite de requisições). `@fastify/jwt` já instalado, registrado no passo 3
 - ⬜ API para as funções contadas na APF (Incluir/Editar/Excluir/Listar/Visualizar de cada módulo)
-- 🟡 Trocar `src/data/mock.ts` pelas chamadas à API dentro de `src/services/`: ✅ contas (passo 3); ✅ níveis, atividades e nivelamento (passo 4, telas com "Carregando..." e "Sem conexão"); ⬜ respostas, progressão e histórico (passo 5, hoje só na memória do app); ⬜ painel do professor (passo 10)
+- 🟡 Trocar `src/data/mock.ts` pelas chamadas à API dentro de `src/services/`: ✅ contas (passo 3); ✅ níveis, atividades e nivelamento (passo 4, telas com "Carregando..." e "Sem conexão"); ✅ respostas, progressão e histórico (passo 5); ⬜ painel do professor (passo 10; ele e `professor/aluno/[id]` ainda leem as respostas do mock, então respostas novas não aparecem lá)
 - ✅ Migração 004: `Atividade.textoApoio` (palavra, frase ou texto mostrado à parte do enunciado; extra em relação ao diagrama)
 - ✅ Guardar o token de login no aparelho (`expo-secure-store`; `localStorage` no navegador)
 - ✅ API de autenticação (`/auth/*`), "middleware" `exigirLogin(perfil)` e cliente `src/services/api.ts`
@@ -405,7 +407,7 @@ Legenda: ✅ feito · 🟡 esqueleto/parcial (só no app, com dados em memória)
 - ⬜ Revisar com leitor de tela (TalkBack/VoiceOver) e tamanho de fonte do sistema aumentado
 
 ### Qualidade, segurança e privacidade
-- ⬜ Testes automatizados (ex.: `jest-expo`), começando por `services/progressao.ts` e `services/respostas.ts`
+- 🟡 Testes automatizados: ✅ servidor com `node --test` (`npm test`: regras de progressão e rotas do passo 5); ⬜ testes de autenticação/autorização e testes de tela no app (`jest-expo`) no passo 12
 - 🟡 Senha com hash no servidor (✅ scrypt) e comunicação só por HTTPS (⬜ RNF11; na demo é HTTP na rede local)
 - ⬜ Invalidar tokens antigos depois de troca/redefinição de senha (hoje valem até vencer, 30 dias) — passo 13
 - ⬜ Forçar troca da senha provisória do professor no primeiro login

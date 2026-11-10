@@ -24,7 +24,7 @@ Fontes de verdade, nesta ordem:
 - Expo **SDK 58**, React Native, React 19, TypeScript estrito, React Compiler ligado (`app.json › experiments.reactCompiler`).
 - Expo Router (rotas por arquivo em `src/app/`), typed routes ligado.
 - **Banco: SQLite em arquivo** (`server/data/ajai.db`), já criado com as 13 tabelas e seed (ver [Banco de dados](#banco-de-dados-sqlite)). Decisão em `docs/decisoes/ADR-001-stack.md`.
-- **API:** Node.js + TypeScript com **Fastify** em `server/src/` (`npm run server:dev`). Validação de entrada com esquemas JSON em **toda** rota; erros sempre `{ erro: string }` em português (lance `ErroApi` de `server/src/erros.ts`). O app chama a API **só** por `src/services/api.ts` (`chamarApi`, token no cabeçalho, erros já em mensagem amigável); login, cadastro e senha vêm da API (passo 3); níveis, atividades e nivelamento também (passo 4, **sem gabarito**: a correção é do servidor). Respostas/progressão e o painel do professor ainda leem/gravam `src/data/mock.ts` em memória até os passos 5 e 10. Tela que espera a API: `useCarregar` (`src/hooks/`) + componente `Carregando`. Rota que exige login: `preHandler: exigirLogin("PROFESSOR")` de `server/src/autenticacao.ts` (`req.user` = `{ idUsuario, perfil }`).
+- **API:** Node.js + TypeScript com **Fastify** em `server/src/` (`npm run server:dev`). Validação de entrada com esquemas JSON em **toda** rota; erros sempre `{ erro: string }` em português (lance `ErroApi` de `server/src/erros.ts`). O app chama a API **só** por `src/services/api.ts` (`chamarApi`, token no cabeçalho, erros já em mensagem amigável); login, cadastro e senha vêm da API (passo 3); níveis, atividades e nivelamento também (passo 4, **sem gabarito**: a correção é do servidor); respostas, progressão e histórico também (passo 5: `POST /respostas`, `POST /nivelamento/concluir`, `GET /alunos/eu/progresso`). Só o painel do professor ainda lê `src/data/mock.ts` em memória até o passo 10. Tela que espera a API: `useCarregar` (`src/hooks/`) + componente `Carregando`. Rota que exige login: `preHandler: exigirLogin("PROFESSOR")` de `server/src/autenticacao.ts` (`req.user` = `{ idUsuario, perfil }`).
 - O servidor roda `.ts` direto no Node (type stripping): **sem `enum`/`namespace`** e imports relativos **com `.ts`** (ex.: `import { banco } from "../banco.ts"`). Rota nova = arquivo em `server/src/rotas/` registrado em `server/src/app.ts`. Typecheck do servidor: `npm run server:typecheck` (`npm run typecheck` faz app + servidor).
 - **Voz trocável**: o app usa a interface `ProvedorVoz` (`src/services/voz/`). Padrão previsto: **Piper** (áudio gerado no servidor); `expo-speech` como alternativa e reserva. Ver [Narração por voz](#narração-por-voz-provedorvoz).
 
@@ -35,7 +35,7 @@ Fontes de verdade, nesta ordem:
 | `src/app/` | **Só telas** e layouts. Toda lógica de regra vai para `services/`. Arquivos fora de rota não ficam aqui. |
 | `src/components/` | Componentes visuais reutilizáveis (`Tela`, `Botao`, `BotaoAudio`, `Campo`, `AtividadeView`...). |
 | `src/services/` | Regras de negócio e acesso a dados. Nomes seguem o diagrama/APF: `incluirResposta`, `corrigirAutomaticamente`, `visualizarPainel`... Quando o backend existir, **só esta pasta muda**. |
-| `src/services/progressao.ts` | Funções **puras** (sem React, sem I/O) de nivelamento, progressão e dificuldades. Mantenha puras para testar fácil. |
+| `server/src/progressao.ts` | Funções **puras** (sem I/O, sem imports) de nivelamento, progressão, dificuldades e próxima atividade, com testes (`npm test`). Regra nova vai aqui. `src/services/progressao.ts` só reexporta para o painel do professor (mock) até o passo 10. |
 | `src/domain/modelos.ts` | Tipos do diagrama de classes. Mudou o diagrama? Mude aqui também. |
 | `src/data/mock.ts` | Dados de demonstração. Não importe direto nas telas; passe por `services/`. |
 | `src/theme/tokens.ts` | Cores, fontes e tamanhos do Figma. **Não use cor ou tamanho "solto"** nas telas. |
@@ -121,9 +121,10 @@ npm run db:reset            # recriar o banco SQLite com os dados de demonstraç
 npm run db:query            # tabelas e contagens (aceita SQL: ver seção Banco de dados)
 npm run server:dev          # sobe a API (GET http://localhost:3333/health)
 npm run typecheck           # tipos do app + servidor
+npm test                    # testes do servidor (node --test; banco temporário)
 ```
 
-Antes de dizer que uma tarefa terminou: rode **lint e typecheck** (e `npm run db:reset` se mexeu em banco ou seed) e abra o fluxo afetado no app (usuários de demonstração no README, senha `demo1234`; o servidor precisa estar rodando).
+Antes de dizer que uma tarefa terminou: rode **lint, typecheck e `npm test`** (e `npm run db:reset` se mexeu em banco ou seed) e abra o fluxo afetado no app (usuários de demonstração no README, senha `demo1234`; o servidor precisa estar rodando).
 
 ## Regras do Expo
 

@@ -5,13 +5,13 @@
  */
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { quandoSessaoExpirar } from "@/services/api";
-import { encerrarSessao, restaurarSessao, type UsuarioSessao } from "@/services/auth";
+import { encerrarSessao, guardarUsuarioDaSessao, restaurarSessao, type UsuarioSessao } from "@/services/auth";
 
 interface Sessao {
   usuario: UsuarioSessao | null;
   /** true enquanto o login guardado está sendo restaurado. */
   carregando: boolean;
-  /** Define (ou substitui) o usuário logado. Passe sempre um objeto novo. */
+  /** Define (ou substitui) o usuário logado e atualiza a cópia guardada. Passe sempre um objeto novo. */
   entrar: (usuario: UsuarioSessao) => void;
   /** Sai da conta e apaga o login guardado no aparelho. */
   sair: () => void;
@@ -43,13 +43,18 @@ export function SessaoProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  function entrar(novo: UsuarioSessao) {
+    setUsuario(novo);
+    void guardarUsuarioDaSessao(novo);
+  }
+
   function sair() {
     void encerrarSessao();
     setUsuario(null);
   }
 
   return (
-    <SessaoContext.Provider value={{ usuario, carregando, entrar: setUsuario, sair }}>
+    <SessaoContext.Provider value={{ usuario, carregando, entrar, sair }}>
       {children}
     </SessaoContext.Provider>
   );

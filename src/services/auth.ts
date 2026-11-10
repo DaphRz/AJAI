@@ -6,7 +6,7 @@
  */
 import type { Administrador, Aluno, Professor } from "@/domain/modelos";
 import { chamarApi, definirToken, ErroDaApi } from "./api";
-import { apagarLogin, guardarLogin, lerLogin } from "./armazenamento";
+import { apagarLogin, atualizarUsuarioGuardado, guardarLogin, lerLogin } from "./armazenamento";
 
 export type UsuarioSessao = Aluno | Professor | Administrador;
 
@@ -73,6 +73,11 @@ export async function restaurarSessao(): Promise<UsuarioSessao | null> {
     await encerrarSessao();
     return null;
   }
+}
+
+/** Atualiza a cópia guardada do usuário (ex.: nível novo), para o app reabrir certo mesmo sem internet. */
+export async function guardarUsuarioDaSessao(usuario: UsuarioSessao): Promise<void> {
+  await atualizarUsuarioGuardado(usuario);
 }
 
 /** Sai da conta neste aparelho. */

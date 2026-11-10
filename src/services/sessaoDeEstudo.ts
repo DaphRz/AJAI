@@ -2,11 +2,9 @@
  * Sessão de estudo (RF22): o aluno faz atividades em sequência e só volta para a home
  * depois de ATIVIDADES_POR_SESSAO atividades concluídas (acertadas). Ao chegar lá, pode
  * voltar ao início ou continuar treinando (aí a próxima parada é na 10ª, 15ª...).
- * TODO (passo 5): a próxima atividade passa a vir de GET /alunos/eu/progresso.
+ * Qual é a próxima atividade quem decide é o servidor (GET /alunos/eu/progresso).
  */
-import type { Aluno } from "@/domain/modelos";
-import { listarAtividadesDoNivel, listarTrilha } from "./atividades";
-import { listarRespostasDoAluno } from "./respostas";
+import { visualizarProgresso } from "./progresso";
 
 /** Quantas atividades concluídas antes de voltar para a home. */
 export const ATIVIDADES_POR_SESSAO = 5;
@@ -22,28 +20,9 @@ export function posicaoNaSessao(concluidas: number): number {
 }
 
 /**
- * Escolhe a próxima atividade da etapa atual do aluno:
- * 1º as que ele ainda não acertou, na ordem; depois, se já acertou todas, repete
- * a que faz mais tempo que ele não responde (nunca a que acabou de fazer, se houver outra).
- * Devolve undefined se a etapa não tem atividades.
+ * Próxima atividade da etapa atual do aluno (1º as que ainda não acertou; depois repete a mais
+ * antiga, nunca a que acabou de fazer se houver outra). Undefined = etapa sem atividades.
  */
-export async function escolherProximaAtividade(aluno: Aluno, idAnterior?: number): Promise<number | undefined> {
-  const trilha = await listarTrilha();
-  const nivel = trilha.find((n) => n.idNivel === aluno.idNivelAtual) ?? trilha[0];
-  if (!nivel) return undefined;
-  const atividades = await listarAtividadesDoNivel(nivel.idNivel);
-  if (atividades.length === 0) return undefined;
-
-  const respostas = listarRespostasDoAluno(aluno.idUsuario);
-  const candidatas = atividades.length > 1 ? atividades.filter((a) => a.idAtividade !== idAnterior) : atividades;
-
-  const pendente = candidatas.find(
-    (a) => !respostas.some((r) => r.idAtividade === a.idAtividade && r.correta),
-  );
-  if (pendente) return pendente.idAtividade;
-
-  const ultimaVez = (idAtividade: number) =>
-    respostas.filter((r) => r.idAtividade === idAtividade).reduce((maior, r) => (r.dataHora > maior ? r.dataHora : maior), "");
-  const maisAntiga = [...candidatas].sort((a, b) => ultimaVez(a.idAtividade).localeCompare(ultimaVez(b.idAtividade)))[0];
-  return maisAntiga.idAtividade;
+export async function escolherProximaAtividade(idAnterior?: number): Promise<number | undefined> {
+  return (await visualizarProgresso(idAnterior)).proximaAtividade;
 }

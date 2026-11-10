@@ -1,9 +1,8 @@
 /**
  * DADOS DE DEMONSTRAÇÃO — fonte do seed do banco (server/db/seed.mjs, `npm run db:seed`).
  *
- * Níveis, atividades e contas já vêm da API (passos 3 e 4). Enquanto os passos 5 e 10 não
- * terminam, as RESPOSTAS e o painel do professor ainda leem/gravam estes arrays em memória
- * (perdidos ao recarregar o app), só pelos arquivos de src/services/.
+ * Níveis, atividades, contas, respostas e progressão já vêm da API (passos 3 a 5). Só o painel
+ * do professor (services/relatorios.ts) ainda lê estes arrays em memória até o passo 10.
  */
 import type {
   Administrador,

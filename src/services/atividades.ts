@@ -39,13 +39,6 @@ export async function listarAtividadesDoNivel(idNivel: number): Promise<Atividad
   return r.atividades;
 }
 
-/** Atividades de todos os níveis da trilha (para o histórico de dificuldades). */
-export async function listarAtividadesDaTrilha(): Promise<AtividadeDoAluno[]> {
-  const trilha = await listarTrilha();
-  const porNivel = await Promise.all(trilha.map((n) => listarAtividadesDoNivel(n.idNivel)));
-  return porNivel.flat();
-}
-
 /** Uma atividade ATIVA (GET /atividades/:id). */
 export async function visualizarAtividade(idAtividade: number): Promise<AtividadeDoAluno> {
   const r = await chamarApi<{ atividade: AtividadeDoAluno }>(`/atividades/${idAtividade}`);

@@ -37,7 +37,7 @@ Legenda: ⬜ a fazer · 🟡 em andamento · ✅ feito
 | 2 | Criar o servidor (API) sobre o banco SQLite — feito | 07/11 | 1 |
 | 3 | Cadastro e login de verdade — feito | 08/11 | 2 |
 | 4 | Atividades e níveis vindos da API — feito | 09/11 | 2 |
-| 5 | Respostas, progressão e histórico no servidor | 10/11 | 3, 4 |
+| 5 | Respostas, progressão e histórico no servidor — feito | 10/11 | 3, 4 |
 | 6 | Narração por voz e preferências de acessibilidade | 10/11 | 1 |
 | 7 | Conteúdo pedagógico completo | 10/11 | 4 |
 | 8 | Telas e recursos visuais que faltam no Figma | 11/11 | — (começar já) |
@@ -153,31 +153,34 @@ O "Ouvir instrução" também lê as opções. Enquanto o servidor corrige, a te
 
 ---
 
-## ⬜ Passo 5 — Respostas, progressão e histórico no servidor (RF12–RF19, RF22)
+## ✅ Passo 5 — Respostas, progressão e histórico no servidor (RF12–RF19, RF22)
 
-**Prazo:** 10/11 · **Depende de:** passos 3 e 4
+**Feito em 09/11.** Cada resposta vai para o banco, e a correção e a subida de nível acontecem no servidor. HistoricoNivel e DesempenhoConteudo são atualizados, e o aluno continua de onde parou ao reabrir o app.
 
-**Pronto quando:** cada resposta fica no banco, a correção e a subida de nível acontecem no servidor, HistoricoNivel e DesempenhoConteudo são atualizados, e o aluno continua de onde parou ao reabrir o app.
+**Servidor** (`server/src/rotas/progresso.ts` + `server/src/desempenho.ts`; só perfil ALUNO, sempre sobre ele mesmo):
+- `POST /respostas` → `{ correta, subiuDeNivel, nivelAtual }`. Corrige, grava Resposta, atualiza DesempenhoConteudo e, se subir, grava HistoricoNivel, tudo numa transação;
+- `POST /nivelamento/concluir { respostas[] }` → `{ nivel }`. Corrige de novo e só aceita as perguntas na ordem, sem pular. Grava as respostas, `idNivelInicial` e HistoricoNivel, e só pode ser feito uma vez;
+- `GET /alunos/eu/progresso?anterior=` → nível, trilha com status, totais, taxa, até 3 dificuldades e a próxima atividade;
+- `POST /atividades/:id/corrigir` ficou **só para perguntas do nivelamento**. O nivelamento ainda precisa dela para parar no primeiro erro.
 
-```text
-Leia AGENTS.md, src/services/progressao.ts, src/services/respostas.ts,
-src/services/alunos.ts, src/app/aluno/** e server/.
+**Regras:** as funções puras foram de `src/services/progressao.ts` para `server/src/progressao.ts` **sem mudar a lógica**. A escolha da próxima atividade, que estava em `sessaoDeEstudo.ts`, também foi para lá. O app só reexporta essas funções para o painel do professor, que usa o mock até o passo 10.
 
-1. Leve as funções puras de src/services/progressao.ts para o servidor (ou para uma
-   pasta compartilhada) SEM mudar a lógica, e escreva testes para elas.
-2. POST /respostas { idAtividade, respostaDada, tempoRespostaSeg }:
-   corrige (normalizando acentos/maiúsculas), grava Resposta, atualiza
-   DesempenhoConteudo (tentativas, acertos, taxa), verifica a regra de progressão
-   (taxa nas últimas 5 respostas do nível >= criterioAcerto) e, se subir, grava
-   HistoricoNivel. Responde { correta, subiuDeNivel, nivelAtual }.
-3. POST /nivelamento/concluir { respostas[] } → define nível inicial, grava
-   HistoricoNivel e devolve o nível.
-4. GET /alunos/eu/progresso → nível atual, trilha com status, total de atividades,
-   taxa de acerto, dificuldades (conteúdos com mais erros), próxima atividade (RF22).
-5. No app, troque incluirResposta, definirNivelDoAluno e a lógica do botão CONTINUAR
-   para usar esses endpoints. Não mute objetos (React Compiler, ver AGENTS.md).
-Regra de progressão: <confirmar com a equipe; se mudar, documente no README>.
-```
+**App:**
+- `incluirResposta`/`responderAtividade` chamam `POST /respostas`;
+- `definirNivelDoAluno` virou `concluirNivelamento` (`services/alunos.ts`) + `comNivel`, que cria um objeto novo sem mutar e não grava no mock;
+- o CONTINUAR e o "Continuar →" pedem a próxima atividade ao servidor (`services/progresso.ts`);
+- home e `/aluno/progresso` leem `GET /alunos/eu/progresso`;
+- `entrar(...)` da sessão também atualiza a cópia guardada do usuário.
+
+**Testes:**
+- fluxo testado no Expo Go pela equipe em 09/11;
+- `npm test` (`node --test`, sem dependências) roda 34 testes: funções puras e rotas com `app.inject` num banco temporário (401/403/404/409, gabarito ausente, Resposta e DesempenhoConteudo gravados, nivelamento fora de ordem recusado, subida de nível com HistoricoNivel, `/auth/eu` devolvendo o nível gravado);
+- lint, typecheck (app e servidor), `npx expo export -p web` e `npm run db:reset` passam.
+
+**Observações:**
+- a **regra de progressão continua provisória** e precisa ser confirmada pela equipe: últimas 5 respostas da etapa ≥ `criterioAcerto`, conferida só depois de um acerto numa atividade da etapa atual. Se mudar, mude `server/src/progressao.ts`, os testes e o README. Decisões no ADR-001 §7;
+- pelos dados de exemplo, Ana e Clara sobem de etapa logo no primeiro acerto (bom para a demo);
+- o painel do professor e a tela de métricas do aluno ainda leem as respostas do mock, então as respostas novas só aparecem lá no passo 10.
 
 ---
 

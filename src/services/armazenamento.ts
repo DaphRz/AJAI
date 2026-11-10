@@ -62,3 +62,8 @@ export async function apagarLogin(): Promise<void> {
   await gravar(CHAVE_TOKEN, null);
   await gravar(CHAVE_USUARIO, null);
 }
+
+/** Troca só a cópia do usuário (ex.: subiu de nível), mantendo o token. Sem login guardado, não faz nada. */
+export async function atualizarUsuarioGuardado<U>(usuario: U): Promise<void> {
+  if (await ler(CHAVE_TOKEN)) await gravar(CHAVE_USUARIO, JSON.stringify(usuario));
+}

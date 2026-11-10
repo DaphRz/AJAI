@@ -4,12 +4,13 @@
 //   GET  /niveis/:id/atividades     atividades ATIVAS do nível, com alternativas ordenadas
 //   GET  /atividades/:id            uma atividade ATIVA
 //   GET  /nivelamento               perguntas do nivelamento (uma ou mais por nível, em ordem crescente)
-//   POST /atividades/:id/corrigir   { respostaDada } → { correta }
+//   POST /atividades/:id/corrigir   { respostaDada } → { correta }   SÓ perguntas do nivelamento
 //
 // O GABARITO NUNCA SAI DAQUI: nem Atividade.respostaCorreta nem Alternativa.correta são lidos
 // nas consultas de listagem, e os esquemas de resposta também não os têm (dupla proteção).
-// TODO (passo 5): POST /respostas grava a Resposta, atualiza DesempenhoConteudo e a progressão;
-// aí /atividades/:id/corrigir pode sair (o app passa a usar só /respostas).
+// As respostas do dia a dia vão para POST /respostas (rotas/progresso.ts), que corrige E grava.
+// /atividades/:id/corrigir ficou só para o nivelamento, que precisa saber na hora se o aluno
+// acertou para parar no primeiro erro; quem grava e decide o nível é POST /nivelamento/concluir.
 import type { FastifyInstance } from "fastify";
 import { exigirLogin } from "../autenticacao.ts";
 import { banco } from "../banco.ts";
@@ -218,9 +219,11 @@ export async function rotasAtividades(app: FastifyInstance): Promise<void> {
     },
     async (req) => {
       const atividade = banco()
-        .prepare("SELECT respostaCorreta FROM Atividade WHERE idAtividade = ? AND status = 'ATIVA'")
+        .prepare(
+          "SELECT respostaCorreta FROM Atividade WHERE idAtividade = ? AND status = 'ATIVA' AND ordemNivelamento IS NOT NULL",
+        )
         .get(req.params.id) as { respostaCorreta: string } | undefined;
-      if (!atividade) throw new ErroApi(404, "Não encontramos esta atividade.");
+      if (!atividade) throw new ErroApi(404, "Não encontramos esta pergunta.");
       return { correta: corrigirAutomaticamente(atividade.respostaCorreta, req.body.respostaDada) };
     },
   );

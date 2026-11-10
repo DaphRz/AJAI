@@ -6,19 +6,20 @@ import { Aviso, Botao, BotaoAudio, Carregando, Cartao, Logo, Subtitulo, Tela, Ti
 import { useAluno } from "@/hooks/useAluno";
 import { useCarregar } from "@/hooks/useCarregar";
 import { mensagemDeErro } from "@/services/api";
-import { listarTrilha } from "@/services/atividades";
+import { visualizarProgresso } from "@/services/progresso";
 import { escolherProximaAtividade } from "@/services/sessaoDeEstudo";
 import { cores, fontes } from "@/theme/tokens";
 
-/** Trilha e etapa atual do aluno. */
-async function carregarHome(idNivelAtual: number | undefined) {
-  const trilha = await listarTrilha();
-  return { trilha, nivel: trilha.find((n) => n.idNivel === idNivelAtual) ?? trilha[0] };
+/** Trilha e etapa atual do aluno, como o servidor guardou (GET /alunos/eu/progresso). */
+async function carregarHome() {
+  const progresso = await visualizarProgresso();
+  return { trilha: progresso.trilha, nivel: progresso.nivelAtual ?? progresso.trilha[0] };
 }
 
 export default function HomeAluno() {
   const aluno = useAluno();
-  const estado = useCarregar(() => carregarHome(aluno.idNivelAtual), aluno.idNivelAtual ?? 0);
+  // Recarrega quando o nível da sessão muda (ex.: acabou de subir de etapa).
+  const estado = useCarregar(carregarHome, aluno.idNivelAtual ?? 0);
   const [aviso, setAviso] = useState<string>();
   const [indo, setIndo] = useState(false);
   const primeiroNome = aluno.nome.split(" ")[0];
@@ -26,15 +27,16 @@ export default function HomeAluno() {
   return (
     <Carregando estado={estado} comAudio>
       {({ trilha, nivel }) => {
-        const etapasConcluidas = nivel ? trilha.filter((n) => n.ordem < nivel.ordem).length : 0;
+        const etapasConcluidas = trilha.filter((n) => n.status === "CONCLUIDA").length;
 
         async function continuar() {
-          // RF22: começa uma sessão de estudo pela primeira atividade da etapa ainda não acertada.
+          // RF22: começa uma sessão de estudo pela atividade que o servidor indicar
+          // (a primeira da etapa ainda não acertada). Pergunta na hora, para não usar dado velho.
           if (indo) return;
           setIndo(true);
           setAviso(undefined);
           try {
-            const proxima = await escolherProximaAtividade(aluno);
+            const proxima = await escolherProximaAtividade();
             if (proxima === undefined) {
               // TODO (passo 8): tela própria de "nível sem atividades".
               setAviso("Esta etapa ainda não tem atividades. Fale com seu professor.");

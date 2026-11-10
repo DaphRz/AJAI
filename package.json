@@ -54,7 +54,9 @@
     "server:build": "tsc -p server",
     "server:start": "node --disable-warning=ExperimentalWarning server/dist/index.js",
     "server:typecheck": "tsc -p server --noEmit",
-    "usuario:senha": "node --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON server/db/senha-provisoria.mjs"
+    "server:test": "node --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --test \"server/src/**/*.test.ts\"",
+    "usuario:senha": "node --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON server/db/senha-provisoria.mjs",
+    "test": "npm run server:test"
   },
   "private": true,
   "engines": {
