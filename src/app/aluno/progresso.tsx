@@ -2,19 +2,35 @@
 // Ainda NÃO há tela no Figma para isto (pendência de UX/UI).
 import { router } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
-import { Botao, BotaoAudio, Cartao, Subtitulo, Tela, Titulo } from "@/components";
+import { Botao, BotaoAudio, Carregando, Cartao, Subtitulo, Tela, Titulo } from "@/components";
 import { useAluno } from "@/hooks/useAluno";
-import { buscarNivel, listarAtividades, listarTrilha } from "@/services/atividades";
+import { useCarregar } from "@/hooks/useCarregar";
+import { listarAtividadesDaTrilha, listarTrilha } from "@/services/atividades";
 import { identificarDificuldades, taxaDeAcerto } from "@/services/progressao";
 import { listarRespostasDoAluno } from "@/services/respostas";
 import { cores, fontes } from "@/theme/tokens";
 
+// TODO (passo 5): tudo isto vem pronto de GET /alunos/eu/progresso.
+async function carregarProgresso() {
+  const [trilha, atividades] = await Promise.all([listarTrilha(), listarAtividadesDaTrilha()]);
+  return { trilha, atividades };
+}
+
 export default function Progresso() {
+  const estado = useCarregar(carregarProgresso);
+  return (
+    <Carregando estado={estado} comAudio>
+      {(dados) => <ConteudoProgresso {...dados} />}
+    </Carregando>
+  );
+}
+
+function ConteudoProgresso({ trilha, atividades }: Awaited<ReturnType<typeof carregarProgresso>>) {
   const aluno = useAluno();
   const respostas = listarRespostasDoAluno(aluno.idUsuario);
-  const atual = buscarNivel(aluno.idNivelAtual);
+  const atual = trilha.find((n) => n.idNivel === aluno.idNivelAtual);
   const taxa = Math.round(taxaDeAcerto(respostas) * 100);
-  const dificuldades = identificarDificuldades(respostas, listarAtividades()).filter((d) => d.erros > 0);
+  const dificuldades = identificarDificuldades(respostas, atividades).filter((d) => d.erros > 0);
 
   return (
     <Tela rodape={<BotaoAudio texto={`Você fez ${respostas.length} atividades e acertou ${taxa} por cento.`} />}>
@@ -22,7 +38,7 @@ export default function Progresso() {
       <Subtitulo>Veja até onde você já chegou.</Subtitulo>
 
       <View style={{ gap: 8 }}>
-        {listarTrilha().map((n) => {
+        {trilha.map((n) => {
           const feito = atual ? n.ordem < atual.ordem : false;
           const agora = n.idNivel === atual?.idNivel;
           return (

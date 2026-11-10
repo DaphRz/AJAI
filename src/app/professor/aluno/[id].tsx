@@ -4,10 +4,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { StyleSheet, Text } from "react-native";
 import { Botao, Cartao, Subtitulo, Tela, Titulo } from "@/components";
 import { buscarAluno } from "@/services/alunos";
-import { listarAtividades } from "@/services/atividades";
-import { identificarDificuldades } from "@/services/progressao";
-import { resumoDoAluno } from "@/services/relatorios";
-import { listarRespostasDoAluno } from "@/services/respostas";
+import { dificuldadesDoAluno, resumoDoAluno } from "@/services/relatorios";
 import { cores, fontes } from "@/theme/tokens";
 
 export default function MetricasAluno() {
@@ -24,7 +21,7 @@ export default function MetricasAluno() {
   }
 
   const resumo = resumoDoAluno(aluno);
-  const dificuldades = identificarDificuldades(listarRespostasDoAluno(aluno.idUsuario), listarAtividades());
+  const dificuldades = dificuldadesDoAluno(aluno.idUsuario);
 
   return (
     <Tela>

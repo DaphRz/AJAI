@@ -3,9 +3,8 @@
  * Professor.VisualizarPainel / VisualizarRelatorioAluno / VisualizarDificuldades.
  * ESQUELETO: calcula em cima dos dados em memória.
  */
-import { alunos, atividades, matriculas, respostas, turmas } from "@/data/mock";
+import { alunos, atividades, matriculas, niveis, respostas, turmas } from "@/data/mock";
 import type { Aluno } from "@/domain/modelos";
-import { buscarNivel } from "./atividades";
 import { identificarDificuldades, taxaDeAcerto } from "./progressao";
 
 export type Situacao = "EM_DIA" | "ATENCAO" | "REFORCO";
@@ -43,7 +42,8 @@ export function resumoDoAluno(aluno: Aluno): ResumoAluno {
 
   return {
     aluno,
-    nomeNivel: buscarNivel(aluno.idNivelAtual)?.nome ?? "Sem nivelamento",
+    // TODO (passo 10): o painel inteiro vem de GET /professor/painel; até lá, níveis do mock.
+    nomeNivel: niveis.find((n) => n.idNivel === aluno.idNivelAtual)?.nome ?? "Sem nivelamento",
     diasAtivos: dias.size,
     totalAtividades: lista.length,
     taxaAcerto: taxa,
@@ -54,4 +54,12 @@ export function resumoDoAluno(aluno: Aluno): ResumoAluno {
 
 export function visualizarPainel(idProfessor: number): ResumoAluno[] {
   return listarAlunosDoProfessor(idProfessor).map(resumoDoAluno);
+}
+
+/** Acertos por conteúdo de um aluno, pior primeiro. TODO (passo 10): GET /professor/alunos/:id. */
+export function dificuldadesDoAluno(idAluno: number) {
+  return identificarDificuldades(
+    respostas.filter((r) => r.idAluno === idAluno),
+    atividades,
+  );
 }

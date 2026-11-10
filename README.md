@@ -3,7 +3,7 @@
 Aplicativo mobile de apoio à alfabetização, complementar à EJA, com área de acompanhamento para professores.
 Projeto da disciplina de Gestão de Projetos – Universidade de Vila Velha, 2026 (turma CC6M, equipe 4).
 
-> **Situação em 05/11/2026 (Sprint 3 de 4):** existe um **esqueleto navegável** com as telas do Figma, regras de correção e progressão e dados de demonstração **em memória**. O **banco SQLite** (13 tabelas + dados iniciais) já existe em `server/`, mas o app ainda **não está ligado a ele**: falta a API e trocar o mock. Veja [Pendências](#pendências) e [Banco de dados](#banco-de-dados-sqlite).
+> **Situação em 09/11/2026 (Sprint 3 de 4):** o app já usa a **API** (Fastify sobre o banco SQLite) para login, contas, níveis, atividades e nivelamento, e a correção das respostas é feita no servidor. Ainda ficam **em memória** no app as respostas, a subida de nível (passo 5) e o painel do professor (passo 10). Veja [Pendências](#pendências) e [Banco de dados](#banco-de-dados-sqlite).
 
 - Protótipo no Figma: <https://www.figma.com/design/hXu6QCdfo7r7Qau5Rbia8M/AJAI>
 - Diagrama de classes: [`docs/diagrama-classes.png`](docs/diagrama-classes.png)
@@ -117,7 +117,7 @@ O login é de verdade desde o passo 3: **o servidor precisa estar rodando** (pas
 
 | Perfil | Entra com | Vai para |
 |---|---|---|
-| Aluno | `maria.silva` (também `ana.souza`, `bruno.lima`, `clara.santos`) | home do aluno |
+| Aluno | `maria.silva` (aluna nova: cai no **nivelamento**; `ana.souza`, `bruno.lima`, `clara.santos` já têm nível) | nivelamento / home do aluno |
 | Professor/Responsável | `rafael@ajai.app` ou `11900000100` | Acompanhamento, com os 4 alunos (criados por ele) na turma "EJA – Noite" |
 | Administrador | `admin@ajai.app` | área do administrador (por enquanto só conta) |
 
@@ -127,7 +127,7 @@ O login é de verdade desde o passo 3: **o servidor precisa estar rodando** (pas
 - **Senha do professor/administrador:** Conta › Trocar minha senha (administrador: na tela inicial dele). Esqueceu? O administrador gera uma provisória (`POST /admin/usuarios/:id/senha-provisoria`), ou, no computador do servidor, `npm run usuario:senha -- rafael@ajai.app`.
 - O login fica guardado no aparelho (`expo-secure-store`): fechar e abrir o app volta logado. Para sair: aluno em **Minha conta › Sair**; professor em **Conta › Sair**.
 
-Rotas da API: `POST /auth/cadastro` (professor), `POST /auth/login`, `GET /auth/eu`, `PATCH /auth/senha` (professor/admin), `GET`/`POST /professor/alunos`, `PATCH /professor/alunos/:id/senha`, `POST /admin/usuarios/:id/senha-provisoria` (detalhes em [ADR-001 §4](docs/decisoes/ADR-001-stack.md)).
+Rotas da API: `POST /auth/cadastro` (professor), `POST /auth/login`, `GET /auth/eu`, `PATCH /auth/senha` (professor/admin), `GET`/`POST /professor/alunos`, `PATCH /professor/alunos/:id/senha`, `POST /admin/usuarios/:id/senha-provisoria` (detalhes em [ADR-001 §4](docs/decisoes/ADR-001-stack.md)). Atividades (passo 4, qualquer perfil logado): `GET /niveis`, `GET /niveis/:id/atividades`, `GET /atividades/:id`, `GET /nivelamento` (sem o gabarito) e `POST /atividades/:id/corrigir` (a correção é do servidor; ver [ADR-001 §6](docs/decisoes/ADR-001-stack.md)).
 
 ### Comandos úteis
 
@@ -270,7 +270,8 @@ src/
   context/sessao.tsx      Usuário logado
   data/mock.ts            Dados de demonstração (níveis, atividades, alunos, respostas)
   domain/modelos.ts       Tipos espelhando o diagrama de classes
-  services/               Regras e acesso a dados (hoje sobre o mock; amanhã sobre a API)
+  hooks/useCarregar.ts    Carrega dados da API numa tela ("Carregando..." / "Sem conexão. Toque para tentar de novo.")
+  services/               Regras e acesso a dados (API; respostas e painel ainda no mock até os passos 5 e 10)
     narracao.ts           Fachada da voz (falar / pararFala)
     voz/                  ProvedorVoz: interface + provedores trocáveis
   theme/tokens.ts         Cores, fontes e tamanhos do Figma
@@ -322,7 +323,7 @@ O roteiro completo até a entrega, com prazo, critério de pronto e **um prompt 
 | 1 | Decisões de stack (SQLite, Fastify, Piper) — ✅ | 05/11 |
 | 2 | Criar o servidor (API) sobre o banco SQLite — ✅ | 07/11 |
 | 3 | Cadastro e login de verdade — ✅ | 08/11 |
-| 4 | Atividades e níveis vindos da API | 09/11 |
+| 4 | Atividades e níveis vindos da API — ✅ | 09/11 |
 | 5 | Respostas, progressão e histórico no servidor | 10/11 |
 | 6 | Narração por voz e preferências | 10/11 |
 | 7 | Conteúdo pedagógico completo | 10/11 |
@@ -348,19 +349,19 @@ Legenda: ✅ feito · 🟡 esqueleto/parcial (só no app, com dados em memória)
 - ✅ Banco de dados configurado: SQLite com as 13 tabelas e seed (`npm run db:reset`) — falta ligar o app a ele pela API
 - ✅ Cadastro e autenticação (RF01, RF02): pela API, senha com hash (scrypt), token JWT guardado no aparelho. Professor se cadastra sozinho; **aluno é cadastrado pelo professor** e entra com nome de usuário. Testado no Expo Go em 08/11 (a parte de contas de aluno criadas pelo professor foi testada só pela API)
 - 🟡 Aluno novo: o nível do nivelamento ainda fica só na memória do app (vai para o servidor no passo 5); ao reabrir o app, o aluno novo refaz o nivelamento
-- 🟡 Nivelamento inicial (RF03): fluxo e regra provisória (para no primeiro erro); faltam as perguntas definitivas validadas pela equipe/profissionais da EJA
+- 🟡 Nivelamento inicial (RF03): perguntas vêm da API (`GET /nivelamento`, hoje 5, uma por nível) e o fluxo tem barra de progresso; a regra ainda é provisória (para no primeiro erro) e faltam as perguntas definitivas validadas pela equipe/profissionais da EJA
 - ⬜ Testes do fluxo de acesso
 - ✅ Passo 0 (esqueleto): lint, tsc e expo-doctor passam, o banco recria e o fluxo foi validado no Expo Go. Node 22.18+ é necessário para `npm run db:*` (em 22.14 use `NODE_OPTIONS=--experimental-strip-types`)
 
 **Sprint 2 – Atividades Básicas (27/10 – 03/11)** — *atrasada*
-- 🟡 Atividades de letras e sílabas (RF04, RF06): só 3 atividades de exemplo
+- 🟡 Atividades de letras e sílabas (RF04, RF06): telas prontas e vindas da API (passo 4, testado no Expo Go em 09/11); só 3 atividades de exemplo (conteúdo no passo 7)
 - ⬜ Associação letra-som (RF05): depende da narração por voz
-- ✅ Correção automática (RF12) e feedback de acerto/erro (RF13) no app
-- ⬜ Registro das respostas **no banco** (RF14) — hoje fica só na memória
+- ✅ Correção automática (RF12) **no servidor** desde o passo 4 (o app não recebe o gabarito) e feedback de acerto/erro (RF13)
+- ⬜ Registro das respostas **no banco** (RF14) — hoje fica só na memória (passo 5)
 
 **Sprint 3 – Atividades Avançadas e Progressão (03/11 – 10/11)** — *em andamento*
-- 🟡 Palavras, leitura de frases e escrita (RF07, RF08, RF09): 1 exemplo de cada
-- ⬜ Interpretação de textos simples (RF10) e atividades do cotidiano (RF11)
+- 🟡 Palavras, leitura de frases e escrita (RF07, RF08, RF09): telas de cada tipo prontas (montar palavra com sílabas e "Apagar", frase em destaque com "Ouvir frase", escrita tolerante a acentos); só 1 exemplo de cada (conteúdo no passo 7)
+- 🟡 Interpretação de textos simples (RF10): tela com o texto visível e "Ouvir texto", 1 exemplo (consulta no posto); atividades do cotidiano (RF11) no passo 7
 - 🟡 Progressão entre níveis (RF16): regra provisória = acertar ≥ `criterioAcerto` do nível nas últimas 5 respostas daquele nível ([`services/progressao.ts`](src/services/progressao.ts)). **A equipe precisa validar essa regra.**
 
 **Sprint 4 – Métricas, Área do Professor e Finalização (10/11 – 17/11)**
@@ -368,7 +369,7 @@ Legenda: ✅ feito · 🟡 esqueleto/parcial (só no app, com dados em memória)
 - 🟡 Área do professor (RF20, RF21): dashboard e métricas por aluno; faltam filtro de período, gráfico de evolução, aba Relatórios
 - 🟡 Identificação de dificuldades (RF17): calculada por conteúdo
 - ⬜ Registro de frequência / "Ofensiva – dias seguidos" (RF15)
-- ⬜ Continuidade do aprendizado entre sessões (RF22) — depende de persistência
+- 🟡 Continuidade do aprendizado (RF22): o CONTINUAR abre uma **sessão de 5 atividades** seguidas (acertos); depois de um acerto vai direto para a próxima, e só no fim do bloco oferece "Voltar ao início" ou "Continuar treinando" (`services/sessaoDeEstudo.ts`, `ATIVIDADES_POR_SESSAO`). Entre aberturas do app depende da persistência do passo 5
 - ⬜ Testes integrados e testes de usabilidade com o público-alvo
 - ⬜ Correção de bugs residuais
 - ⬜ Documentação final e preparação da apresentação (entrega **17/11**)
@@ -378,7 +379,8 @@ Legenda: ✅ feito · 🟡 esqueleto/parcial (só no app, com dados em memória)
 - ✅ Tabelas do diagrama de classes criadas (Usuario, Aluno, Professor, Administrador, Turma, Matricula, Nivel, Atividade, Alternativa, AudioCache, Resposta, DesempenhoConteudo, HistoricoNivel) + dados iniciais
 - ✅ **Servidor da API criado** com Fastify em `server/src/` (`npm run server:dev`, `GET /health`, erros padronizados em `{ erro }`, CORS e limite de requisições). `@fastify/jwt` já instalado, registrado no passo 3
 - ⬜ API para as funções contadas na APF (Incluir/Editar/Excluir/Listar/Visualizar de cada módulo)
-- ⬜ Trocar `src/data/mock.ts` pelas chamadas à API dentro de `src/services/` (as telas não precisam mudar)
+- 🟡 Trocar `src/data/mock.ts` pelas chamadas à API dentro de `src/services/`: ✅ contas (passo 3); ✅ níveis, atividades e nivelamento (passo 4, telas com "Carregando..." e "Sem conexão"); ⬜ respostas, progressão e histórico (passo 5, hoje só na memória do app); ⬜ painel do professor (passo 10)
+- ✅ Migração 004: `Atividade.textoApoio` (palavra, frase ou texto mostrado à parte do enunciado; extra em relação ao diagrama)
 - ✅ Guardar o token de login no aparelho (`expo-secure-store`; `localStorage` no navegador)
 - ✅ API de autenticação (`/auth/*`), "middleware" `exigirLogin(perfil)` e cliente `src/services/api.ts`
 - ✅ Migrações 002 e 003: `Usuario.telefone`, `Usuario.email` opcional, `Usuario.nomeUsuario` (login do aluno) e `Aluno.idCriador` (extras em relação ao diagrama: registrar na documentação)
@@ -397,7 +399,7 @@ Legenda: ✅ feito · 🟡 esqueleto/parcial (só no app, com dados em memória)
   ⚠️ Conferir a licença da voz `pt_BR-faber-medium` e revisar na APF o `ServicoTTS`.
 - ⬜ Banco real de atividades (letras, sílabas, palavras, frases, escrita, interpretação, cotidiano), validado com os profissionais da EJA
 - ⬜ O enum `TipoAtividade` do diagrama não tem tipos para **letra-som** (RF05) nem **cotidiano** (RF11): incluir ou explicar no documento que entram como `conteudo` de outros tipos
-- ⬜ Imagens das alternativas (o Figma usa fotos; o app usa emojis provisórios)
+- ⬜ Imagens das alternativas e da palavra em destaque (o Figma usa fotos, ex.: a casa em "Formar palavra"; o app usa emojis provisórios e ainda não mostra a imagem da palavra)
 - ⬜ Trocar **todos os emojis** por ícones de `@expo/vector-icons` (regra no AGENTS.md; `react-icons` não roda em React Native) e carregar a fonte Inter (`expo-font`)
 - ⬜ Ícone do app e splash com a identidade do AJAI (hoje são os do Expo)
 - ⬜ Revisar com leitor de tela (TalkBack/VoiceOver) e tamanho de fonte do sistema aumentado
@@ -415,7 +417,7 @@ Legenda: ✅ feito · 🟡 esqueleto/parcial (só no app, com dados em memória)
 
 ### Documentação
 - ⬜ Atualizar a seção 15 (Prototipação) do PDF: ela diz que o protótipo tem 9 telas e que cadastro e nivelamento seriam feitos depois, mas o Figma já tem 15 telas, incluindo cadastro, nivelamento, formar palavra e ler frase
-- ⬜ Registrar no documento as decisões de stack (SQLite, API com Fastify, voz com Piper + `expo-speech`) e as 2 colunas extras do esquema (`Atividade.ordemNivelamento`, `AudioCache.provedor`)
+- ⬜ Registrar no documento as decisões de stack (SQLite, API com Fastify, voz com Piper + `expo-speech`) e as colunas extras do esquema (`Atividade.ordemNivelamento`, `Atividade.textoApoio`, `AudioCache.provedor`, `Usuario.telefone`, `Usuario.nomeUsuario`, `Aluno.idCriador`)
 - ⬜ Manter o quadro Kanban (Trello) alinhado com esta lista
 
 ---

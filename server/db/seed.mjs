@@ -89,11 +89,11 @@ export async function semear(db) {
     for (const at of mock.atividades) {
       const posicao = mock.idsAtividadesNivelamento.indexOf(at.idAtividade);
       db.prepare(
-        `INSERT INTO Atividade (idAtividade, idNivel, tipo, conteudo, enunciado, urlImagem, respostaCorreta,
+        `INSERT INTO Atividade (idAtividade, idNivel, tipo, conteudo, enunciado, textoApoio, urlImagem, respostaCorreta,
                                 status, ordemNivelamento, criadoEm, atualizadoEm)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       ).run(
-        at.idAtividade, at.idNivel, at.tipo, at.conteudo, at.enunciado, at.urlImagem ?? null,
+        at.idAtividade, at.idNivel, at.tipo, at.conteudo, at.enunciado, at.textoApoio ?? null, at.urlImagem ?? null,
         at.respostaCorreta, at.status, posicao >= 0 ? posicao + 1 : null, at.criadoEm, at.atualizadoEm,
       );
       for (const alt of at.alternativas) {

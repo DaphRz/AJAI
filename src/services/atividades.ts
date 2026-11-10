@@ -1,38 +1,59 @@
 /**
- * Atividade.Listar / Atividade.Visualizar / Nivel.ListarTrilha.
- * ESQUELETO: lê de src/data/mock.ts. Trocar por GET /atividades e GET /niveis.
+ * Nivel.ListarTrilha / Atividade.Listar / Atividade.Visualizar / nivelamento (RF03–RF11).
+ * Tudo vem da API (server/src/rotas/atividades.ts). O app NUNCA recebe o gabarito:
+ * a correção é feita no servidor (ver respostas.ts).
  */
-import { atividades, idsAtividadesNivelamento, niveis } from "@/data/mock";
-import type { Atividade, Nivel } from "@/domain/modelos";
+import type { AtividadeDoAluno, Nivel } from "@/domain/modelos";
+import { chamarApi } from "./api";
 
-export function listarTrilha(): Nivel[] {
-  return [...niveis].sort((a, b) => a.ordem - b.ordem);
+// A trilha quase nunca muda: guarda a primeira resposta para não pedir de novo a cada tela.
+let trilhaGuardada: Promise<Nivel[]> | null = null;
+
+/** Níveis em ordem (GET /niveis). */
+export function listarTrilha(): Promise<Nivel[]> {
+  if (!trilhaGuardada) {
+    trilhaGuardada = chamarApi<{ niveis: Nivel[] }>("/niveis").then(
+      (r) => [...r.niveis].sort((a, b) => a.ordem - b.ordem),
+      (erro: unknown) => {
+        trilhaGuardada = null; // falhou: na próxima vez tenta de novo
+        throw erro;
+      },
+    );
+  }
+  return trilhaGuardada;
 }
 
-export function buscarNivel(idNivel: number | undefined): Nivel | undefined {
-  return niveis.find((n) => n.idNivel === idNivel);
+export async function buscarNivel(idNivel: number | undefined): Promise<Nivel | undefined> {
+  return (await listarTrilha()).find((n) => n.idNivel === idNivel);
 }
 
-export function proximoNivel(idNivel: number): Nivel | undefined {
-  const atual = buscarNivel(idNivel);
-  if (!atual) return undefined;
-  return listarTrilha().find((n) => n.ordem === atual.ordem + 1);
+export async function proximoNivel(idNivel: number): Promise<Nivel | undefined> {
+  const trilha = await listarTrilha();
+  const atual = trilha.find((n) => n.idNivel === idNivel);
+  return atual ? trilha.find((n) => n.ordem > atual.ordem) : undefined;
 }
 
-export function listarAtividadesDoNivel(idNivel: number): Atividade[] {
-  return atividades.filter((a) => a.idNivel === idNivel && a.status === "ATIVA");
+/** Atividades ATIVAS do nível, com alternativas em ordem (GET /niveis/:id/atividades). */
+export async function listarAtividadesDoNivel(idNivel: number): Promise<AtividadeDoAluno[]> {
+  const r = await chamarApi<{ atividades: AtividadeDoAluno[] }>(`/niveis/${idNivel}/atividades`);
+  return r.atividades;
 }
 
-export function visualizarAtividade(idAtividade: number): Atividade | undefined {
-  return atividades.find((a) => a.idAtividade === idAtividade);
+/** Atividades de todos os níveis da trilha (para o histórico de dificuldades). */
+export async function listarAtividadesDaTrilha(): Promise<AtividadeDoAluno[]> {
+  const trilha = await listarTrilha();
+  const porNivel = await Promise.all(trilha.map((n) => listarAtividadesDoNivel(n.idNivel)));
+  return porNivel.flat();
 }
 
-export function atividadesDoNivelamento(): Atividade[] {
-  return idsAtividadesNivelamento
-    .map((id) => visualizarAtividade(id))
-    .filter((a): a is Atividade => a !== undefined);
+/** Uma atividade ATIVA (GET /atividades/:id). */
+export async function visualizarAtividade(idAtividade: number): Promise<AtividadeDoAluno> {
+  const r = await chamarApi<{ atividade: AtividadeDoAluno }>(`/atividades/${idAtividade}`);
+  return r.atividade;
 }
 
-export function listarAtividades(): Atividade[] {
-  return atividades;
+/** Perguntas do nivelamento, do nível mais fácil ao mais difícil (GET /nivelamento). */
+export async function atividadesDoNivelamento(): Promise<AtividadeDoAluno[]> {
+  const r = await chamarApi<{ perguntas: AtividadeDoAluno[] }>("/nivelamento");
+  return r.perguntas;
 }

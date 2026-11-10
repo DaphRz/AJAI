@@ -47,6 +47,9 @@ export const fontes = {
   corpo: 20,
   legenda: 16,
   letraAtividade: 120, // a letra grande da tela "Reconhecimento"
+  silaba: 48, // peças de sílaba ("Sílabas", "Formar palavra")
+  palavraDestaque: 40, // a palavra em destaque ("BOLA", "CASA")
+  ilustracao: 44, // PROVISÓRIO: emoji das alternativas até as imagens do passo 8
 } as const;
 
 export const toqueMinimo = 64;

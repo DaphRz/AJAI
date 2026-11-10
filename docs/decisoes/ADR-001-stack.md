@@ -1,6 +1,6 @@
 # ADR-001 · Stack de dados, servidor e voz
 
-Data: 05/11/2026 · Situação: **decidido** (banco, API com Fastify, arquitetura e provedor de voz, login e contas, ícones)
+Data: 05/11/2026 · Situação: **decidido** (banco, API com Fastify, arquitetura e provedor de voz, login e contas, ícones, atividades sem gabarito no app)
 
 ## Contexto
 
@@ -16,7 +16,7 @@ Entrega final em 17/11/2026. O app (Expo SDK 58) só tem dados de demonstração
 - Mudança de estrutura **sempre por migração nova** (`002_*.sql`...), nunca editando a anterior.
 - Por quê: não precisa de conta, chave ou rede; um agente de IA (ou qualquer pessoa) consulta e altera o banco por `npm run db:query`; a demo roda no notebook da equipe.
 - Consequências: o banco não é compartilhado entre integrantes (cada um tem o seu, com os mesmos dados iniciais); na demo o servidor roda em um notebook na mesma rede Wi-Fi dos celulares. Se a equipe quiser compartilhar dados no futuro, Turso (SQLite na nuvem) mantém o mesmo SQL.
-- Extras em relação ao diagrama de classes (registrar na documentação final): `Atividade.ordemNivelamento`, `AudioCache.provedor` e, desde o passo 3, `Usuario.telefone`, `Usuario.email` opcional, `Usuario.nomeUsuario` e `Aluno.idCriador` (migrações 002 e 003, ver §4).
+- Extras em relação ao diagrama de classes (registrar na documentação final): `Atividade.ordemNivelamento`, `AudioCache.provedor` e, desde o passo 3, `Usuario.telefone`, `Usuario.email` opcional, `Usuario.nomeUsuario` e `Aluno.idCriador` (migrações 002 e 003, ver §4) e, desde o passo 4, `Atividade.textoApoio` (migração 004, ver §6).
 - Migração que precisa **recriar** uma tabela começa com a linha `-- ajai: sem-chaves-estrangeiras`: o `migrar.mjs` desliga as chaves estrangeiras só durante ela e confere tudo (`PRAGMA foreign_key_check`) antes do COMMIT.
 
 ### 2. Voz: interface `ProvedorVoz`, padrão **Piper**, `expo-speech` também implementado — **DECIDIDO**
@@ -56,6 +56,15 @@ Entrega final em 17/11/2026. O app (Expo SDK 58) só tem dados de demonstração
 ### 5. Ícones: biblioteca, nunca emoji — **DECIDIDO** (08/11/2026)
 
 - A interface não usa emojis. Ícones vêm de **`@expo/vector-icons`** (padrão, mantido pelo Expo) ou `lucide-react-native`. O `react-icons` foi descartado: só funciona na web (gera elementos do navegador) e não roda no React Native. A troca dos emojis provisórios acontece no passo 8.
+
+### 6. Atividades vêm da API, sem gabarito; correção no servidor — **DECIDIDO** (passo 4, 09/11/2026)
+
+- Rotas (qualquer perfil logado, `server/src/rotas/atividades.ts`): `GET /niveis`, `GET /niveis/:id/atividades` (só ATIVAS, alternativas em ordem), `GET /atividades/:id`, `GET /nivelamento` (ordem do nível, depois `ordemNivelamento`).
+- **O app nunca recebe `respostaCorreta` nem `Alternativa.correta`**: as consultas não leem essas colunas e os esquemas de resposta não as têm. No app, o tipo é `AtividadeDoAluno` (`src/domain/modelos.ts`).
+- Por isso a correção passou para o servidor já no passo 4: `POST /atividades/:id/corrigir { respostaDada } → { correta }` (só corrige, não grava; `server/src/correcao.ts`, tolerante a maiúsculas, acentos e espaços). **Provisória:** no passo 5, `POST /respostas` corrige **e grava**, e esta rota pode sair. Até lá a resposta e a subida de nível ficam na memória do app.
+- **`Atividade.textoApoio`** (migração 004, opcional): o texto mostrado à parte do enunciado. SILABA/PALAVRA = a palavra em destaque ("CASA"); FRASE = a frase; INTERPRETACAO = o texto de 2 a 4 linhas. Assim o enunciado fica só com a pergunta, como no Figma ("Ler frase").
+- **PALAVRA (montar palavra):** as alternativas são as **peças** (sílabas, com distratoras); `correta` marca as peças que fazem parte da palavra, e a resposta é a junção das peças tocadas, comparada com `respostaCorreta`. Consequência para o passo 11: a regra "exatamente uma alternativa correta" vale para os tipos de múltipla escolha, não para PALAVRA (nem para ESCRITA, que não tem alternativas).
+- No app, telas que dependem da API usam `useCarregar` (`src/hooks/`, sem biblioteca) e o componente `Carregando` ("Carregando..." / "Sem conexão. Toque para tentar de novo."). A trilha de níveis fica guardada na memória depois da primeira leitura.
 
 ### Comparativo de voz (preços consultados nas páginas oficiais em 05/11/2026; confira antes de assinar)
 

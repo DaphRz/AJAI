@@ -1,9 +1,9 @@
 /**
- * DADOS DE DEMONSTRAÇÃO (em memória).
+ * DADOS DE DEMONSTRAÇÃO — fonte do seed do banco (server/db/seed.mjs, `npm run db:seed`).
  *
- * Enquanto o backend (Node.js + banco) não existe, os serviços leem e
- * gravam aqui. Tudo é perdido ao recarregar o app.
- * Pendência: substituir por chamadas à API (ver README › Pendências).
+ * Níveis, atividades e contas já vêm da API (passos 3 e 4). Enquanto os passos 5 e 10 não
+ * terminam, as RESPOSTAS e o painel do professor ainda leem/gravam estes arrays em memória
+ * (perdidos ao recarregar o app), só pelos arquivos de src/services/.
  */
 import type {
   Administrador,
@@ -65,6 +65,7 @@ export const atividades: Atividade[] = [
     tipo: "SILABA",
     conteudo: "Sílaba BO",
     enunciado: "Qual sílaba começa a palavra BOLA?",
+    textoApoio: "BOLA",
     respostaCorreta: "BO",
     status: "ATIVA",
     alternativas: [
@@ -80,13 +81,17 @@ export const atividades: Atividade[] = [
     idNivel: 3,
     tipo: "PALAVRA",
     conteudo: "Palavra CASA",
-    enunciado: "Junte as sílabas: CA + SA",
+    enunciado: "Junte as sílabas",
+    // PALAVRA: a palavra aparece em destaque e as alternativas são as PEÇAS para montá-la
+    // (correta = a peça faz parte da palavra). A resposta é a junção das peças tocadas.
+    textoApoio: "CASA",
     respostaCorreta: "CASA",
     status: "ATIVA",
     alternativas: [
-      { idAlternativa: 10, texto: "CASA", ordem: 1, correta: true },
-      { idAlternativa: 11, texto: "SACA", ordem: 2, correta: false },
-      { idAlternativa: 12, texto: "CAÇA", ordem: 3, correta: false },
+      { idAlternativa: 10, texto: "CA", ordem: 1, correta: true },
+      { idAlternativa: 11, texto: "SA", ordem: 2, correta: true },
+      { idAlternativa: 12, texto: "BO", ordem: 3, correta: false },
+      { idAlternativa: 16, texto: "LA", ordem: 4, correta: false },
     ],
     criadoEm: agora,
     atualizadoEm: agora,
@@ -96,7 +101,8 @@ export const atividades: Atividade[] = [
     idNivel: 4,
     tipo: "FRASE",
     conteudo: "Frase do cotidiano",
-    enunciado: "Leia a frase: “O ônibus passa às 7 horas.” Que horas o ônibus passa?",
+    enunciado: "Que horas o ônibus passa?",
+    textoApoio: "O ônibus passa às 7 horas.",
     respostaCorreta: "7 horas",
     status: "ATIVA",
     alternativas: [
@@ -119,10 +125,31 @@ export const atividades: Atividade[] = [
     criadoEm: agora,
     atualizadoEm: agora,
   },
+  {
+    idAtividade: 7,
+    idNivel: 5,
+    tipo: "INTERPRETACAO",
+    conteudo: "Texto do cotidiano",
+    enunciado: "O que Dona Rosa precisa levar?",
+    textoApoio:
+      "A consulta de Dona Rosa é na quinta-feira, às 9 horas. Ela precisa levar o cartão do SUS e chegar meia hora antes.",
+    respostaCorreta: "O cartão do SUS",
+    status: "ATIVA",
+    alternativas: [
+      { idAlternativa: 17, texto: "A conta de luz", ordem: 1, correta: false },
+      { idAlternativa: 18, texto: "O cartão do SUS", ordem: 2, correta: true },
+      { idAlternativa: 19, texto: "O título de eleitor", ordem: 3, correta: false },
+    ],
+    criadoEm: agora,
+    atualizadoEm: agora,
+  },
 ];
 
-/** Perguntas usadas no nivelamento inicial (uma por nível, em ordem). */
-export const idsAtividadesNivelamento = [1, 3, 4, 5];
+/**
+ * Perguntas do nivelamento inicial (uma por nível, em ordem). O seed grava a posição em
+ * Atividade.ordemNivelamento; o app recebe as perguntas por GET /nivelamento.
+ */
+export const idsAtividadesNivelamento = [1, 3, 4, 5, 7];
 
 export const professores: Professor[] = [
   {
@@ -153,7 +180,8 @@ export const administradores: Administrador[] = [
   },
 ];
 
-function alunoDemo(idUsuario: number, nome: string, idNivelAtual: number): Aluno {
+/** idNivelAtual ausente = aluno que ainda não fez o nivelamento (entra direto nele). */
+function alunoDemo(idUsuario: number, nome: string, idNivelAtual?: number): Aluno {
   return {
     idUsuario,
     nome,
@@ -167,13 +195,13 @@ function alunoDemo(idUsuario: number, nome: string, idNivelAtual: number): Aluno
     vozPreferida: "pt-BR",
     velocidadeVoz: 0.9,
     tamanhoFonte: 20,
-    idNivelInicial: 1,
+    idNivelInicial: idNivelAtual === undefined ? undefined : 1,
     idNivelAtual,
   };
 }
 
 export const alunos: Aluno[] = [
-  alunoDemo(1, "Maria Silva", 1),
+  alunoDemo(1, "Maria Silva"), // aluna nova: o login leva ao nivelamento
   alunoDemo(2, "Ana Souza", 1),
   alunoDemo(3, "Bruno Lima", 2),
   alunoDemo(4, "Clara Santos", 1),

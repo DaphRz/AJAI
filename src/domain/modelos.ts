@@ -100,7 +100,13 @@ export interface Atividade {
   tipo: TipoAtividade;
   conteudo: string; // ex.: "Letra B", usado no DesempenhoConteudo
   enunciado: string;
+  /**
+   * EXTRA (fora do diagrama, migração 004): texto mostrado à parte do enunciado.
+   * SILABA/PALAVRA: a palavra ("CASA"); FRASE: a frase; INTERPRETACAO: o texto de 2 a 4 linhas.
+   */
+  textoApoio?: string;
   urlImagem?: string;
+  /** Gabarito: só existe no servidor (a API nunca envia para o app). */
   respostaCorreta: string;
   /** EXTRA (fora do diagrama): posição no nivelamento inicial; ausente = fora do nivelamento. */
   ordemNivelamento?: number;
@@ -108,6 +114,19 @@ export interface Atividade {
   alternativas: Alternativa[]; // composição
   criadoEm: string;
   atualizadoEm: string;
+}
+
+/** Alternativa como o app recebe da API: sem o gabarito (`correta`). */
+export type AlternativaDoAluno = Omit<Alternativa, "correta">;
+
+/**
+ * Atividade como o app recebe da API (GET /atividades/:id, /niveis/:id/atividades, /nivelamento):
+ * sem `respostaCorreta` e sem `Alternativa.correta`. A correção é feita no servidor.
+ * PALAVRA: as alternativas são as peças (sílabas) para montar a palavra, e a resposta é a junção.
+ */
+export interface AtividadeDoAluno
+  extends Omit<Atividade, "respostaCorreta" | "alternativas" | "status" | "ordemNivelamento" | "criadoEm" | "atualizadoEm"> {
+  alternativas: AlternativaDoAluno[];
 }
 
 export interface AudioCache {

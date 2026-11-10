@@ -24,7 +24,7 @@ export function taxaDeAcerto(lista: Resposta[]): number {
  * O nível inicial é o da última pergunta acertada antes do primeiro erro.
  */
 export function definirNivelInicial(
-  perguntas: Atividade[],
+  perguntas: Pick<Atividade, "idNivel">[],
   acertos: boolean[],
   trilha: Nivel[],
 ): Nivel {
@@ -48,7 +48,7 @@ export function deveAvancar(
 /** Agrupa respostas por conteúdo e devolve os de menor taxa de acerto. */
 export function identificarDificuldades(
   respostas: Resposta[],
-  atividades: Atividade[],
+  atividades: Pick<Atividade, "idAtividade" | "conteudo">[],
 ): { conteudo: string; tentativas: number; erros: number; taxaAcerto: number }[] {
   const porConteudo = new Map<string, Resposta[]>();
   for (const r of respostas) {

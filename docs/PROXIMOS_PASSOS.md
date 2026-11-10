@@ -36,7 +36,7 @@ Legenda: ⬜ a fazer · 🟡 em andamento · ✅ feito
 | 1 | Decisões de stack (SQLite, Fastify, Piper) — feito | 05/11 | — |
 | 2 | Criar o servidor (API) sobre o banco SQLite — feito | 07/11 | 1 |
 | 3 | Cadastro e login de verdade — feito | 08/11 | 2 |
-| 4 | Atividades e níveis vindos da API | 09/11 | 2 |
+| 4 | Atividades e níveis vindos da API — feito | 09/11 | 2 |
 | 5 | Respostas, progressão e histórico no servidor | 10/11 | 3, 4 |
 | 6 | Narração por voz e preferências de acessibilidade | 10/11 | 1 |
 | 7 | Conteúdo pedagógico completo | 10/11 | 4 |
@@ -99,37 +99,57 @@ Sprints da documentação: **Sprint 3** vai até 10/11 (passos 0–7), **Sprint 
 
 ---
 
-## ⬜ Passo 4 — Atividades e níveis vindos da API
+## ✅ Passo 4 — Atividades e níveis vindos da API
 
-**Prazo:** 09/11 · **Depende de:** passo 2
+**Feito em 09/11.** A trilha, as atividades e o nivelamento vêm do banco pela API, e o app **não recebe mais o gabarito**.
 
-**Pronto quando:** a trilha de níveis, as atividades e o nivelamento vêm do banco e as telas continuam iguais.
+**Servidor** (`server/src/rotas/atividades.ts`, qualquer perfil logado):
+- `GET /niveis`, `GET /niveis/:id/atividades` (só ATIVAS, alternativas em ordem), `GET /atividades/:id`, `GET /nivelamento` (por ordem do nível e `ordemNivelamento`);
+- nenhuma resposta leva `respostaCorreta` nem `Alternativa.correta`;
+- como o app ficou sem o gabarito, a correção já foi para o servidor: `POST /atividades/:id/corrigir` → `{ correta }` (`server/src/correcao.ts`, tolerante a maiúsculas, acentos e espaços). Ela só corrige, não grava. **Provisória:** sai quando o `POST /respostas` do passo 5 existir.
 
-```text
-Leia AGENTS.md, src/services/atividades.ts, src/components/AtividadeView.tsx e server/.
+**Banco:** migração **004** criou `Atividade.textoApoio` (a palavra em destaque, a frase ou o texto de interpretação, separado do enunciado). No `mock.ts`:
+- SILABA ganhou "BOLA";
+- PALAVRA passou a ser montada com as peças CA, SA, BO e LA;
+- FRASE separou a frase da pergunta;
+- entrou uma atividade INTERPRETACAO no nível 5 (consulta de Dona Rosa), que também está no nivelamento (5 perguntas).
 
-No SERVIDOR: GET /niveis (trilha ordenada), GET /niveis/:id/atividades (só ATIVAS,
-com alternativas ordenadas), GET /atividades/:id, GET /nivelamento (perguntas do
-nivelamento, uma ou mais por nível, em ordem crescente). Todas exigem login.
-Nunca envie o campo `correta` das alternativas nem `respostaCorreta` para o app:
-a correção passa a ser no servidor (passo 5).
+**App:**
+- `services/atividades.ts` agora é assíncrono e guarda a trilha na memória;
+- tipo `AtividadeDoAluno` (sem gabarito) em `modelos.ts`;
+- hook `useCarregar` (`src/hooks/`) e componente `Carregando`: "Carregando..." e "Sem conexão. Toque para tentar de novo.", com "Ouvir ajuda" nas telas do aluno;
+- telas ligadas à API: home, atividade, nivelamento (com barra de progresso, como no Figma), resultado do nivelamento e progresso;
+- o painel do professor continua lendo o mock (passo 10).
 
-No APP: troque as funções de src/services/atividades.ts para a API (agora assíncronas)
-e ajuste as telas para mostrar um estado de carregamento simples ("Carregando...")
-e uma mensagem amigável se falhar ("Sem conexão. Toque para tentar de novo.").
-Considere usar um hook pequeno useCarregar(fn) em src/hooks/ em vez de biblioteca nova.
-Mantenha o mock só como seed do servidor.
+**`AtividadeView` tem um layout por tipo:**
+- LETRA: letra grande + alternativas com imagem;
+- SILABA: palavra em destaque + sílabas grandes;
+- PALAVRA: palavra em destaque, espaços para montar, peças de sílaba, "Apagar" e "Confirmar" (Figma "Formar palavra");
+- FRASE: frase num cartão com "Ouvir frase" + múltipla escolha;
+- INTERPRETACAO: texto visível com "Ouvir texto" + múltipla escolha;
+- ESCRITA: campo de texto.
 
-Cobertura dos tipos de atividade (RF04–RF11): revise AtividadeView e a tela
-/aluno/atividade/[id] para renderizar CADA TipoAtividade com o layout do Figma:
-- LETRA e SILABA: alternativas com imagem/texto grandes;
-- PALAVRA: montar palavra juntando sílabas (toque nas sílabas, com "Apagar");
-- FRASE: frase em destaque + pergunta de múltipla escolha, com "Ouvir frase";
-- ESCRITA: campo de texto (ou letras para tocar) e correção tolerante a maiúsculas/acentos;
-- INTERPRETACAO: texto de 2 a 4 linhas visível durante a pergunta + "Ouvir texto".
-Toda tela tem BotaoAudio. Se algum tipo exigir campos novos no banco (ex.: texto
-de apoio), crie uma migração e atualize modelos.ts e o mock.
-```
+O "Ouvir instrução" também lê as opções. Enquanto o servidor corrige, a tela trava os toques e mostra "Conferindo sua resposta...".
+
+**Ajustes pedidos no primeiro teste:**
+- `maria.silva` agora é aluna nova no seed (sem nível), para o login levar ao nivelamento. Os outros alunos de demonstração continuam com nível.
+- **Sessão de 5 atividades** (`src/services/sessaoDeEstudo.ts`, constante `ATIVIDADES_POR_SESSAO`):
+  - o CONTINUAR da home começa a sessão, e a tela mostra "Atividade X de 5";
+  - depois de um acerto, "Continuar →" vai direto para a próxima atividade;
+  - erro → "Tentar novamente" a mesma atividade (só os acertos contam);
+  - na 5ª atividade acertada: "Voltar ao início" ou "Continuar treinando" (a próxima parada é na 10ª).
+- Ordem das atividades: primeiro as da etapa que o aluno ainda não acertou. Com poucas atividades por etapa (até o passo 7), as já acertadas se repetem, a mais antiga primeiro e nunca a mesma duas vezes seguidas.
+
+**Testes:**
+- fluxo testado no Expo Go pela equipe em 09/11: nivelamento, sequência de 5 atividades e volta para a home;
+- rotas testadas com `app.inject`: 401 sem login, 404, gabarito ausente e correção com acento/maiúscula/espaço;
+- lint, typecheck (app e servidor), `npx expo export -p web` e `npm run db:reset` passam.
+
+**Observações:**
+- na tela "Formar palavra", a **foto** da palavra (a casa) ainda não aparece: vem com as imagens do passo 8, usando `Atividade.urlImagem`, que já existe no banco;
+- respostas e subida de nível ficam só na memória do app até o passo 5: ao reabrir o app, o aluno novo refaz o nivelamento;
+- `POST /atividades/:id/corrigir` é provisória e sai no passo 5;
+- PALAVRA usa as alternativas como peças (várias `correta`), o que muda a validação do passo 11 (ADR-001 §6).
 
 ---
 
@@ -378,8 +398,9 @@ A) Rotas REST protegidas por perfil ADMINISTRADOR + um usuário admin no seed +
    server/admin.http com exemplos prontos).
 B) Telas simples no próprio app em /admin (lista de atividades por nível, formulário
    com enunciado, tipo, conteúdo, 3 alternativas e qual é a correta, inativar).
-"Excluir" nunca apaga: muda status para INATIVA. Valide que toda atividade tem
-exatamente uma alternativa correta.
+"Excluir" nunca apaga: muda status para INATIVA. Valide que toda atividade de múltipla
+escolha tem exatamente uma alternativa correta (PALAVRA usa as alternativas como peças
+e ESCRITA não tem alternativas: ver ADR-001 §6). Inclua o campo textoApoio no formulário.
 Inclua também IncluirNivel/EditarNivel (nome, descrição, ordem, criterioAcerto) e a
 listagem de atividades por nível. O administrador entra pelo login (passo 3) e só ele
 acessa essas rotas/telas.
