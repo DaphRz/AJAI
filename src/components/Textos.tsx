@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import type { ReactNode } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { cores, fontes, raios } from "@/theme/tokens";
@@ -18,12 +19,12 @@ export function Corpo({ children }: { children: ReactNode }) {
   return <Text style={styles.corpo}>{children}</Text>;
 }
 
-/** Logo "AJAI" do cabeçalho. TODO: usar o ícone do livro exportado do Figma. */
+/** Logo "AJAI" do cabeçalho. */
 export function Logo() {
   return (
     <View style={styles.logo} accessibilityLabel="AJAI">
-      <View style={styles.logoIcone}>
-        <Text style={{ fontSize: 22 }}>📖</Text>
+      <View style={styles.logoIcone} accessibilityElementsHidden importantForAccessibility="no">
+        <Ionicons name="book" size={24} color={cores.primaria} />
       </View>
       <Text style={styles.logoTexto}>AJAI</Text>
     </View>

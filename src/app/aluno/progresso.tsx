@@ -1,5 +1,6 @@
 // RF18, RF19 – histórico e evolução do aluno
 // Ainda NÃO há tela no Figma para isto (pendência de UX/UI).
+import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 import { Botao, BotaoAudio, Carregando, Cartao, Subtitulo, Tela, Titulo } from "@/components";
@@ -31,7 +32,13 @@ function ConteudoProgresso({ trilha, totalAtividades, taxaAcerto, dificuldades }
           const agora = n.status === "ATUAL";
           return (
             <View key={n.idNivel} style={[styles.etapa, agora && styles.etapaAtual]}>
-              <Text style={styles.etapaIcone}>{feito ? "✅" : agora ? "▶️" : "⚪"}</Text>
+              <Ionicons
+                name={feito ? "checkmark-circle" : agora ? "play-circle" : "ellipse-outline"}
+                size={28}
+                color={feito ? cores.sucesso : agora ? cores.primaria : cores.textoSuave}
+                accessibilityElementsHidden
+                importantForAccessibility="no"
+              />
               <Text style={styles.etapaNome}>{n.nome}</Text>
             </View>
           );
@@ -64,7 +71,6 @@ function ConteudoProgresso({ trilha, totalAtividades, taxaAcerto, dificuldades }
 const styles = StyleSheet.create({
   etapa: { flexDirection: "row", alignItems: "center", gap: 12, padding: 12, borderRadius: 12 },
   etapaAtual: { backgroundColor: cores.superficieSuave },
-  etapaIcone: { fontSize: 22 },
   etapaNome: { fontSize: fontes.corpo, fontWeight: "700", color: cores.texto },
   rotulo: { fontSize: fontes.legenda, color: cores.textoSuave, fontWeight: "600" },
   valor: { fontSize: fontes.titulo, fontWeight: "800", color: cores.primaria },

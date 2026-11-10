@@ -1,6 +1,7 @@
 // Figma: "AJAI · Acerto" e "AJAI · Tentar novamente"  |  RF13, RNF15 – feedback claro; RF22 – continuidade
 // Depois de um acerto, segue direto para a próxima atividade; só volta para a home ao fim
 // de cada bloco de ATIVIDADES_POR_SESSAO atividades (services/sessaoDeEstudo.ts).
+import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
@@ -53,10 +54,13 @@ export default function Resultado() {
   return (
     <Tela rodape={<BotaoAudio texto={`${titulo} ${mensagem}`} />}>
       <View style={styles.centro}>
-        {/* TODO (passo 8): trocar o emoji por ícone de @expo/vector-icons */}
-        <Text style={styles.icone} accessibilityElementsHidden importantForAccessibility="no">
-          {acertou ? "✅" : "🔁"}
-        </Text>
+        <Ionicons
+          name={acertou ? "checkmark-circle" : "refresh"}
+          size={96}
+          color={acertou ? cores.sucesso : cores.primaria}
+          accessibilityElementsHidden
+          importantForAccessibility="no"
+        />
         <Text accessibilityRole="header" style={[styles.titulo, !acertou && { color: cores.texto }]}>
           {titulo}
         </Text>
@@ -98,7 +102,6 @@ export default function Resultado() {
 
 const styles = StyleSheet.create({
   centro: { flex: 1, alignItems: "center", justifyContent: "center", gap: 16, paddingVertical: 32 },
-  icone: { fontSize: 96 },
   titulo: { fontSize: 40, fontWeight: "800", color: cores.sucesso },
   mensagem: { fontSize: fontes.subtitulo, color: cores.texto, textAlign: "center" },
 });

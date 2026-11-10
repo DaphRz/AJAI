@@ -90,7 +90,10 @@ export interface Alternativa {
   ordem: number;
   correta: boolean;
   urlImagem?: string;
-  /** PROVISÓRIO: emoji no lugar da imagem até termos os arquivos finais. */
+  /**
+   * PROVISÓRIO: nome de um ícone do MaterialCommunityIcons (@expo/vector-icons) no lugar
+   * da imagem até termos os arquivos finais (urlImagem). Nunca emoji.
+   */
   ilustracao?: string;
 }
 

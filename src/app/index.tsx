@@ -1,4 +1,5 @@
 // Figma: "AJAI · Splash"
+import { Ionicons } from "@expo/vector-icons";
 import { Redirect, router } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 import { Botao, Tela } from "@/components";
@@ -14,8 +15,8 @@ export default function Splash() {
   return (
     <Tela rolavel={false}>
       <View style={styles.centro}>
-        <View style={styles.icone}>
-          <Text style={{ fontSize: 56 }}>📖</Text>
+        <View style={styles.icone} accessibilityElementsHidden importantForAccessibility="no">
+          <Ionicons name="book" size={60} color={cores.primaria} />
         </View>
         <Text style={styles.marca}>AJAI</Text>
         <Text style={styles.slogan}>Alfabetização para Jovens, Adultos e Idosos</Text>

@@ -4,6 +4,7 @@
   "main": "expo-router/entry",
   "dependencies": {
     "@expo/ui": "~58.0.27",
+    "@expo/vector-icons": "^15.0.2",
     "@fastify/cors": "^11.4.1",
     "@fastify/jwt": "^10.2.7",
     "@fastify/rate-limit": "^11.2.2",

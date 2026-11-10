@@ -1,13 +1,15 @@
+import { Ionicons } from "@expo/vector-icons";
 import { Redirect, Tabs } from "expo-router";
-import { Text } from "react-native";
+import type { ComponentProps } from "react";
+import type { ColorValue } from "react-native";
 import { useSessao } from "@/context/sessao";
 import { rotaInicial } from "@/services/auth";
 import { cores } from "@/theme/tokens";
 
-// TODO: trocar os emojis pelos ícones do Figma.
-function icone(simbolo: string) {
-  function IconeAba() {
-    return <Text style={{ fontSize: 22 }}>{simbolo}</Text>;
+/** Ícone da aba (a aba já tem o título escrito; o ícone é só decorativo). */
+function icone(nome: ComponentProps<typeof Ionicons>["name"]) {
+  function IconeAba({ color, size }: { color: ColorValue; size: number }) {
+    return <Ionicons name={nome} color={color as string} size={size} />;
   }
   return IconeAba;
 }
@@ -31,9 +33,9 @@ export default function ProfessorLayout() {
         sceneStyle: { backgroundColor: cores.fundo },
       }}
     >
-      <Tabs.Screen name="index" options={{ title: "Acompanhamento", tabBarIcon: icone("▦") }} />
-      <Tabs.Screen name="relatorios" options={{ title: "Relatórios", tabBarIcon: icone("📊") }} />
-      <Tabs.Screen name="conta" options={{ title: "Conta", tabBarIcon: icone("👤") }} />
+      <Tabs.Screen name="index" options={{ title: "Acompanhamento", tabBarIcon: icone("grid") }} />
+      <Tabs.Screen name="relatorios" options={{ title: "Relatórios", tabBarIcon: icone("bar-chart") }} />
+      <Tabs.Screen name="conta" options={{ title: "Conta", tabBarIcon: icone("person") }} />
       <Tabs.Screen name="aluno/[id]" options={{ href: null }} />
       <Tabs.Screen name="senha" options={{ href: null }} />
       <Tabs.Screen name="contas/index" options={{ href: null }} />

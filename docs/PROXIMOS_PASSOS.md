@@ -294,11 +294,15 @@ Depois de revisado pela equipe: <colar aqui as correções>, atualize o mock.ts 
 
 ---
 
-## ⬜ Passo 8 — Telas e recursos visuais que faltam (UX/UI)
+## 🟡 Passo 8 — Telas e recursos visuais que faltam (UX/UI)
 
 **Prazo:** 11/11 · **Pode começar já**
 
 **Pronto quando:** o Figma tem as telas que faltam, os ícones e imagens foram exportados para `assets/`, a fonte Inter está carregada e o ícone/splash do app são do AJAI.
+
+**Feito em 09/11 (parcial):** todos os emojis de `src/` foram trocados por ícones de `@expo/vector-icons` (instalado): alto-falante do `BotaoAudio`, livro do `Logo` e da splash, abas do professor, trilha em `/aluno/progresso` e acerto/erro em `/aluno/resultado` (Ionicons). As figuras das alternativas do `mock.ts` viraram nomes de ícones do `MaterialCommunityIcons` na mesma coluna `Alternativa.ilustracao` (sem migração).
+
+**O que falta / o que fazer:** itens 1, 2, 3, 5 e 6 do prompt abaixo; no item 4, só as imagens finais das alternativas e da palavra em destaque (`urlImagem`).
 
 Telas a desenhar no Figma: progresso do aluno, preferências de acessibilidade, relatórios do professor, conta do professor, **contas dos alunos** (lista, mudar senha, "aluno cadastrado" com usuário e senha), gestão de turma, correção manual de resposta, "esqueceu a senha?", "minha conta" do aluno, estados "carregando" / "sem internet" / "nível sem atividades" / "subiu de nível". Atualizar no Figma: **Login** sem "Quem você é?" e sem "Ouvir ajuda", campo "Seu usuário ou e-mail"; **Cadastro de aluno** passa a ser tela do professor (nome, nome de usuário, senha; sem telefone do professor); **Cadastro de professor** sem "Ouvir ajuda".
 
@@ -313,11 +317,10 @@ Arquivo do Figma: https://www.figma.com/design/hXu6QCdfo7r7Qau5Rbia8M/AJAI
    do Figma.
 3. Carregue a fonte Inter com expo-font (`npx expo install expo-font @expo-google-fonts/inter`)
    e aplique nos componentes de texto.
-4. Substitua TODOS os emojis provisórios (alto-falante do BotaoAudio, livro do Logo e da
-   splash, ícones das abas do professor, ilustrações das alternativas no mock.ts) por ícones
-   de @expo/vector-icons (`npx expo install @expo/vector-icons`; NÃO use react-icons, que só
-   roda na web) e pelas imagens exportadas em assets/ (<listar arquivos>). Procure com
-   `grep -rnP "[\x{1F300}-\x{1FAFF}\x{2600}-\x{27BF}]" src` e não deixe nenhum emoji.
+4. Os emojis já foram trocados por ícones de @expo/vector-icons (09/11). Troque os ícones
+   provisórios das alternativas (Alternativa.ilustracao, nomes do MaterialCommunityIcons)
+   pelas imagens exportadas em assets/ (<listar arquivos>), usando urlImagem, e mostre a
+   imagem da palavra em destaque em "Formar palavra".
 5. Configure ícone do app, ícone adaptativo do Android e splash em app.json com os
    arquivos <listar arquivos>.
 6. Implemente as telas novas desenhadas: <listar frames/links>.

@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { falar } from "@/services/narracao";
 import { cores, fontes, raios, toqueMinimo } from "@/theme/tokens";
@@ -20,10 +21,13 @@ export function BotaoAudio({ texto, titulo = "Ouvir ajuda" }: Props) {
       onPress={() => falar(texto)}
       style={({ pressed }) => [styles.cartao, pressed && { opacity: 0.8 }]}
     >
-      {/* TODO: trocar o emoji pelo ícone de alto-falante do Figma */}
-      <Text style={styles.icone} accessibilityElementsHidden>
-        🔊
-      </Text>
+      <Ionicons
+        name="volume-high"
+        size={36}
+        color={cores.texto}
+        accessibilityElementsHidden
+        importantForAccessibility="no"
+      />
       <View>
         <Text style={styles.titulo}>{titulo}</Text>
         <Text style={styles.legenda}>Toque para escutar</Text>
@@ -44,7 +48,6 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderRadius: raios.lg,
   },
-  icone: { fontSize: 32 },
   titulo: { fontSize: fontes.subtitulo, fontWeight: "700", color: cores.texto },
   legenda: { fontSize: fontes.legenda, color: cores.texto },
 });

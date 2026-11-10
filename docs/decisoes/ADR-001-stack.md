@@ -55,7 +55,7 @@ Entrega final em 17/11/2026. O app (Expo SDK 58) só tem dados de demonstração
 
 ### 5. Ícones: biblioteca, nunca emoji — **DECIDIDO** (08/11/2026)
 
-- A interface não usa emojis. Ícones vêm de **`@expo/vector-icons`** (padrão, mantido pelo Expo) ou `lucide-react-native`. O `react-icons` foi descartado: só funciona na web (gera elementos do navegador) e não roda no React Native. A troca dos emojis provisórios acontece no passo 8.
+- A interface não usa emojis. Ícones vêm de **`@expo/vector-icons`** (padrão, mantido pelo Expo) ou `lucide-react-native`. O `react-icons` foi descartado: só funciona na web (gera elementos do navegador) e não roda no React Native. Os emojis provisórios foram trocados em 09/11: Ionicons na interface (alto-falante, livro, abas, trilha, acerto/erro) e, nas alternativas, `Alternativa.ilustracao` passou a guardar o nome de um ícone do `MaterialCommunityIcons` (mesma coluna, sem migração), até as imagens do passo 8.
 
 ### 6. Atividades vêm da API, sem gabarito; correção no servidor — **DECIDIDO** (passo 4, 09/11/2026)
 

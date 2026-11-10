@@ -6,6 +6,7 @@
  *
  * O app não sabe a resposta certa: só envia a resposta dada (onResponder) e o servidor corrige.
  */
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { type ReactNode, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { AlternativaDoAluno, AtividadeDoAluno } from "@/domain/modelos";
@@ -250,10 +251,14 @@ function ListaOpcoes({
           onPress={() => onEscolher(alt.texto)}
           style={({ pressed }) => [styles.alternativa, (pressed || ocupado) && styles.apertado]}
         >
-          {alt.ilustracao ? (
+          {alt.ilustracao && alt.ilustracao in MaterialCommunityIcons.glyphMap ? (
             <View style={styles.ilustracao} importantForAccessibility="no" accessibilityElementsHidden>
-              {/* TODO (passo 8): trocar o emoji provisório pela imagem (alt.urlImagem). */}
-              <Text style={{ fontSize: fontes.ilustracao }}>{alt.ilustracao}</Text>
+              {/* TODO (passo 8): trocar o ícone provisório pela imagem (alt.urlImagem). */}
+              <MaterialCommunityIcons
+                name={alt.ilustracao as keyof typeof MaterialCommunityIcons.glyphMap}
+                size={fontes.ilustracao}
+                color={cores.primaria}
+              />
             </View>
           ) : null}
           <Text style={styles.textoAlternativa}>{alt.texto}</Text>

@@ -401,8 +401,9 @@ Legenda: ✅ feito · 🟡 esqueleto/parcial (só no app, com dados em memória)
   ⚠️ Conferir a licença da voz `pt_BR-faber-medium` e revisar na APF o `ServicoTTS`.
 - ⬜ Banco real de atividades (letras, sílabas, palavras, frases, escrita, interpretação, cotidiano), validado com os profissionais da EJA
 - ⬜ O enum `TipoAtividade` do diagrama não tem tipos para **letra-som** (RF05) nem **cotidiano** (RF11): incluir ou explicar no documento que entram como `conteudo` de outros tipos
-- ⬜ Imagens das alternativas e da palavra em destaque (o Figma usa fotos, ex.: a casa em "Formar palavra"; o app usa emojis provisórios e ainda não mostra a imagem da palavra)
-- ⬜ Trocar **todos os emojis** por ícones de `@expo/vector-icons` (regra no AGENTS.md; `react-icons` não roda em React Native) e carregar a fonte Inter (`expo-font`)
+- ⬜ Imagens das alternativas e da palavra em destaque (o Figma usa fotos, ex.: a casa em "Formar palavra"; o app usa ícones provisórios do `MaterialCommunityIcons` e ainda não mostra a imagem da palavra)
+- ✅ Emojis trocados por ícones de `@expo/vector-icons` (09/11)
+- ⬜ Carregar a fonte Inter (`expo-font`)
 - ⬜ Ícone do app e splash com a identidade do AJAI (hoje são os do Expo)
 - ⬜ Revisar com leitor de tela (TalkBack/VoiceOver) e tamanho de fonte do sistema aumentado
 
