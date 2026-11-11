@@ -10,13 +10,13 @@ Roteiro do que falta até a entrega, **na ordem em que deve ser feito**. Cada pa
 >
 > **Todos desenvolvem.** Os papéis da documentação (gerente, UX/UI, testes...) são formais; aqui os passos não têm dono fixo. Combine no grupo quem pega cada um e mova o cartão no Kanban.
 >
-> **Já decidido** ([ADR-001](decisoes/ADR-001-stack.md)): banco = **SQLite em arquivo dentro do projeto** (`server/data/ajai.db`, criado com `npm run db:reset`) e voz = o app só usa a interface **`ProvedorVoz`**; o padrão será o **Piper** (áudios gerados no servidor) e o `expo-speech` fica implementado como alternativa e reserva, com troca em uma linha.
+> **Já decidido** ([ADR-001](decisoes/ADR-001-stack.md)): banco = **SQLite em arquivo dentro do projeto** (`server/data/ajai.db`, criado com `npm run db:reset`) e voz = o app só usa a interface **`ProvedorVoz`**; a **API de voz ainda não foi definida** e o `expo-speech` fica implementado como alternativa e reserva, com troca em uma linha.
 
 ## Regras que valem para TODO prompt
 
 O `CLAUDE.md` da raiz carrega automaticamente `AGENTS.md`, o ADR-001 e este arquivo a cada sessão do Claude Code. Por isso, em qualquer passo:
 
-1. **Identifique o passo** em que a tarefa se encaixa e siga o critério "Pronto quando". Se a tarefa contrariar uma decisão do ADR-001 (SQLite, Fastify, `ProvedorVoz`, Piper), pare e avise antes de mudar.
+1. **Identifique o passo** em que a tarefa se encaixa e siga o critério "Pronto quando". Se a tarefa contrariar uma decisão do ADR-001 (SQLite, Fastify, `ProvedorVoz`), pare e avise antes de mudar.
 2. **Cobertura do app inteiro:** a tarefa vale para aluno **e** professor **e** administrador, quando se aplicar. Confira a tabela "Telas do Figma × código" do README para não esquecer nenhuma tela.
 3. **Regras de acessibilidade do AGENTS.md** em toda tela nova ou alterada (botão de áudio, texto nos botões, fonte e toque mínimos, mensagens positivas).
 4. **Banco:** mudou estrutura → migração nova (`npm run db:migrate`); mudou dados de exemplo → `src/data/mock.ts` + `npm run db:seed`; atualize `src/domain/modelos.ts`.
@@ -33,7 +33,7 @@ Legenda: ⬜ a fazer · 🟡 em andamento · ✅ feito
 | # | Passo | Prazo | Depende de |
 |---|---|---|---|
 | 0 | Instalar e validar o esqueleto | 05/11 | — |
-| 1 | Decisões de stack (SQLite, Fastify, Piper) — feito | 05/11 | — |
+| 1 | Decisões de stack (SQLite, Fastify, `ProvedorVoz`) — feito | 05/11 | — |
 | 2 | Criar o servidor (API) sobre o banco SQLite — feito | 07/11 | 1 |
 | 3 | Cadastro e login de verdade — feito | 08/11 | 2 |
 | 4 | Atividades e níveis vindos da API — feito | 09/11 | 2 |
@@ -63,7 +63,7 @@ Sprints da documentação: **Sprint 3** vai até 10/11 (passos 0–7), **Sprint 
 
 ## ✅ Passo 1 — Decisões de stack
 
-**Feito em 05/11.** Banco = SQLite em arquivo; API = **Fastify** (Node.js + TypeScript); voz = interface `ProvedorVoz` com **Piper como padrão** e `expo-speech` como alternativa e reserva. Tudo registrado em [`decisoes/ADR-001-stack.md`](decisoes/ADR-001-stack.md).
+**Feito em 05/11.** Banco = SQLite em arquivo; API = **Fastify** (Node.js + TypeScript); voz = interface `ProvedorVoz` com `expo-speech` como alternativa e reserva (a API de voz ainda não foi definida). Tudo registrado em [`decisoes/ADR-001-stack.md`](decisoes/ADR-001-stack.md).
 
 ---
 
@@ -188,7 +188,7 @@ O "Ouvir instrução" também lê as opções. Enquanto o servidor corrige, a te
 
 **Prazo:** 10/11 · **Depende de:** passos 1 e 2
 
-**Pronto quando:** todo botão "Ouvir ajuda / Ouvir instrução" fala em português do Brasil, com o **Piper como padrão** e o `expo-speech` funcionando como alternativa e como reserva; o aluno pode mudar a velocidade da voz e o tamanho da letra, a preferência fica salva, e **trocar o provedor é mudar uma linha** (`PROVEDOR_PADRAO` em `src/services/voz/index.ts`).
+**Pronto quando:** todo botão "Ouvir ajuda / Ouvir instrução" fala em português do Brasil com a **API de voz escolhida pela equipe** (ainda não definida; opções no ADR-001 §2) e o `expo-speech` funcionando como alternativa e como reserva; o aluno pode mudar a velocidade da voz e o tamanho da letra, a preferência fica salva, e **trocar o provedor é mudar uma linha** (`PROVEDOR_PADRAO` em `src/services/voz/index.ts`).
 
 Arquitetura (a interface e o provedor `console` já existem; faltam os demais):
 
@@ -199,7 +199,7 @@ BotaoAudio / telas ──► services/narracao.ts ──► ProvedorVoz ativo (s
                                                   ├─ expo-speech  voz do aparelho (alternativa/reserva)
                                                   └─ console      (desenvolvimento)
 Servidor: GET/POST /narracao { texto, voz, velocidade } ──► SintetizadorVoz ativo (VOZ_PROVEDOR)
-                                                  └─ piper → grava o áudio em server/storage/audio + linha em AudioCache
+                                                  └─ <API escolhida> → grava o áudio em server/storage/audio + linha em AudioCache
 ```
 
 ```text
@@ -207,32 +207,26 @@ Leia AGENTS.md, src/services/narracao.ts, src/services/voz/ (provedor.ts, index.
 provedorConsole.ts), src/components/BotaoAudio.tsx, docs/decisoes/ADR-001-stack.md,
 server/db/migrations/001_esquema_inicial.sql (tabela AudioCache) e src/domain/modelos.ts.
 
-Decisão: PIPER é o provedor padrão; expo-speech também deve ser implementado.
+API de voz escolhida pela equipe: <preencher; opções e custos no ADR-001 §2>.
+expo-speech também deve ser implementado.
 NÃO mude a interface ProvedorVoz nem as telas que chamam falar()/pararFala().
 
-A) Servidor (Piper):
-1. Instalação do Piper (repositório atual: https://github.com/OHF-Voice/piper1-gpl; o
-   huggingface.js NÃO é o Piper e não deve ser usado). Documente no README, seção Voz:
-   Python 3 + `pip install piper-tts`, e baixar a voz com
-   `python3 -m piper.download_voices pt_BR-faber-medium --data-dir server/voz-modelos`
-   (pasta fora do git; as vozes ficam em huggingface.co/rhasspy/piper-voices). Confirme
-   o nome da voz ao rodar. Só o computador que GERA os áudios precisa disso.
+A) Servidor (só se a API escolhida gerar áudio no servidor):
+1. Documente no README, seção Voz, como configurar a API escolhida (conta, chave ou
+   programa a instalar) e o nome da voz pt-BR usada. Só o computador que GERA os
+   áudios precisa disso.
 2. server/src/voz/sintetizador.ts com a interface SintetizadorVoz
-   { nome; sintetizar(texto, voz, velocidade): Promise<Buffer> } e
-   server/src/voz/piper.ts, que chama o executável do Piper (child_process, sem shell,
-   argumentos em lista) e devolve o áudio. Comando base:
-   `python3 -m piper -m pt_BR-faber-medium --data-dir server/voz-modelos -f arquivo.wav -- 'texto'`.
-   Velocidade: veja `python3 -m piper --help` e use o parâmetro de duração (length scale =
-   1 / velocidade), confirmando o nome da flag. Guarde em .wav
-   se isso evitar depender do ffmpeg.
-3. Configuração em server/.env (PIPER_BIN, PIPER_MODELO, VOZ_PROVEDOR=piper) e em
+   { nome; sintetizar(texto, voz, velocidade): Promise<Buffer> } e um arquivo
+   server/src/voz/<api>.ts que implementa a API escolhida e devolve o áudio. Prefira
+   um formato que não dependa do ffmpeg.
+3. Configuração em server/.env (VOZ_PROVEDOR e o que a API exigir) e em
    server/.env.example. Nunca colocar caminhos ou chaves no código.
 4. Rota de narração: procura em AudioCache (textoOrigem + voz + velocidade + provedor);
    se não achar, sintetiza, grava o arquivo em server/storage/audio/ e insere a linha.
    Responde a URL do áudio. Valide o tamanho do texto (limite curto).
 5. `npm run voz:preparar`: gera, uma vez, o áudio de todos os enunciados e alternativas
    das atividades ATIVAS do banco, nas velocidades 0.8, 1.0 e 1.2. Assim a demonstração
-   NÃO precisa do Piper rodando: basta a API servir os arquivos.
+   NÃO depende da API de voz na hora: basta a API do AJAI servir os arquivos.
 
 B) App:
 6. src/services/voz/provedorExpoSpeech.ts (`npx expo install expo-speech`; confira a API
@@ -242,8 +236,8 @@ B) App:
 7. src/services/voz/provedorServidor.ts (`npx expo install expo-audio`): pede a URL do
    áudio, toca, e se der erro, rede fora ou áudio inexistente, chama o provedor
    expo-speech como reserva.
-8. Registre os dois em `provedores` e defina PROVEDOR_PADRAO = "servidor". Trocar o
-   padrão para "expo-speech" deve ser só mudar essa constante.
+8. Registre os dois em `provedores` e defina PROVEDOR_PADRAO conforme a API escolhida
+   ("servidor" ou "expo-speech"). Trocar o padrão deve ser só mudar essa constante.
 9. Mostre no BotaoAudio o estado "Falando..." enquanto toca (com texto, não só ícone);
    sair da tela para a fala. Nas telas de atividade, leia a alternativa ao tocar e segurar
    (onLongPress), sem selecionar.
@@ -568,7 +562,7 @@ Prepare a apresentação final do AJAI (<N> minutos no total, 5 integrantes):
 3. Plano B e preparação técnica: como rodar a demo SEM internet da faculdade (servidor
    no notebook + celulares no mesmo Wi-Fi/ponto de acesso do celular; app via Expo Go
    ou build de desenvolvimento com EAS), checklist do dia (db:reset com dados de demo,
-   áudios do Piper já gerados com `npm run voz:preparar`, EXPO_PUBLIC_API_URL com o IP
+   áudios já gerados com `npm run voz:preparar`, se a voz vier do servidor, EXPO_PUBLIC_API_URL com o IP
    certo, celular carregado, vídeo gravado de backup).
 4. Prováveis perguntas da banca e respostas curtas.
 ```

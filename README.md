@@ -240,12 +240,12 @@ O app **não depende de nenhuma API de voz específica**. Telas e componentes ch
 | Provedor | Situação | O que é |
 |---|---|---|
 | `console` | ✅ existe (padrão até o passo 6) | Só registra no console; para desenvolver sem áudio |
-| `servidor` | ⬜ passo 6 — **será o padrão** | Toca o áudio gerado no servidor com o **Piper** (voz pt-BR, grátis, sem conta) e guardado em `AudioCache`; se o servidor falhar, cai para o `expo-speech` |
+| `servidor` | ⬜ passo 6 — depende da API de voz escolhida | Tocaria o áudio gerado no servidor pela API de voz escolhida (**ainda não definida**) e guardado em `AudioCache`; se o servidor falhar, cai para o `expo-speech` |
 | `expo-speech` | ⬜ passo 6 — implementado como alternativa | Voz do próprio aparelho: grátis, sem conta, offline |
 
 **Para trocar de voz:** crie o arquivo do provedor em `src/services/voz/`, registre-o em `src/services/voz/index.ts` e mude `PROVEDOR_PADRAO`. Nenhuma tela muda.
 
-No servidor, a geração de áudio segue a mesma ideia (interface `SintetizadorVoz`, um arquivo por serviço: **Piper** é o primeiro; Google, Polly etc. entrariam como arquivos novos). O Piper só precisa estar instalado no computador que **gera** os áudios; depois de gerados, a API apenas serve os arquivos. Chaves de API ficam só em `server/.env`, **nunca no app**. Comparativo de opções e custos: [ADR-001](docs/decisoes/ADR-001-stack.md).
+Se a API de voz escolhida gerar áudio no servidor, a geração segue a mesma ideia (interface `SintetizadorVoz`, um arquivo por serviço). A **API de voz ainda não foi definida**; depois de gerados, os áudios ficam guardados e a API do AJAI apenas serve os arquivos. Chaves de API ficam só em `server/.env`, **nunca no app**. Comparativo de opções e custos: [ADR-001](docs/decisoes/ADR-001-stack.md).
 
 ---
 
@@ -322,7 +322,7 @@ O roteiro completo até a entrega, com prazo, critério de pronto e **um prompt 
 | # | Passo | Prazo |
 |---|---|---|
 | 0 | Instalar e validar o esqueleto | 05/11 |
-| 1 | Decisões de stack (SQLite, Fastify, Piper) — ✅ | 05/11 |
+| 1 | Decisões de stack (SQLite, Fastify, `ProvedorVoz`) — ✅ | 05/11 |
 | 2 | Criar o servidor (API) sobre o banco SQLite — ✅ | 07/11 |
 | 3 | Cadastro e login de verdade — ✅ | 08/11 |
 | 4 | Atividades e níveis vindos da API — ✅ | 09/11 |
@@ -396,9 +396,9 @@ Legenda: ✅ feito · 🟡 esqueleto/parcial (só no app, com dados em memória)
 - 🟡 Trocar/recuperar senha (APF 18): ✅ professor/admin trocam a própria; ✅ senha do aluno só pelo professor que criou a conta; ✅ senha provisória de professor pelo administrador/script. Faltam as telas no Figma
 
 ### Acessibilidade e conteúdo
-- 🟡 **Narração por voz (RNF04)** — a arquitetura trocável (`ProvedorVoz`) já existe, mas o único provedor é o `console` (o botão "Ouvir ajuda" só escreve no console). Decidido: **Piper como padrão** (áudios gerados no servidor e guardados em `AudioCache`) e **`expo-speech` implementado** como alternativa e reserva. Falta implementar os dois provedores e o gerador (passo 6).
+- 🟡 **Narração por voz (RNF04)** — a arquitetura trocável (`ProvedorVoz`) já existe, mas o único provedor é o `console` (o botão "Ouvir ajuda" só escreve no console). **A API de voz ainda NÃO foi definida** (opções no ADR-001 §2); o `expo-speech` será implementado como alternativa e reserva. Falta a equipe escolher a API e implementar os provedores (passo 6).
 
-  ⚠️ Conferir a licença da voz `pt_BR-faber-medium` e revisar na APF o `ServicoTTS`.
+  ⚠️ Ao escolher a API, conferir custo e licença da voz e revisar na APF o `ServicoTTS`.
 - ⬜ Banco real de atividades (letras, sílabas, palavras, frases, escrita, interpretação, cotidiano), validado com os profissionais da EJA
 - ⬜ O enum `TipoAtividade` do diagrama não tem tipos para **letra-som** (RF05) nem **cotidiano** (RF11): incluir ou explicar no documento que entram como `conteudo` de outros tipos
 - ⬜ Imagens das alternativas e da palavra em destaque (o Figma usa fotos, ex.: a casa em "Formar palavra"; o app usa ícones provisórios do `MaterialCommunityIcons` e ainda não mostra a imagem da palavra)
@@ -420,7 +420,7 @@ Legenda: ✅ feito · 🟡 esqueleto/parcial (só no app, com dados em memória)
 
 ### Documentação
 - ⬜ Atualizar a seção 15 (Prototipação) do PDF: ela diz que o protótipo tem 9 telas e que cadastro e nivelamento seriam feitos depois, mas o Figma já tem 15 telas, incluindo cadastro, nivelamento, formar palavra e ler frase
-- ⬜ Registrar no documento as decisões de stack (SQLite, API com Fastify, voz com Piper + `expo-speech`) e as colunas extras do esquema (`Atividade.ordemNivelamento`, `Atividade.textoApoio`, `AudioCache.provedor`, `Usuario.telefone`, `Usuario.nomeUsuario`, `Aluno.idCriador`)
+- ⬜ Registrar no documento as decisões de stack (SQLite, API com Fastify, voz com `ProvedorVoz` + `expo-speech`; API de voz a definir) e as colunas extras do esquema (`Atividade.ordemNivelamento`, `Atividade.textoApoio`, `AudioCache.provedor`, `Usuario.telefone`, `Usuario.nomeUsuario`, `Aluno.idCriador`)
 - ⬜ Manter o quadro Kanban (Trello) alinhado com esta lista
 
 ---

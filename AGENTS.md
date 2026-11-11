@@ -26,7 +26,7 @@ Fontes de verdade, nesta ordem:
 - **Banco: SQLite em arquivo** (`server/data/ajai.db`), já criado com as 13 tabelas e seed (ver [Banco de dados](#banco-de-dados-sqlite)). Decisão em `docs/decisoes/ADR-001-stack.md`.
 - **API:** Node.js + TypeScript com **Fastify** em `server/src/` (`npm run server:dev`). Validação de entrada com esquemas JSON em **toda** rota; erros sempre `{ erro: string }` em português (lance `ErroApi` de `server/src/erros.ts`). O app chama a API **só** por `src/services/api.ts` (`chamarApi`, token no cabeçalho, erros já em mensagem amigável); login, cadastro e senha vêm da API (passo 3); níveis, atividades e nivelamento também (passo 4, **sem gabarito**: a correção é do servidor); respostas, progressão e histórico também (passo 5: `POST /respostas`, `POST /nivelamento/concluir`, `GET /alunos/eu/progresso`). Só o painel do professor ainda lê `src/data/mock.ts` em memória até o passo 10. Tela que espera a API: `useCarregar` (`src/hooks/`) + componente `Carregando`. Rota que exige login: `preHandler: exigirLogin("PROFESSOR")` de `server/src/autenticacao.ts` (`req.user` = `{ idUsuario, perfil }`).
 - O servidor roda `.ts` direto no Node (type stripping): **sem `enum`/`namespace`** e imports relativos **com `.ts`** (ex.: `import { banco } from "../banco.ts"`). Rota nova = arquivo em `server/src/rotas/` registrado em `server/src/app.ts`. Typecheck do servidor: `npm run server:typecheck` (`npm run typecheck` faz app + servidor).
-- **Voz trocável**: o app usa a interface `ProvedorVoz` (`src/services/voz/`). Padrão previsto: **Piper** (áudio gerado no servidor); `expo-speech` como alternativa e reserva. Ver [Narração por voz](#narração-por-voz-provedorvoz).
+- **Voz trocável**: o app usa a interface `ProvedorVoz` (`src/services/voz/`). A **API de voz ainda não foi definida**; `expo-speech` como alternativa e reserva. Ver [Narração por voz](#narração-por-voz-provedorvoz).
 
 ## Arquitetura e onde colocar cada coisa
 
@@ -95,8 +95,8 @@ O app **não pode depender de uma API de voz específica**. Regras:
 - Telas e componentes só chamam `falar()` / `pararFala()` de `@/services/narracao`.
 - Quem fala é o provedor ativo de `src/services/voz/index.ts` (`PROVEDOR_PADRAO`). Cada provedor implementa `ProvedorVoz` (`nome`, `falar`, `parar`) em um arquivo próprio (`provedorExpoSpeech.ts`, `provedorServidor.ts`...).
 - **Trocar de voz = criar o provedor, registrá-lo em `index.ts` e mudar `PROVEDOR_PADRAO`.** Se uma troca exigir mexer em tela ou em `BotaoAudio`, a abstração foi violada: corrija o provedor, não a tela.
-- Provedores do app: `servidor` (padrão: toca áudio gerado com Piper) e `expo-speech` (alternativa e reserva quando o servidor falha). O Piper só roda no servidor/geração, nunca no celular.
-- No servidor, a mesma ideia: interface `SintetizadorVoz`, um arquivo por serviço (Piper primeiro; Google, Polly... se um dia forem necessários), escolhido por variável de ambiente; resultado em `AudioCache` (tabela, com a coluna `provedor`) e `server/storage/audio/`.
+- Provedores previstos no app: `servidor` (toca áudio gerado no servidor pela API de voz escolhida, **ainda não definida**) e `expo-speech` (alternativa e reserva quando o servidor falha).
+- No servidor, a mesma ideia: interface `SintetizadorVoz`, um arquivo por serviço (o da API escolhida), escolhido por variável de ambiente; resultado em `AudioCache` (tabela, com a coluna `provedor`) e `server/storage/audio/`.
 - Chaves de API só em `server/.env`, nunca no app (`EXPO_PUBLIC_*` vai para dentro do aplicativo e é público).
 
 ## Expo mudou — não confie na memória

@@ -138,7 +138,7 @@ export interface AudioCache {
   voz: string;
   velocidade: number;
   caminhoArquivo: string;
-  /** EXTRA (fora do diagrama): provedor que gerou o áudio, ex.: "google", "piper". */
+  /** EXTRA (fora do diagrama): provedor que gerou o áudio, ex.: "google", "polly". */
   provedor: string;
 }
 

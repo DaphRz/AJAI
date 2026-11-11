@@ -1,6 +1,6 @@
 # ADR-001 · Stack de dados, servidor e voz
 
-Data: 05/11/2026 · Situação: **decidido** (banco, API com Fastify, arquitetura e provedor de voz, login e contas, ícones, atividades sem gabarito no app, respostas e progressão no servidor)
+Data: 05/11/2026 · Situação: **decidido** (banco, API com Fastify, arquitetura de voz `ProvedorVoz` (a API de voz ainda **não** foi definida), login e contas, ícones, atividades sem gabarito no app, respostas e progressão no servidor)
 
 ## Contexto
 
@@ -19,15 +19,15 @@ Entrega final em 17/11/2026. O app (Expo SDK 58) só tem dados de demonstração
 - Extras em relação ao diagrama de classes (registrar na documentação final): `Atividade.ordemNivelamento`, `AudioCache.provedor` e, desde o passo 3, `Usuario.telefone`, `Usuario.email` opcional, `Usuario.nomeUsuario` e `Aluno.idCriador` (migrações 002 e 003, ver §4) e, desde o passo 4, `Atividade.textoApoio` (migração 004, ver §6).
 - Migração que precisa **recriar** uma tabela começa com a linha `-- ajai: sem-chaves-estrangeiras`: o `migrar.mjs` desliga as chaves estrangeiras só durante ela e confere tudo (`PRAGMA foreign_key_check`) antes do COMMIT.
 
-### 2. Voz: interface `ProvedorVoz`, padrão **Piper**, `expo-speech` também implementado — **DECIDIDO**
+### 2. Voz: interface `ProvedorVoz`, `expo-speech` também implementado; **API de voz ainda NÃO definida**
 
 - Interface `ProvedorVoz` (VoiceProvider) em `src/services/voz/provedor.ts`; o app chama só `falar()`/`pararFala()` de `services/narracao.ts`.
 - Trocar de `expo-speech` para uma API (ou o contrário) = mudar `PROVEDOR_PADRAO` em `src/services/voz/index.ts`.
-- **Provedor padrão: Piper** (código aberto, grátis, sem conta nem chave), rodando no computador que serve a API. Os áudios das atividades são gerados uma vez e guardados; o app toca os arquivos pelo provedor `servidor`.
+- **A API de voz (provedor padrão) ainda não foi definida** (11/11/2026: a escolha anterior foi desfeita). Opções no comparativo abaixo. Se a API escolhida gerar áudio no servidor, os áudios das atividades são gerados uma vez e guardados; o app toca os arquivos pelo provedor `servidor`.
 - **`expo-speech` também é implementado**, como alternativa selecionável e como **reserva**: se o servidor não responder (sem rede, sem áudio ainda), o app fala com a voz do aparelho. Para textos que mudam ("Olá, Maria!") também serve.
 - Para trocar o padrão: mudar `PROVEDOR_PADRAO` em `src/services/voz/index.ts` (`"servidor"` ou `"expo-speech"`).
-- Pontos a verificar na implementação: o repositório e a licença atuais do Piper (o projeto original foi migrado; confira o oficial) e a **licença da voz `pt_BR-faber-medium`**, antes de citar na apresentação.
-- No servidor, a geração de áudio seguirá a mesma ideia: uma interface `SintetizadorVoz` (texto + voz + velocidade → arquivo de áudio) com um arquivo por serviço (Google, Polly, Piper...), e o resultado guardado em `AudioCache` (tabela) + `server/storage/audio/` (arquivos, fora do git).
+- Ao escolher a API: conferir custo, necessidade de conta/chave e a **licença da voz pt-BR**, antes de citar na apresentação.
+- No servidor, a geração de áudio seguirá a mesma ideia: uma interface `SintetizadorVoz` (texto + voz + velocidade → arquivo de áudio) com um arquivo por serviço (o da API escolhida), e o resultado guardado em `AudioCache` (tabela) + `server/storage/audio/` (arquivos, fora do git).
 - `AudioCache.provedor` evita misturar áudios de vozes diferentes ao trocar de serviço.
 
 ### 3. API: Node.js + TypeScript com **Fastify** — **DECIDIDO** (implementado no passo 2, 05/11)
@@ -83,12 +83,11 @@ Entrega final em 17/11/2026. O app (Expo SDK 58) só tem dados de demonstração
 | Opção | Custo | Conta/chave | Observações |
 |---|---|---|---|
 | `expo-speech` (voz do aparelho) | Grátis | Não | Alternativa e reserva offline. Qualidade depende da voz pt-BR instalada no celular |
-| **Piper (padrão)** | Grátis | Não | Código aberto, roda no servidor. Existe voz pt-BR (`pt_BR-faber-medium`). Gera os áudios uma vez; **ouvir a qualidade e conferir a licença da voz** antes de fechar |
 | Google Cloud TTS | Standard/WaveNet: 4 mi caracteres grátis/mês, depois US$ 4 por 1 mi | Sim (cartão) | Confirmar vozes pt-BR na lista oficial |
 | Amazon Polly | Standard: 5 mi caracteres grátis/mês, depois US$ 4 por 1 mi | Sim (cartão) | Permite guardar e reutilizar o áudio gerado |
 | ElevenLabs | Grátis ≈ 10 mil caracteres; pago a partir de US$ 6/mês | Sim | Voz muito natural; cota grátis pequena |
 
 ## Consequências para a documentação
 
-- Registrar no PDF: SQLite local como banco, arquitetura `ProvedorVoz`, e o provedor final escolhido.
-- APF: como a geração de áudio no servidor (Piper) continua existindo como serviço de síntese, a equipe deve decidir se `ServicoTTS` segue contado como AIE; só sairia se o app usasse apenas `expo-speech`.
+- Registrar no PDF: SQLite local como banco, arquitetura `ProvedorVoz`, e a API de voz quando for escolhida.
+- APF: se a API de voz escolhida gerar áudio no servidor, a equipe deve decidir se `ServicoTTS` segue contado como AIE; só sairia se o app usasse apenas `expo-speech`.
