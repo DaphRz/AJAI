@@ -1,5 +1,5 @@
 // Aluno › Minha conta (sem tela no Figma; a desenhar no passo 8): dados e sair.
-// O aluno NÃO troca a própria senha: só o professor que criou a conta (decisão de 08/11).
+// O aluno NÃO troca a própria senha: só o professor que criou a conta.
 // As preferências de voz e letra entram aqui ou na home no passo 6.
 import { router } from "expo-router";
 import { Botao, BotaoAudio, Cartao, Corpo, Logo, Subtitulo, Tela, Titulo } from "@/components";

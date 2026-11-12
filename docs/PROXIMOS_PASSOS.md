@@ -10,13 +10,13 @@ Roteiro do que falta até a entrega, **na ordem em que deve ser feito**. Cada pa
 >
 > **Todos desenvolvem.** Os papéis da documentação (gerente, UX/UI, testes...) são formais; aqui os passos não têm dono fixo. Combine no grupo quem pega cada um e mova o cartão no Kanban.
 >
-> **Já decidido** ([ADR-001](decisoes/ADR-001-stack.md)): banco = **SQLite em arquivo dentro do projeto** (`server/data/ajai.db`, criado com `npm run db:reset`) e voz = o app só usa a interface **`ProvedorVoz`**; a **API de voz ainda não foi definida** e o `expo-speech` fica implementado como alternativa e reserva, com troca em uma linha.
+> **Stack:** banco = **SQLite em arquivo dentro do projeto** (`server/data/ajai.db`, criado com `npm run db:reset`) e voz = o app só usa a interface **`ProvedorVoz`**; a **API de voz ainda não foi definida** e o `expo-speech` fica implementado como alternativa e reserva, com troca em uma linha.
 
 ## Regras que valem para TODO prompt
 
-O `CLAUDE.md` da raiz carrega automaticamente `AGENTS.md`, o ADR-001 e este arquivo a cada sessão do Claude Code. Por isso, em qualquer passo:
+O `CLAUDE.md` da raiz carrega automaticamente `AGENTS.md` e este arquivo a cada sessão do Claude Code. Por isso, em qualquer passo:
 
-1. **Identifique o passo** em que a tarefa se encaixa e siga o critério "Pronto quando". Se a tarefa contrariar uma decisão do ADR-001 (SQLite, Fastify, `ProvedorVoz`), pare e avise antes de mudar.
+1. **Identifique o passo** em que a tarefa se encaixa e siga o critério "Pronto quando". Se a tarefa contrariar a stack (SQLite, Fastify, `ProvedorVoz`), pare e avise antes de mudar.
 2. **Cobertura do app inteiro:** a tarefa vale para aluno **e** professor **e** administrador, quando se aplicar. Confira a tabela "Telas do Figma × código" do README para não esquecer nenhuma tela.
 3. **Regras de acessibilidade do AGENTS.md** em toda tela nova ou alterada (botão de áudio, texto nos botões, fonte e toque mínimos, mensagens positivas).
 4. **Banco:** mudou estrutura → migração nova (`npm run db:migrate`); mudou dados de exemplo → `src/data/mock.ts` + `npm run db:seed`; atualize `src/domain/modelos.ts`.
@@ -63,19 +63,19 @@ Sprints da documentação: **Sprint 3** vai até 10/11 (passos 0–7), **Sprint 
 
 ## ✅ Passo 1 — Decisões de stack
 
-**Feito em 05/11.** Banco = SQLite em arquivo; API = **Fastify** (Node.js + TypeScript); voz = interface `ProvedorVoz` com `expo-speech` como alternativa e reserva (a API de voz ainda não foi definida). Tudo registrado em [`decisoes/ADR-001-stack.md`](decisoes/ADR-001-stack.md).
+**Feito em 05/11.** Banco = SQLite em arquivo; API = **Fastify** (Node.js + TypeScript); voz = interface `ProvedorVoz` com `expo-speech` como alternativa e reserva (a API de voz ainda não foi definida).
 
 ---
 
 ## ✅ Passo 2 — Criar o servidor (API) com Fastify sobre o banco SQLite
 
-**Feito em 05/11.** API em `server/src/` com **Fastify 5** (`@fastify/cors`, `@fastify/rate-limit`; `@fastify/jwt` instalado para o passo 3). `banco.ts` abre o mesmo arquivo dos scripts `db:*` (`caminhoBanco` de `server/db/conectar.mjs`, variável `AJAI_DB`) com `node:sqlite`, `PRAGMA foreign_keys = ON`, e avisa para rodar `db:reset` se o arquivo não existir. `GET /health` confere o banco (503 com mensagem amigável se não abrir). Erros sempre `{ erro }` em português (`erros.ts`, classe `ErroApi`), inclusive 404, JSON inválido/validação (400) e limite de requisições (429). Scripts: `server:dev` (Node roda o `.ts` direto com `--watch`, sem `tsx`), `server:build` (`tsc` → `server/dist/`, fora do git), `server:start`, `server:typecheck`; `npm run typecheck` agora checa app + servidor. `server/.env.example` criado; README ganhou "Subir o servidor" e "Como o app encontra a API" (`EXPO_PUBLIC_API_URL`, IP da Wi-Fi no celular). Nenhuma migração nova; telas do app não mudaram. Observações: servidor só com TypeScript "apagável" (sem `enum`, imports com `.ts`); decisões no ADR-001 §3. Testado no Node 22.14.
+**Feito em 05/11.** API em `server/src/` com **Fastify 5** (`@fastify/cors`, `@fastify/rate-limit`; `@fastify/jwt` instalado para o passo 3). `banco.ts` abre o mesmo arquivo dos scripts `db:*` (`caminhoBanco` de `server/db/conectar.mjs`, variável `AJAI_DB`) com `node:sqlite`, `PRAGMA foreign_keys = ON`, e avisa para rodar `db:reset` se o arquivo não existir. `GET /health` confere o banco (503 com mensagem amigável se não abrir). Erros sempre `{ erro }` em português (`erros.ts`, classe `ErroApi`), inclusive 404, JSON inválido/validação (400) e limite de requisições (429). Scripts: `server:dev` (Node roda o `.ts` direto com `--watch`, sem `tsx`), `server:build` (`tsc` → `server/dist/`, fora do git), `server:start`, `server:typecheck`; `npm run typecheck` agora checa app + servidor. `server/.env.example` criado; README ganhou "Subir o servidor" e "Como o app encontra a API" (`EXPO_PUBLIC_API_URL`, IP da Wi-Fi no celular). Nenhuma migração nova; telas do app não mudaram. Observações: servidor só com TypeScript "apagável" (sem `enum`, imports com `.ts`). Testado no Node 22.14.
 
 ---
 
 ## ✅ Passo 3 — Cadastro e login de verdade (RF01, RF02)
 
-**Feito em 08/11.** Login, cadastro e senha passam pela API, com senha em **scrypt** (`server/db/senha.mjs`, sem módulo nativo) e token **JWT** de 30 dias guardado no `expo-secure-store` (no navegador, `localStorage`). A sessão é restaurada ao abrir o app, com a splash, e funciona sem internet usando a cópia guardada. O "modo demonstração" saiu e o seed grava o hash da senha `demo1234` para todos, incluindo um administrador (`admin@ajai.app`). Modelo de contas decidido pela equipe:
+**Feito em 08/11.** Login, cadastro e senha passam pela API, com senha em **scrypt** (`server/db/senha.mjs`, sem módulo nativo) e token **JWT** de 30 dias guardado no `expo-secure-store` (no navegador, `localStorage`). A sessão é restaurada ao abrir o app, com a splash, e funciona sem internet usando a cópia guardada. O "modo demonstração" saiu e o seed grava o hash da senha `demo1234` para todos, incluindo um administrador (`admin@ajai.app`). Modelo de contas:
 - só o **professor/responsável** se cadastra sozinho, em `/cadastro` (nome, e-mail, telefone, senha);
 - o **aluno** é cadastrado **pelo professor** (`/professor/contas/nova`), entra na turma dele, **não tem e-mail nem telefone** e entra com **nome de usuário** (`maria.silva`);
 - o aluno **não troca a própria senha**: só o professor que criou a conta (`Aluno.idCriador`) muda;
@@ -90,7 +90,7 @@ Sprints da documentação: **Sprint 3** vai até 10/11 (passos 0–7), **Sprint 
 
 **App:** `services/api.ts` (endereço por `EXPO_PUBLIC_API_URL` ou IP do Metro), `services/armazenamento.ts`, `services/contasAlunos.ts`; telas `/esqueci-senha`, `/aluno/conta`, `/professor/contas` (lista, cadastrar, mudar senha), `/professor/senha`, `/admin`. Os layouts protegidos mandam cada perfil para a sua área.
 
-**Testes:** login e cadastro testados no Expo Go pela equipe. O modelo de contas de aluno foi testado pela API (`app.inject`), junto com lint e typecheck (app e servidor). Decisões no ADR-001 §4 e §5 (ícones).
+**Testes:** login e cadastro testados no Expo Go pela equipe. O modelo de contas de aluno foi testado pela API (`app.inject`), junto com lint e typecheck (app e servidor).
 
 **Observações:**
 - o painel de Acompanhamento ainda lê `mock.ts`, então o aluno novo só aparece em Conta › Contas dos alunos até o passo 10;
@@ -149,7 +149,7 @@ O "Ouvir instrução" também lê as opções. Enquanto o servidor corrige, a te
 - na tela "Formar palavra", a **foto** da palavra (a casa) ainda não aparece: vem com as imagens do passo 8, usando `Atividade.urlImagem`, que já existe no banco;
 - respostas e subida de nível ficam só na memória do app até o passo 5: ao reabrir o app, o aluno novo refaz o nivelamento;
 - `POST /atividades/:id/corrigir` é provisória e sai no passo 5;
-- PALAVRA usa as alternativas como peças (várias `correta`), o que muda a validação do passo 11 (ADR-001 §6).
+- PALAVRA usa as alternativas como peças (várias `correta`), o que muda a validação do passo 11.
 
 ---
 
@@ -178,7 +178,7 @@ O "Ouvir instrução" também lê as opções. Enquanto o servidor corrige, a te
 - lint, typecheck (app e servidor), `npx expo export -p web` e `npm run db:reset` passam.
 
 **Observações:**
-- a **regra de progressão continua provisória** e precisa ser confirmada pela equipe: últimas 5 respostas da etapa ≥ `criterioAcerto`, conferida só depois de um acerto numa atividade da etapa atual. Se mudar, mude `server/src/progressao.ts`, os testes e o README. Decisões no ADR-001 §7;
+- a **regra de progressão continua provisória** e precisa ser confirmada pela equipe: últimas 5 respostas da etapa ≥ `criterioAcerto`, conferida só depois de um acerto numa atividade da etapa atual. Se mudar, mude `server/src/progressao.ts`, os testes e o README;
 - pelos dados de exemplo, Ana e Clara sobem de etapa logo no primeiro acerto (bom para a demo);
 - o painel do professor e a tela de métricas do aluno ainda leem as respostas do mock, então as respostas novas só aparecem lá no passo 10.
 
@@ -188,7 +188,7 @@ O "Ouvir instrução" também lê as opções. Enquanto o servidor corrige, a te
 
 **Prazo:** 10/11 · **Depende de:** passos 1 e 2
 
-**Pronto quando:** todo botão "Ouvir ajuda / Ouvir instrução" fala em português do Brasil com a **API de voz escolhida pela equipe** (ainda não definida; opções no ADR-001 §2) e o `expo-speech` funcionando como alternativa e como reserva; o aluno pode mudar a velocidade da voz e o tamanho da letra, a preferência fica salva, e **trocar o provedor é mudar uma linha** (`PROVEDOR_PADRAO` em `src/services/voz/index.ts`).
+**Pronto quando:** todo botão "Ouvir ajuda / Ouvir instrução" fala em português do Brasil com a **API de voz escolhida pela equipe** (ainda não definida) e o `expo-speech` funcionando como alternativa e como reserva; o aluno pode mudar a velocidade da voz e o tamanho da letra, a preferência fica salva, e **trocar o provedor é mudar uma linha** (`PROVEDOR_PADRAO` em `src/services/voz/index.ts`).
 
 Arquitetura (a interface e o provedor `console` já existem; faltam os demais):
 
@@ -204,10 +204,10 @@ Servidor: GET/POST /narracao { texto, voz, velocidade } ──► SintetizadorVo
 
 ```text
 Leia AGENTS.md, src/services/narracao.ts, src/services/voz/ (provedor.ts, index.ts,
-provedorConsole.ts), src/components/BotaoAudio.tsx, docs/decisoes/ADR-001-stack.md,
+provedorConsole.ts), src/components/BotaoAudio.tsx,
 server/db/migrations/001_esquema_inicial.sql (tabela AudioCache) e src/domain/modelos.ts.
 
-API de voz escolhida pela equipe: <preencher; opções e custos no ADR-001 §2>.
+API de voz escolhida pela equipe: <preencher>.
 expo-speech também deve ser implementado.
 NÃO mude a interface ProvedorVoz nem as telas que chamam falar()/pararFala().
 
@@ -247,7 +247,7 @@ B) App:
     tamanhoFonte via contexto, sem espalhar ifs. Acesso pela home do aluno.
 11. Teste: troque o provedor com usarProvedor("console") e confirme que falar() chega
     nele; teste o provedorServidor com a rede falhando e confirme que cai no expo-speech.
-Atualize README (Pendências) e ADR-001 com o que foi feito.
+Atualize README (Pendências) com o que foi feito.
 ```
 ---
 
@@ -400,7 +400,7 @@ B) Telas simples no próprio app em /admin (lista de atividades por nível, form
    com enunciado, tipo, conteúdo, 3 alternativas e qual é a correta, inativar).
 "Excluir" nunca apaga: muda status para INATIVA. Valide que toda atividade de múltipla
 escolha tem exatamente uma alternativa correta (PALAVRA usa as alternativas como peças
-e ESCRITA não tem alternativas: ver ADR-001 §6). Inclua o campo textoApoio no formulário.
+e ESCRITA não tem alternativas). Inclua o campo textoApoio no formulário.
 Inclua também IncluirNivel/EditarNivel (nome, descrição, ordem, criterioAcerto) e a
 listagem de atividades por nível. O administrador entra pelo login (passo 3) e só ele
 acessa essas rotas/telas.
@@ -528,7 +528,7 @@ Leia README.md, AGENTS.md, docs/** e o código. Compare com a documentação do 
 (PDF) e a planilha APF_AJAI.xlsx que vou anexar.
 Liste todas as diferenças entre o que está documentado e o que foi implementado:
 - seção 15 (Prototipação): o PDF diz 9 telas; atualizar com a lista real do Figma;
-- stack e arquitetura definidas (ADR-001), incluindo a escolha da voz;
+- stack e arquitetura definidas, incluindo a escolha da voz;
 - requisitos RF01–RF22 e RNF01–RNF15: atendido / parcial / não atendido, com a tela
   ou o arquivo que comprova;
 - diagrama de classes: campos/enums que mudaram (ex.: TipoAtividade);
@@ -566,9 +566,3 @@ Prepare a apresentação final do AJAI (<N> minutos no total, 5 integrantes):
    certo, celular carregado, vídeo gravado de backup).
 4. Prováveis perguntas da banca e respostas curtas.
 ```
-
----
-
-## Depois da entrega (trabalhos futuros)
-
-Fora do escopo do MVP pela documentação, mas bons próximos passos se o projeto continuar: gamificação simples, recomendação de atividades por dificuldade, modo offline com sincronização, publicação nas lojas com EAS, versão web para o professor, validação pedagógica com uma turma real da EJA.

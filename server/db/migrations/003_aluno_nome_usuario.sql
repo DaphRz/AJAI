@@ -1,5 +1,5 @@
 -- ajai: sem-chaves-estrangeiras
--- AJAI · 003 · Aluno entra com NOME DE USUÁRIO e é criado pelo professor (passo 3, decisão de 08/11)
+-- AJAI · 003 · Aluno entra com NOME DE USUÁRIO e é criado pelo professor (passo 3)
 -- - Usuario.nomeUsuario (ex.: maria.silva): obrigatório para ALUNO, que NÃO tem e-mail nem telefone.
 --   Professor e administrador continuam com e-mail e/ou telefone, sem nome de usuário.
 -- - Aluno.idCriador: professor que criou a conta. Só ele cadastra e muda a senha desse aluno.

@@ -127,7 +127,7 @@ O login é de verdade desde o passo 3: **o servidor precisa estar rodando** (pas
 - **Senha do professor/administrador:** Conta › Trocar minha senha (administrador: na tela inicial dele). Esqueceu? O administrador gera uma provisória (`POST /admin/usuarios/:id/senha-provisoria`), ou, no computador do servidor, `npm run usuario:senha -- rafael@ajai.app`.
 - O login fica guardado no aparelho (`expo-secure-store`): fechar e abrir o app volta logado. Para sair: aluno em **Minha conta › Sair**; professor em **Conta › Sair**.
 
-Rotas da API: `POST /auth/cadastro` (professor), `POST /auth/login`, `GET /auth/eu`, `PATCH /auth/senha` (professor/admin), `GET`/`POST /professor/alunos`, `PATCH /professor/alunos/:id/senha`, `POST /admin/usuarios/:id/senha-provisoria` (detalhes em [ADR-001 §4](docs/decisoes/ADR-001-stack.md)). Atividades (passo 4, qualquer perfil logado): `GET /niveis`, `GET /niveis/:id/atividades`, `GET /atividades/:id`, `GET /nivelamento` (sem o gabarito) e `POST /atividades/:id/corrigir` (só perguntas do nivelamento; ver [ADR-001 §6](docs/decisoes/ADR-001-stack.md)). Respostas e progresso (passo 5, só aluno, sobre ele mesmo): `POST /respostas`, `POST /nivelamento/concluir` e `GET /alunos/eu/progresso` (ver [ADR-001 §7](docs/decisoes/ADR-001-stack.md)).
+Rotas da API: `POST /auth/cadastro` (professor), `POST /auth/login`, `GET /auth/eu`, `PATCH /auth/senha` (professor/admin), `GET`/`POST /professor/alunos`, `PATCH /professor/alunos/:id/senha`, `POST /admin/usuarios/:id/senha-provisoria`. Atividades (passo 4, qualquer perfil logado): `GET /niveis`, `GET /niveis/:id/atividades`, `GET /atividades/:id`, `GET /nivelamento` (sem o gabarito) e `POST /atividades/:id/corrigir` (só perguntas do nivelamento). Respostas e progresso (passo 5, só aluno, sobre ele mesmo): `POST /respostas`, `POST /nivelamento/concluir` e `GET /alunos/eu/progresso`.
 
 **Testes do servidor:** `npm test` (ou `npm run server:test`) roda os testes com o executor nativo do Node (`node --test`, sem instalar nada): regras de progressão (`server/src/progressao.test.ts`) e rotas de respostas/nivelamento/progresso (`server/src/rotas/progresso.test.ts`, num banco temporário: o seu `ajai.db` não é tocado).
 
@@ -158,7 +158,7 @@ npm run usuario:senha -- <e-mail ou telefone>   # senha provisória de professor
 
 ## Banco de dados (SQLite)
 
-Decisão registrada em [`docs/decisoes/ADR-001-stack.md`](docs/decisoes/ADR-001-stack.md): **SQLite em um arquivo dentro do projeto**, sem servidor de banco, sem conta e sem senha.
+**SQLite em um arquivo dentro do projeto**, sem servidor de banco, sem conta e sem senha.
 
 | O quê | Onde | Vai para o git? |
 |---|---|---|
@@ -245,7 +245,7 @@ O app **não depende de nenhuma API de voz específica**. Telas e componentes ch
 
 **Para trocar de voz:** crie o arquivo do provedor em `src/services/voz/`, registre-o em `src/services/voz/index.ts` e mude `PROVEDOR_PADRAO`. Nenhuma tela muda.
 
-Se a API de voz escolhida gerar áudio no servidor, a geração segue a mesma ideia (interface `SintetizadorVoz`, um arquivo por serviço). A **API de voz ainda não foi definida**; depois de gerados, os áudios ficam guardados e a API do AJAI apenas serve os arquivos. Chaves de API ficam só em `server/.env`, **nunca no app**. Comparativo de opções e custos: [ADR-001](docs/decisoes/ADR-001-stack.md).
+Se a API de voz escolhida gerar áudio no servidor, a geração segue a mesma ideia (interface `SintetizadorVoz`, um arquivo por serviço). A **API de voz ainda não foi definida**; depois de gerados, os áudios ficam guardados e a API do AJAI apenas serve os arquivos. Chaves de API ficam só em `server/.env`, **nunca no app**.
 
 ---
 
@@ -292,7 +292,6 @@ server/
 docs/
   diagrama-classes.png
   PROXIMOS_PASSOS.md      Roteiro até a entrega, com prompts
-  decisoes/ADR-001-stack.md  Decisões de banco, servidor e voz
 ```
 
 ### Telas do Figma × código
@@ -377,7 +376,7 @@ Legenda: ✅ feito · 🟡 esqueleto/parcial (só no app, com dados em memória)
 - ⬜ Documentação final e preparação da apresentação (entrega **17/11**)
 
 ### Backend e dados (bloqueia quase tudo acima)
-- ✅ **Banco decidido: SQLite em arquivo** (`server/data/ajai.db`), ver [ADR-001](docs/decisoes/ADR-001-stack.md)
+- ✅ **Banco decidido: SQLite em arquivo** (`server/data/ajai.db`)
 - ✅ Tabelas do diagrama de classes criadas (Usuario, Aluno, Professor, Administrador, Turma, Matricula, Nivel, Atividade, Alternativa, AudioCache, Resposta, DesempenhoConteudo, HistoricoNivel) + dados iniciais
 - ✅ **Servidor da API criado** com Fastify em `server/src/` (`npm run server:dev`, `GET /health`, erros padronizados em `{ erro }`, CORS e limite de requisições). `@fastify/jwt` já instalado, registrado no passo 3
 - ⬜ API para as funções contadas na APF (Incluir/Editar/Excluir/Listar/Visualizar de cada módulo)
@@ -396,7 +395,7 @@ Legenda: ✅ feito · 🟡 esqueleto/parcial (só no app, com dados em memória)
 - 🟡 Trocar/recuperar senha (APF 18): ✅ professor/admin trocam a própria; ✅ senha do aluno só pelo professor que criou a conta; ✅ senha provisória de professor pelo administrador/script. Faltam as telas no Figma
 
 ### Acessibilidade e conteúdo
-- 🟡 **Narração por voz (RNF04)** — a arquitetura trocável (`ProvedorVoz`) já existe, mas o único provedor é o `console` (o botão "Ouvir ajuda" só escreve no console). **A API de voz ainda NÃO foi definida** (opções no ADR-001 §2); o `expo-speech` será implementado como alternativa e reserva. Falta a equipe escolher a API e implementar os provedores (passo 6).
+- 🟡 **Narração por voz (RNF04)** — a arquitetura trocável (`ProvedorVoz`) já existe, mas o único provedor é o `console` (o botão "Ouvir ajuda" só escreve no console). **A API de voz ainda NÃO foi definida**; o `expo-speech` será implementado como alternativa e reserva. Falta a equipe escolher a API e implementar os provedores (passo 6).
 
   ⚠️ Ao escolher a API, conferir custo e licença da voz e revisar na APF o `ServicoTTS`.
 - ⬜ Banco real de atividades (letras, sílabas, palavras, frases, escrita, interpretação, cotidiano), validado com os profissionais da EJA

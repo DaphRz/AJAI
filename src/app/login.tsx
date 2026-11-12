@@ -1,5 +1,5 @@
 // Figma: "AJAI · Login"  |  RF02 – Autenticação e acesso
-// Diferenças do Figma (decisão da equipe, 08/11): sem "Quem você é?" (o perfil vem da conta) e
+// Diferenças do Figma: sem "Quem você é?" (o perfil vem da conta) e
 // sem "Ouvir ajuda" nas telas de login e cadastro. Aluno entra com nome de usuário (ex.: maria.silva);
 // professor/responsável e administrador, com e-mail ou telefone.
 import { router } from "expo-router";

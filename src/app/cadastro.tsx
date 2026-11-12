@@ -1,7 +1,7 @@
 // Figma: "AJAI · Cadastro de professor ou responsável"  |  RF01
 // Único cadastro público: o ALUNO é cadastrado pelo professor, dentro da conta dele
 // (/professor/contas/nova). Campos do Figma: Nome completo, E-mail, Telefone e Senha.
-// Sem "Ouvir ajuda" nas telas de login e cadastro (decisão da equipe, 08/11).
+// Sem "Ouvir ajuda" nas telas de login e cadastro.
 import { router } from "expo-router";
 import { useState } from "react";
 import { Aviso, Botao, Campo, Logo, Subtitulo, Tela, Titulo } from "@/components";
