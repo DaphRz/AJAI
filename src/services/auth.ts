@@ -79,6 +79,12 @@ export function sugerirNomeUsuario(nome: string): string {
   return `${partes[0]}.${partes[partes.length - 1]}`;
 }
 
+/** Usuario.EditarDados (passo 8): muda o próprio nome. Devolve o usuário novo (passe para entrar()). */
+export async function editarMeuNome(nome: string): Promise<UsuarioSessao> {
+  const { usuario } = await chamarApi<{ usuario: UsuarioSessao }>("/auth/eu", { metodo: "PATCH", corpo: { nome: nome.trim() } });
+  return usuario;
+}
+
 /** Pergunta de novo ao servidor como está a conta (botão "Verificar de novo" da tela de espera). */
 export async function verificarConta(): Promise<UsuarioSessao> {
   const { usuario } = await chamarApi<{ usuario: UsuarioSessao }>("/auth/eu");

@@ -1,7 +1,7 @@
 // "Meus alunos" do acompanhante (Passo 3.1): convidar aluno pelo usuário, e-mail ou telefone,
 // ver a situação de cada convite e desfazer. Usado em /professor/alunos e /responsavel.
 // O nome do aluno só aparece depois que ele aceita (o servidor não manda antes).
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import type { StatusVinculo } from "@/domain/modelos";
 import { useCarregar } from "@/hooks/useCarregar";
@@ -18,14 +18,24 @@ const rotuloStatus: Record<StatusVinculo, string> = {
   RECUSADO: "O aluno recusou o convite",
 };
 
-export function MeusAlunos() {
+interface Props {
+  /** Conteúdo extra embaixo de cada aluno que ACEITOU (ex.: recomendações do responsável). */
+  extraDoAluno?: (vinculo: VinculoDoAcompanhante) => ReactNode;
+  /** Chamado depois de convidar ou desfazer (a tela pode recarregar o que depende da lista). */
+  aoMudar?: () => void;
+}
+
+export function MeusAlunos({ extraDoAluno, aoMudar }: Props = {}) {
   const [versao, setVersao] = useState(0);
   const estado = useCarregar(listarMeusAlunos, versao);
   const [aluno, setAluno] = useState("");
   const [aviso, setAviso] = useState<{ texto: string; tipo: "atencao" | "sucesso" } | null>(null);
   const [enviando, setEnviando] = useState(false);
 
-  const recarregar = () => setVersao((v) => v + 1);
+  const recarregar = () => {
+    setVersao((v) => v + 1);
+    aoMudar?.();
+  };
 
   async function aoConvidar() {
     setAviso(null);
@@ -104,6 +114,7 @@ export function MeusAlunos() {
             <View style={styles.linha}>
               <Text style={[styles.status, v.status === "ACEITO" && { color: cores.sucesso }]}>{rotuloStatus[v.status]}</Text>
             </View>
+            {v.status === "ACEITO" && extraDoAluno ? extraDoAluno(v) : null}
             <Botao
               titulo={v.status === "PENDENTE" ? "Cancelar convite" : "Desfazer"}
               variante="secundario"

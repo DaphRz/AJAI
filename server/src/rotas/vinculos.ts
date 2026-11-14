@@ -20,6 +20,13 @@ import { limiteSenha } from "./auth.ts";
 /** Quantas pessoas um responsável pode acompanhar (convites pendentes contam). */
 export const LIMITE_RESPONSAVEL = 2;
 
+/** Tira o aluno das turmas do professor (vínculo desfeito = sai das turmas dele; passo 8). */
+function tirarDasTurmas(idAluno: number, idAcompanhante: number): void {
+  banco()
+    .prepare("DELETE FROM Matricula WHERE idAluno = ? AND idTurma IN (SELECT idTurma FROM Turma WHERE idProfessor = ?)")
+    .run(idAluno, idAcompanhante);
+}
+
 /** true se o acompanhante tem vínculo ACEITO com o aluno. Use em toda rota que mostrar dado de aluno. */
 export function temVinculoAceito(idAcompanhante: number, idAluno: number): boolean {
   return !!banco()
@@ -193,8 +200,14 @@ export async function rotasVinculos(app: FastifyInstance): Promise<void> {
       schema: { params: paramsId, response: { 200: respostaMensagem, ...errosComuns } },
     },
     async (req) => {
-      const r = banco().prepare("DELETE FROM Vinculo WHERE idVinculo = ? AND idAcompanhante = ?").run(req.params.id, req.user.idUsuario);
-      if (r.changes === 0) throw new ErroApi(404, "Não encontramos este acompanhamento.");
+      const vinculo = banco()
+        .prepare("SELECT idAluno FROM Vinculo WHERE idVinculo = ? AND idAcompanhante = ?")
+        .get(req.params.id, req.user.idUsuario) as { idAluno: number } | undefined;
+      if (!vinculo) throw new ErroApi(404, "Não encontramos este acompanhamento.");
+      emTransacao(() => {
+        banco().prepare("DELETE FROM Vinculo WHERE idVinculo = ?").run(req.params.id);
+        tirarDasTurmas(vinculo.idAluno, req.user.idUsuario);
+      });
       return { mensagem: "Pronto. Você não acompanha mais esta pessoa." };
     },
   );
@@ -279,10 +292,14 @@ export async function rotasVinculos(app: FastifyInstance): Promise<void> {
       schema: { params: paramsId, response: { 200: respostaMensagem, ...errosComuns } },
     },
     async (req) => {
-      const r = banco()
-        .prepare("DELETE FROM Vinculo WHERE idVinculo = ? AND idAluno = ? AND status = 'ACEITO'")
-        .run(req.params.id, req.user.idUsuario);
-      if (r.changes === 0) throw new ErroApi(404, "Não encontramos este acompanhamento.");
+      const vinculo = banco()
+        .prepare("SELECT idAcompanhante FROM Vinculo WHERE idVinculo = ? AND idAluno = ? AND status = 'ACEITO'")
+        .get(req.params.id, req.user.idUsuario) as { idAcompanhante: number } | undefined;
+      if (!vinculo) throw new ErroApi(404, "Não encontramos este acompanhamento.");
+      emTransacao(() => {
+        banco().prepare("DELETE FROM Vinculo WHERE idVinculo = ?").run(req.params.id);
+        tirarDasTurmas(req.user.idUsuario, vinculo.idAcompanhante);
+      });
       return { mensagem: "Pronto. Essa pessoa não acompanha mais você." };
     },
   );

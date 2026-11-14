@@ -22,8 +22,14 @@ function mensagemDeFalha(erro: unknown): string {
  * Carrega dados assíncronos (da API) para uma tela, sem biblioteca.
  * `chave`: quando muda, carrega de novo (ex.: o id da atividade).
  * Uso: const { dados, carregando, erro, tentarDeNovo } = useCarregar(() => visualizarAtividade(id), id);
+ * `manterAnterior`: enquanto recarrega, continua mostrando os dados de antes (sem piscar
+ * "Carregando..." ao voltar para a aba ou trocar o período).
  */
-export function useCarregar<T>(carregar: () => Promise<T>, chave: string | number = ""): Carregamento<T> {
+export function useCarregar<T>(
+  carregar: () => Promise<T>,
+  chave: string | number = "",
+  opcoes: { manterAnterior?: boolean } = {},
+): Carregamento<T> {
   const [tentativa, setTentativa] = useState(0);
   const pedido = `${chave}#${tentativa}`;
   const [resultado, setResultado] = useState<{ pedido: string; dados?: T; erro?: string }>({ pedido: "" });
@@ -42,7 +48,7 @@ export function useCarregar<T>(carregar: () => Promise<T>, chave: string | numbe
 
   const pronto = resultado.pedido === pedido;
   return {
-    dados: pronto ? resultado.dados : undefined,
+    dados: pronto || opcoes.manterAnterior ? resultado.dados : undefined,
     carregando: !pronto,
     erro: pronto ? resultado.erro : undefined,
     tentarDeNovo: () => setTentativa((t) => t + 1),

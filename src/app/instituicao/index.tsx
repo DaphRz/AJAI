@@ -1,6 +1,6 @@
 // Área da instituição (Passo 3.1): mostra o código para os professores e aprova ou recusa os
 // professores que se cadastraram com ele. Só depois que o AJAI aprovou a instituição (o _layout
-// manda para /espera antes disso). Sem tela no Figma (a desenhar no passo 11).
+// manda para /espera antes disso). "Turmas" (passo 8): cria turmas e escolhe o professor. Sem tela no Figma (a desenhar no passo 11).
 import { router } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, Text } from "react-native";
@@ -82,6 +82,7 @@ export default function InicioInstituicao() {
         </>
       )}
 
+      <Botao titulo="Turmas" onPress={() => router.push("/instituicao/turmas")} />
       <Botao titulo="Trocar minha senha" variante="secundario" onPress={() => router.push("/instituicao/senha")} />
       <Botao
         titulo="Sair"

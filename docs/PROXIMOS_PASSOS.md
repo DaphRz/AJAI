@@ -41,7 +41,7 @@ Legenda: ⬜ a fazer · 🟡 em andamento · ✅ feito
 | 5 | Respostas, progressão e histórico no servidor — feito | 10/11 | 3, 4 |
 | 6 | Conteúdo pedagógico completo — feito | 14/11 | 4 |
 | 7 | Home do aluno: ofensiva, frequência e tela de progresso — feito | 15/11 | 5 |
-| 8 | Área do professor e do responsável | 15/11 | 5, 3.1 |
+| 8 | Área do professor e do responsável — feito | 15/11 | 5, 3.1 |
 | 9 | Cadastro de atividades (administrador e professor) e níveis (administrador) | 15/11 | 2, 3.1 |
 | 10 | Narração por voz e preferências de acessibilidade | 15/11 | 1 |
 | 11 | Ajuste ao Figma e recursos visuais | 16/11 | — |
@@ -260,49 +260,44 @@ O "Ouvir instrução" também lê as opções. Enquanto o servidor corrige, a te
 
 ---
 
-## ⬜ Passo 8 — Área do professor e do responsável (RF20, RF21, APF 20–24, 35, 40–43)
+## ✅ Passo 8 — Área do professor e do responsável (RF17, RF20, RF21, APF 20–24, 35, 40–43)
 
-**Prazo:** 15/11 · **Depende de:** passos 5 e 3.1 
+**Feito em 14/11.** A área do professor e as recomendações do responsável vêm da API, e **nenhuma tela lê mais o `mock.ts`** (ele só alimenta o seed).
 
-**Pronto quando:** o professor vê só os alunos com **vínculo ACEITO** com ele, filtra por período, abre métricas com gráfico de evolução, consulta relatórios da turma, cria turma, põe/tira alunos vinculados das turmas e corrige manualmente uma resposta; o responsável vê algumas recomendações sobre as (até 2) pessoas que acompanha.
+**Servidor** (`server/src/rotas/professor.ts` e `responsavel.ts`; professor com `exigirContaLiberada("PROFESSOR")`, só alunos com vínculo ACEITO; aluno de outro professor ou sem vínculo = **404**, para não revelar que existe):
+- `GET /professor/painel?inicio&fim`: por aluno, nível, turma, dias com atividade, atividades, acertos, taxa, maior dificuldade e situação;
+- `GET /professor/alunos/:id?inicio&fim`: resumo, acertos por conteúdo, **série diária** (um ponto por dia, `null` sem atividade), histórico de níveis e as 30 respostas mais recentes com a resposta esperada (só o professor vê);
+- `GET /professor/relatorios/frequencia` e `/dificuldades` (`?idTurma&inicio&fim`; sem `idTurma` = todos os alunos dele);
+- turmas: `GET/POST /professor/turmas`, `PATCH/DELETE /professor/turmas/:id` (nome, período, encerrar/reabrir; apagar deixa os alunos sem turma) e `PUT /professor/alunos/:id/turma { idTurma | null }` (põe, move ou tira; um aluno fica em **uma turma de cada professor**; turma encerrada = 409). Desfazer o vínculo (pelo professor ou pelo aluno) tira o aluno das turmas daquele professor;
+- `PATCH /respostas/:id/correcao { correta, observacao? }`: muda `correta`, grava `correcaoProfessor` (a observação ou um texto padrão) e **recalcula** o DesempenhoConteudo. **Não mexe na etapa** (HistoricoNivel);
+- `GET /responsavel/recomendacoes`: para cada pessoa com vínculo ACEITO, até 3 frases (dias de treino nos últimos 7 dias, conteúdo para treinar junto, etapa atual);
+- `PATCH /auth/eu { nome }`: qualquer perfil muda o próprio nome;
+- **turmas da instituição** (`server/src/rotas/turmasInstituicao.ts`, instituição aprovada): `GET/POST /instituicao/turmas` e `PATCH/DELETE /instituicao/turmas/:id`. A instituição cria a turma e escolhe um professor **aprovado dela**; a turma aparece na aba Turmas desse professor, que põe os alunos. Ela vê só **quantos** alunos há (não os nomes). Trocar o professor tira os alunos da turma (eram acompanhados pelo professor antigo). Turma de professor de outra instituição = 404.
 
-**A fazer depois (definido no Passo 3.1, não implementado ainda):**
-- turmas (criar/editar, mover aluno entre turmas, `Matricula`) e métricas detalhadas do aluno: **só PROFESSOR**, e só de alunos com vínculo ACEITO;
-- **responsável**: sem turma e sem métricas detalhadas; só algumas recomendações (ex.: "Maria treinou 3 dias esta semana", "Vale a pena treinar a letra B com ela");
-- toda rota que mostrar dado de aluno chama `temVinculoAceito(idAcompanhante, idAluno)` (`server/src/rotas/vinculos.ts`);
-- o aluno que se cadastra sozinho não está em turma: o professor coloca na turma depois de o aluno aceitar o convite.
+**Período:** dias "AAAA-MM-DD" no fuso America/Sao_Paulo, início e fim incluídos; sem eles, os últimos 7 dias; no máximo 1 ano. **Regra da situação** (`situacaoDoAluno` em `server/src/progressao.ts`): sem atividade no período → ATENÇÃO; taxa de acerto < 60% → REFORÇO; menos de 3 dias com atividade por semana (proporcional ao período, mínimo 1) → ATENÇÃO; senão EM DIA. Funções puras novas: `diasNoPeriodo`, `estaNoPeriodo`, `diasEsperados`, `situacaoDoAluno`, `serieDiaria`, `recomendacoesParaFamilia`. **Nenhuma migração** (Turma e Matricula já existiam).
 
-```text
-Leia AGENTS.md, src/services/relatorios.ts, src/app/professor/**, src/app/responsavel/**,
-server/src/rotas/vinculos.ts e server/.
-Frames do Figma: Dashboard do professor, Métricas de Ana Souza (telas sem frame seguem o padrão visual das desenhadas).
+**App:**
+- `services/relatorios.ts` reescrito (API) e `services/turmas.ts` novo; saíram `services/progressao.ts` e `buscarAluno` (liam o mock);
+- componentes novos: `SeletorPeriodo` (Últimos 7 dias / 30 dias / Escolher datas em dd/mm/aaaa), `GraficoBarras` (só `View`, sem biblioteca, com descrição para o leitor de tela) e `Opcao`; hook `useVersaoAoFocar` (recarrega ao voltar à aba, com `useFocusEffect`) e `useCarregar(..., { manterAnterior })` (não pisca "Carregando..." ao recarregar);
+- **Dashboard** (`/professor`): período, alunos com vínculo aceito, turma no cartão, selo verde "Em dia";
+- **Métricas** (`/professor/aluno/[id]`): situação, frequência, taxa de acerto/erro, gráfico da taxa de acerto por dia, histórico de etapas, acertos por conteúdo e respostas recentes com "Considerar certa/errada" (observação opcional);
+- **Relatórios** (`/professor/relatorios`): filtro por turma, alunos que treinaram, atividades por dia (gráfico), dias por aluno (menos ativos primeiro) e conteúdos com mais dificuldade;
+- **Navegação do professor refeita:** no SDK 58, tela escondida das abas (`href: null`) **redireciona para a 1ª aba**, então "Meus alunos: convidar", "Ver métricas" e "Trocar senha" voltavam para o dashboard. Agora `professor/_layout.tsx` é uma pilha (Stack) com a proteção de acesso; as abas ficam no grupo `professor/(abas)/` (Acompanhamento, **Turmas**, Relatórios, Conta) e as telas internas (`aluno/[id]`, `alunos`, `senha`) ficam fora das abas. As URLs não mudaram. Conferido no navegador (Playwright): convidar, métricas, turmas e senha abrem;
+- **aba Turmas** (`/professor/turmas`): os alunos de cada turma com "Ver métricas" e "Mudar de turma"; "Opções da turma" (editar, encerrar/reabrir, apagar); "Criar turma nova"; alunos sem turma. O **dashboard** filtra por turma ("Todas as turmas", cada turma, "Sem turma");
+- **Conta**: editar nome, "Meus alunos", trocar senha e sair;
+- **Instituição › Turmas** (`/instituicao/turmas`, botão "Turmas" na área da instituição): criar turma escolhendo o professor, editar, trocar professor, encerrar/reabrir e apagar;
+- **gráficos** com o número em cima de cada barra (taxa de acerto em % nas métricas, quantidade de atividades nos relatórios); com mais de 10 dias, as barras rolam para o lado e o gráfico abre nos dias mais recentes;
+- **Responsável** (`/responsavel`): "Dicas para ajudar" embaixo de cada pessoa que aceitou (`MeusAlunos` ganhou `extraDoAluno`) e "Ouvir dicas";
+- aviso "Os dados do aplicativo complementam a avaliação do professor" no dashboard, nas métricas e nos relatórios.
 
-No SERVIDOR (professor: exigirContaLiberada("PROFESSOR"); só retornam alunos com Vinculo ACEITO
-com ele, conferido com temVinculoAceito):
-- GET /professor/painel?inicio&fim → resumo por aluno (frequência em dias, total de
-  atividades, taxa de acerto/erro, nível, maior dificuldade, situação EM_DIA /
-  ATENCAO / REFORCO com regra documentada);
-- GET /professor/alunos/:id?inicio&fim → relatório individual + série diária de taxa
-  de acerto + histórico de níveis;
-- GET /professor/relatorios/frequencia e /professor/relatorios/dificuldades (por turma);
-- CRUD de turma e pôr/tirar/mover aluno entre as turmas DO PRÓPRIO professor (só alunos com
-  vínculo ACEITO; o aluno cria a própria conta e aceita o convite em /aluno/acompanhamento);
-- RESPONSÁVEL: GET /responsavel/recomendacoes → para cada aluno com vínculo ACEITO, 1 a 3 frases
-  curtas (dias de treino na semana, conteúdo para treinar). Sem turma e sem métricas detalhadas.
-- PATCH /respostas/:id/correcao (correção manual: muda `correta`, grava
-  correcaoProfessor e recalcula DesempenhoConteudo).
+**Testes:** `npm test` roda 110 testes (31 novos): funções puras (período, fuso, situação, série, recomendações) e `rotas/professor.test.ts` (aluno/responsável/professor PENDENTE barrados, **outro professor não vê nem mexe em nada do Rafael**, convite PENDENTE não libera dados, responsável só recebe recomendações de quem aceitou, período inválido = 400, correção manual recalculando o desempenho, turmas e mover aluno, vínculo desfeito tirando da turma, editar nome, turmas da instituição: só professor aprovado dela, total sem nomes de alunos, trocar professor tira os alunos, outra instituição = 404). Lint, typecheck (app e servidor), `db:reset` e `npx expo export -p web` passam, e as rotas foram conferidas com o servidor rodando.
 
-No APP: seletor de período (Últimos 7 dias / 30 dias / personalizado), gráfico de
-evolução simples (barras com View, sem biblioteca, ou react-native-svg via
-`npx expo install` se necessário), aba Relatórios, gestão de turma na aba Conta,
-correção manual na tela de métricas. Recarregue os dados ao focar a aba
-(useFocusEffect). Mostre o aviso "Os dados complementam a avaliação do professor".
-A aba Conta mostra os dados do professor (editar nome), trocar senha (passo 3) e sair.
-Em /responsavel, mostre as recomendações embaixo de cada pessoa acompanhada.
-Cobertura: confira que TODA tela do professor e do responsável da tabela do README existe e
-funciona com dados reais (dashboard, métricas do aluno, relatórios, conta, meus alunos, gestão
-de turma, área do responsável). O dashboard deve listar os alunos com vínculo ACEITO (hoje lê o mock).
-```
+**Observações:**
+- **falta a equipe abrir as telas no Expo Go** (no navegador já foram conferidas; dashboard, métricas, relatórios, conta, turmas, área do responsável e turmas da instituição; Rafael `rafael@ajai.app`, Joana `joana@ajai.app` e instituição `instituicao@ajai.app`, senha `demo1234`);
+- pelos dados de exemplo, nos últimos 7 dias Ana, Bruno e Clara ficam "Em dia" (Ana está no limite, 60%) e Maria "Atenção" (não fez o nivelamento). Para mostrar um aluno em REFORÇO na demo, faça algumas respostas erradas com a Ana antes;
+- a regra da situação e as frases do responsável são **provisórias**: a equipe precisa validar (mude em `server/src/progressao.ts` e nos testes);
+- depois de `git pull`, abra o `npx expo start` uma vez antes do `npx tsc` (gera os tipos das rotas novas `/professor/turmas` e `/instituicao/turmas`).
+- a turma não guarda quem a criou (instituição ou professor): o professor pode editar ou apagar uma turma criada pela instituição. Se a equipe quiser travar isso, precisa de uma migração (`Turma.idInstituicao`/criador).
 
 ---
 
@@ -455,7 +450,7 @@ Leia AGENTS.md, src/services/** e server/.
 Configure testes:
 - no app: jest-expo (`npx expo install jest-expo jest @types/jest -- --save-dev`) e
   @testing-library/react-native; script `npm test`;
-- no servidor: já existe `node --test` (npm test, 79 testes em 14/11); complete os casos abaixo
+- no servidor: já existe `node --test` (npm test, 110 testes em 14/11, incluindo as rotas do passo 8 em professor.test.ts); complete os casos abaixo
   que faltarem (ver server/src/rotas/contas.test.ts e progresso.test.ts).
 Escreva testes para:
 1. corrigirAutomaticamente (acentos, maiúsculas, espaços);

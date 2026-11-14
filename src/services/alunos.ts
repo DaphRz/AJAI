@@ -3,7 +3,6 @@
  * O nível é decidido e gravado no servidor (HistoricoNivel); aqui só se monta o aluno da sessão.
  * Sempre devolve um NOVO objeto (o React Compiler depende de imutabilidade).
  */
-import { alunos } from "@/data/mock";
 import type { Aluno, Nivel } from "@/domain/modelos";
 import { chamarApi } from "./api";
 
@@ -36,9 +35,4 @@ export async function concluirNivelamento(
     corpo: { respostas },
   });
   return { nivel, alunoAtualizado: comNivel(aluno, nivel.idNivel, true) };
-}
-
-/** TODO (passo 8): o painel do professor ainda lê o mock; trocar por GET /professor/alunos/:id. */
-export function buscarAluno(idUsuario: number): Aluno | undefined {
-  return alunos.find((a) => a.idUsuario === idUsuario);
 }

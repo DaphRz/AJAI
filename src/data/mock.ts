@@ -1,8 +1,8 @@
 /**
  * DADOS DE DEMONSTRAÇÃO — fonte do seed do banco (server/db/seed.mjs, `npm run db:seed`).
  *
- * Níveis, atividades, contas, respostas e progressão já vêm da API (passos 3 a 5). Só o painel
- * do professor (services/relatorios.ts) ainda lê estes arrays em memória até o passo 8.
+ * O app não importa este arquivo: tudo vem da API (desde o passo 8, também a área do professor).
+ * Mudou algo aqui? Rode `npm run db:seed`.
  */
 import type {
   Administrador,

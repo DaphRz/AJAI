@@ -52,6 +52,14 @@ const mensagensPorCampo: Record<string, string> = {
   decisao: "Escolha aprovar ou recusar.",
   motivo: "Escreva o motivo em poucas palavras.",
   aceitar: "Escolha aceitar ou recusar.",
+  inicio: "Confira a data de início do período.",
+  fim: "Confira a data de fim do período.",
+  idTurma: "Escolha uma turma.",
+  idProfessor: "Escolha o professor da turma.",
+  periodo: "Escreva o período da turma. Exemplo: 2026/2",
+  ativa: "Escolha se a turma está ativa.",
+  correta: "Escolha certa ou errada.",
+  observacao: "Escreva a observação em até 200 letras.",
 };
 
 function mensagemDeValidacao(erro: FastifyError): string | undefined {

@@ -1,8 +1,8 @@
 // Regras de nivelamento e progressão (RF03, RF16, RF17, RF19, RF22).
 //
 // Funções PURAS (sem banco, sem Fastify, sem React): recebem dados e devolvem decisões.
-// Vieram de src/services/progressao.ts (passo 5) SEM mudar a lógica; o app reexporta este
-// arquivo (o painel do professor ainda calcula em cima do mock até o passo 8).
+// Vieram de src/services/progressao.ts (passo 5) SEM mudar a lógica. Desde o passo 8 o app não
+// importa mais este arquivo: painel, relatórios e recomendações vêm da API.
 // Por isso este arquivo NÃO importa nada: os tipos abaixo são o mínimo de cada modelo
 // (compatíveis com Atividade, Nivel e Resposta de src/domain/modelos.ts).
 // Testes: progressao.test.ts (`npm run server:test`).
@@ -195,4 +195,113 @@ export function frequenciaRecente(
   const primeiroDia = somarDias(diaNoFuso(agora, fuso), -(dias - 1));
   const recentes = datas.map((d) => diaNoFuso(d, fuso)).filter((dia) => dia >= primeiroDia);
   return { atividades: recentes.length, diasComAtividade: new Set(recentes).size };
+}
+
+// ---------------------------------------------------------------------------------------------
+// Área do professor e do responsável (RF20, RF21, passo 8).
+// O período é sempre um intervalo de dias do calendário ("AAAA-MM-DD", início e fim incluídos),
+// no fuso America/Sao_Paulo, como a ofensiva.
+
+/** Abaixo desta taxa de acerto no período, o aluno precisa de REFORÇO. */
+export const TAXA_MINIMA_EM_DIA = 0.6;
+/** Dias com atividade esperados por semana; menos que isso (proporcional ao período) = ATENÇÃO. */
+export const DIAS_ESPERADOS_POR_SEMANA = 3;
+
+export type Situacao = "EM_DIA" | "ATENCAO" | "REFORCO";
+
+/** Quantos dias tem o período (início e fim incluídos). */
+export function diasNoPeriodo(inicio: string, fim: string): number {
+  const [a, b] = [inicio, fim].map((d) => {
+    const [ano, mes, dia] = d.split("-").map(Number);
+    return Date.UTC(ano, mes - 1, dia);
+  });
+  return Math.round((b - a) / 86_400_000) + 1;
+}
+
+/** true se o instante cai entre os dias `inicio` e `fim` (incluídos), no fuso. */
+export function estaNoPeriodo(instante: string, inicio: string, fim: string, fuso: string = FUSO_PADRAO): boolean {
+  const dia = diaNoFuso(instante, fuso);
+  return dia >= inicio && dia <= fim;
+}
+
+/** Dias com atividade esperados no período: 3 por semana, proporcional, no mínimo 1. */
+export function diasEsperados(dias: number): number {
+  return Math.max(1, Math.ceil((dias * DIAS_ESPERADOS_POR_SEMANA) / 7));
+}
+
+/**
+ * Situação do aluno no período (selo do painel do professor). Regra, nesta ordem:
+ * 1. nenhuma atividade no período → ATENCAO;
+ * 2. taxa de acerto < 60% (TAXA_MINIMA_EM_DIA) → REFORCO;
+ * 3. dias com atividade < 3 por semana (proporcional ao período, mínimo 1) → ATENCAO;
+ * 4. senão → EM_DIA.
+ */
+export function situacaoDoAluno(dados: {
+  totalAtividades: number;
+  taxaAcerto: number;
+  diasAtivos: number;
+  diasNoPeriodo: number;
+}): Situacao {
+  if (dados.totalAtividades === 0) return "ATENCAO";
+  if (dados.taxaAcerto < TAXA_MINIMA_EM_DIA) return "REFORCO";
+  if (dados.diasAtivos < diasEsperados(dados.diasNoPeriodo)) return "ATENCAO";
+  return "EM_DIA";
+}
+
+export interface PontoDaSerie {
+  dia: string;
+  atividades: number;
+  acertos: number;
+  /** null = sem atividade no dia. */
+  taxaAcerto: number | null;
+}
+
+/** Uma linha por dia do período (inclusive os dias sem atividade), para o gráfico de evolução. */
+export function serieDiaria(
+  respostas: readonly { dataHora: string; correta: boolean }[],
+  inicio: string,
+  fim: string,
+  fuso: string = FUSO_PADRAO,
+): PontoDaSerie[] {
+  const porDia = new Map<string, { atividades: number; acertos: number }>();
+  for (const r of respostas) {
+    const dia = diaNoFuso(r.dataHora, fuso);
+    if (dia < inicio || dia > fim) continue;
+    const atual = porDia.get(dia) ?? { atividades: 0, acertos: 0 };
+    atual.atividades++;
+    if (r.correta) atual.acertos++;
+    porDia.set(dia, atual);
+  }
+  const serie: PontoDaSerie[] = [];
+  for (let dia = inicio; dia <= fim; dia = somarDias(dia, 1)) {
+    const d = porDia.get(dia) ?? { atividades: 0, acertos: 0 };
+    serie.push({ dia, ...d, taxaAcerto: d.atividades === 0 ? null : d.acertos / d.atividades });
+  }
+  return serie;
+}
+
+/**
+ * Até 3 frases curtas e positivas para o responsável (familiar), sem métricas detalhadas:
+ * frequência da semana, um conteúdo para treinar junto e a etapa atual.
+ */
+export function recomendacoesParaFamilia(dados: {
+  primeiroNome: string;
+  /** Dias com atividade nos últimos 7 dias. */
+  diasNaSemana: number;
+  nomeEtapa?: string;
+  /** Conteúdo com mais erros (ex.: "Letra B"). */
+  conteudoParaTreinar?: string;
+}): string[] {
+  const { primeiroNome: nome, diasNaSemana: dias } = dados;
+  if (!dados.nomeEtapa) {
+    return [`${nome} ainda não começou. Ajude a fazer as primeiras perguntas no aplicativo.`];
+  }
+  const frases: string[] = [];
+  if (dias === 0) frases.push(`${nome} não treinou nos últimos 7 dias. Que tal combinar um horário para treinar juntos?`);
+  else if (dias === 1) frases.push(`${nome} treinou 1 dia nos últimos 7 dias. Um incentivo ajuda a continuar!`);
+  else if (dias < 4) frases.push(`${nome} treinou ${dias} dias nos últimos 7 dias. Treinar um pouco todo dia ajuda.`);
+  else frases.push(`${nome} treinou ${dias} dias nos últimos 7 dias. Muito bem!`);
+  if (dados.conteudoParaTreinar) frases.push(`Vale a pena treinar junto: ${dados.conteudoParaTreinar}.`);
+  frases.push(`${nome} está na etapa ${dados.nomeEtapa}.`);
+  return frases.slice(0, 3);
 }

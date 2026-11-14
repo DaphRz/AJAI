@@ -7,6 +7,7 @@
 //                                      todos → { token, usuario } (usuario.situacao diz se a conta já está liberada)
 //   POST  /auth/login      usuário, e-mail ou telefone + senha → { token, usuario }
 //   GET   /auth/eu         usuário do token (com a situação da conta: o app usa em "Verificar de novo")
+//   PATCH /auth/eu         { nome } muda o próprio nome (passo 8)
 //   PATCH /auth/senha      qualquer perfil troca a própria senha (inclusive o aluno)
 import type { FastifyInstance } from "fastify";
 import { conferirSenha, gerarHashSenha, HASH_FALSO } from "../../db/senha.mjs";
@@ -301,6 +302,28 @@ export async function rotasAuth(app: FastifyInstance): Promise<void> {
       },
     },
     async (req) => ({ usuario: usuarioPublico(buscarPorId(req.user.idUsuario)!) }),
+  );
+
+  // Usuario.EditarDados (passo 8): qualquer perfil muda o próprio nome (a instituição, o nome dela).
+  app.patch<{ Body: { nome: string } }>(
+    "/auth/eu",
+    {
+      preHandler: exigirLogin(),
+      schema: {
+        body: { type: "object", properties: { nome: NOME }, required: ["nome"] },
+        response: {
+          200: { type: "object", properties: { usuario: esquemaUsuario }, required: ["usuario"] },
+          400: esquemaErro,
+          401: esquemaErro,
+        },
+      },
+    },
+    async (req) => {
+      banco()
+        .prepare("UPDATE Usuario SET nome = ?, atualizadoEm = ? WHERE idUsuario = ?")
+        .run(limparNome(req.body.nome), new Date().toISOString(), req.user.idUsuario);
+      return { usuario: usuarioPublico(buscarPorId(req.user.idUsuario)!) };
+    },
   );
 
   app.patch<{ Body: { senhaAtual: string; senhaNova: string } }>(

@@ -1,7 +1,7 @@
 /**
  * Vínculo acompanhante ↔ aluno (Passo 3.1; server/src/rotas/vinculos.ts).
  * O professor (aprovado) ou o responsável convida o aluno pelo usuário, e-mail ou telefone; o aluno
- * aceita ou recusa. Só com o vínculo ACEITO o acompanhante vê o nome (e, no passo 8, os dados) do aluno.
+ * aceita ou recusa. Só com o vínculo ACEITO o acompanhante vê o nome e os dados do aluno (passo 8).
  * Responsável: no máximo 2 pessoas (o servidor confere).
  */
 import type { Perfil, StatusVinculo } from "@/domain/modelos";

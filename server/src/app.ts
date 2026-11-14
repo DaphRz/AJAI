@@ -9,9 +9,12 @@ import { registrarTratamentoDeErros } from "./erros.ts";
 import { rotasAtividades } from "./rotas/atividades.ts";
 import { rotasAuth } from "./rotas/auth.ts";
 import { rotasInstituicoes } from "./rotas/instituicoes.ts";
+import { rotasProfessor } from "./rotas/professor.ts";
 import { rotasProgresso } from "./rotas/progresso.ts";
+import { rotasResponsavel } from "./rotas/responsavel.ts";
 import { rotasSaude } from "./rotas/saude.ts";
 import { rotasSenhaProvisoria } from "./rotas/senhaProvisoria.ts";
+import { rotasTurmasInstituicao } from "./rotas/turmasInstituicao.ts";
 import { rotasVinculos } from "./rotas/vinculos.ts";
 
 export async function construirApp(opcoes: { log?: boolean } = {}): Promise<FastifyInstance> {
@@ -55,6 +58,9 @@ export async function construirApp(opcoes: { log?: boolean } = {}): Promise<Fast
   await app.register(rotasSenhaProvisoria);
   await app.register(rotasAtividades);
   await app.register(rotasProgresso);
+  await app.register(rotasProfessor);
+  await app.register(rotasResponsavel);
+  await app.register(rotasTurmasInstituicao);
 
   return app;
 }

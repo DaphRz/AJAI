@@ -3,7 +3,7 @@
 Aplicativo mobile de apoio à alfabetização, complementar à EJA, com área de acompanhamento para professores.
 Projeto da disciplina de Gestão de Projetos – Universidade de Vila Velha, 2026 (turma CC6M, equipe 4).
 
-> **Situação em 14/11/2026 (Sprint 4 de 4):** o app já usa a **API** (Fastify sobre o banco SQLite) para login, contas, níveis, atividades, nivelamento, **respostas, progressão e histórico** (passo 5). No **Passo 3.1** o modelo de contas mudou: aluno, professor, responsável e instituição criam a própria conta, a instituição é aprovada pelo administrador, o professor pela instituição, e o acompanhamento é por **vínculo** que o aluno aceita. Ainda fica **em memória** no app só o painel do professor (passo 8). Veja [Pendências](#pendências) e [Banco de dados](#banco-de-dados-sqlite).
+> **Situação em 14/11/2026 (Sprint 4 de 4):** o app já usa a **API** (Fastify sobre o banco SQLite) para login, contas, níveis, atividades, nivelamento, **respostas, progressão e histórico** (passo 5). No **Passo 3.1** o modelo de contas mudou: aluno, professor, responsável e instituição criam a própria conta, a instituição é aprovada pelo administrador, o professor pela instituição, e o acompanhamento é por **vínculo** que o aluno aceita. Desde o **passo 8** a área do professor (painel com período, métricas com gráfico, relatórios por turma, turmas e correção manual) e as recomendações do responsável também vêm da API: nenhuma tela lê mais o `mock.ts`. Veja [Pendências](#pendências) e [Banco de dados](#banco-de-dados-sqlite).
 
 - Protótipo no Figma: <https://www.figma.com/design/hXu6QCdfo7r7Qau5Rbia8M/AJAI>
 - Diagrama de classes: [`docs/diagrama-classes.png`](docs/diagrama-classes.png)
@@ -297,7 +297,7 @@ src/
   data/mock.ts            Dados de demonstração (níveis, atividades, alunos, respostas)
   domain/modelos.ts       Tipos espelhando o diagrama de classes
   hooks/useCarregar.ts    Carrega dados da API numa tela ("Carregando..." / "Sem conexão. Toque para tentar de novo.")
-  services/               Regras e acesso a dados (API; respostas e painel ainda no mock até os passos 5 e 8)
+  services/               Regras e acesso a dados (tudo pela API desde o passo 8)
     narracao.ts           Fachada da voz (falar / pararFala)
     voz/                  ProvedorVoz: interface + provedores trocáveis
   theme/tokens.ts         Cores, fontes e tamanhos do Figma
@@ -332,10 +332,10 @@ docs/
 | Home do aluno | `/aluno` | ✅ ofensiva real e frequência da semana (passo 7) |
 | Reconhecimento / Sílabas / Formar palavra / Ler frase | `/aluno/atividade/[id]` | um componente para todos os tipos |
 | Acerto / Tentar novamente | `/aluno/resultado` | esqueleto |
-| Dashboard do professor | `/professor` | esqueleto (sem filtro de período) |
-| Métricas de Ana Souza | `/professor/aluno/[id]` | esqueleto (sem gráfico) |
+| Dashboard do professor | `/professor` | ✅ pela API, só alunos com vínculo aceito, seletor de período (passo 8) |
+| Métricas de Ana Souza | `/professor/aluno/[id]` | ✅ gráfico de evolução, histórico de etapas, correção manual (passo 8) |
 | *(sem tela no Figma)* | `/aluno/progresso`, `/aluno/comemoracao` | ✅ passo 7, no padrão da Home e do Acerto |
-| *(sem tela no Figma)* | `/professor/relatorios`, `/professor/conta` | provisórias |
+| *(sem tela no Figma)* | `/professor/relatorios`, `/professor/conta`, `/professor/turmas`, `/instituicao/turmas` | ✅ passo 8 (relatórios por turma, editar nome, aba Turmas, turmas criadas pela instituição), no padrão do Dashboard |
 | *(sem tela no Figma)* | `/esqueci-senha`, `/aluno/conta`, `/aluno/senha`, `/aluno/acompanhamento`, `/professor/alunos`, `/professor/senha`, `/responsavel`, `/responsavel/senha`, `/instituicao`, `/instituicao/senha`, `/admin`, `/admin/senha` | provisórias (passos 3 e 3.1) – desenhar no passo 11 |
 
 ---
@@ -355,7 +355,7 @@ O roteiro completo até a entrega, com prazo, critério de pronto e **um prompt 
 | 5 | Respostas, progressão e histórico no servidor — ✅ | 10/11 |
 | 6 | Conteúdo pedagógico completo — ✅ | 14/11 |
 | 7 | Home do aluno: ofensiva e progresso ✅ | 15/11 |
-| 8 | Área do professor e do responsável | 15/11 |
+| 8 | Área do professor e do responsável — ✅ | 15/11 |
 | 9 | Cadastro de atividades (admin e professor) e níveis (admin) | 15/11 |
 | 10 | Narração por voz e preferências | 15/11 |
 | 11 | Ajuste ao Figma e recursos visuais | 16/11 |
@@ -395,8 +395,8 @@ Legenda: ✅ feito · 🟡 esqueleto/parcial (só no app, com dados em memória)
 
 **Sprint 4 – Métricas, Área do Professor e Finalização (10/11 – 17/11)**
 - ✅ Histórico e evolução do aluno (RF18, RF19): `/aluno/progresso` refeita no passo 7 com dados de `GET /alunos/eu/progresso` (trilha com a situação de cada etapa, atividades feitas, taxa de acerto com barra, ofensiva e "Vale a pena treinar"); **sem frame no Figma**, segue o padrão das telas desenhadas. Comemoração com narração ao subir de etapa (`/aluno/comemoracao`). Falta a equipe abrir as telas no Expo Go
-- 🟡 Área do professor (RF20, RF21): dashboard e métricas por aluno; faltam filtro de período, gráfico de evolução, aba Relatórios
-- 🟡 Identificação de dificuldades (RF17): calculada por conteúdo
+- ✅ Área do professor (RF20, RF21): dashboard, métricas por aluno com gráfico de evolução e histórico de etapas, aba Turmas e filtro por turma no dashboard, aba Relatórios (frequência e dificuldades por turma), gráficos com o número em cima de cada barra, seletor de período (7 dias / 30 dias / datas), turmas e correção manual, tudo pela API e só com alunos de vínculo aceito (passo 8, 14/11). Falta a equipe abrir as telas no Expo Go
+- ✅ Identificação de dificuldades (RF17): calculada por conteúdo no servidor, por aluno (painel e métricas) e por turma (relatório de dificuldades)
 - ✅ Registro de frequência / "Ofensiva – dias seguidos" (RF15): calculada no servidor (`calcularOfensiva` e `frequenciaRecente` em `server/src/progressao.ts`, fuso America/Sao_Paulo, com testes) e mostrada na home e no progresso com texto encorajador (passo 7)
 - 🟡 Continuidade do aprendizado (RF22): o CONTINUAR abre uma **sessão de 5 atividades** seguidas (acertos); depois de um acerto vai direto para a próxima, e só no fim do bloco oferece "Voltar ao início" ou "Continuar treinando" (`services/sessaoDeEstudo.ts`, `ATIVIDADES_POR_SESSAO`). A próxima atividade vem do servidor (`GET /alunos/eu/progresso`), então continua certa entre aberturas do app
 - ⬜ Testes integrados (casos manuais do passo 12) em Android e iPhone/web
@@ -408,7 +408,7 @@ Legenda: ✅ feito · 🟡 esqueleto/parcial (só no app, com dados em memória)
 - ✅ Tabelas do diagrama de classes criadas (Usuario, Aluno, Professor, Administrador, Turma, Matricula, Nivel, Atividade, Alternativa, AudioCache, Resposta, DesempenhoConteudo, HistoricoNivel) + as extras do Passo 3.1 (Responsavel, Instituicao, Vinculo) + dados iniciais
 - ✅ **Servidor da API criado** com Fastify em `server/src/` (`npm run server:dev`, `GET /health`, erros padronizados em `{ erro }`, CORS e limite de requisições). `@fastify/jwt` já instalado, registrado no passo 3
 - ⬜ API para as funções contadas na APF (Incluir/Editar/Excluir/Listar/Visualizar de cada módulo)
-- 🟡 Trocar `src/data/mock.ts` pelas chamadas à API dentro de `src/services/`: ✅ contas (passo 3); ✅ níveis, atividades e nivelamento (passo 4, telas com "Carregando..." e "Sem conexão"); ✅ respostas, progressão e histórico (passo 5); ⬜ painel do professor (passo 8; ele e `professor/aluno/[id]` ainda leem as respostas do mock, então respostas novas não aparecem lá)
+- ✅ Trocar `src/data/mock.ts` pelas chamadas à API dentro de `src/services/`: ✅ contas (passo 3); ✅ níveis, atividades e nivelamento (passo 4, telas com "Carregando..." e "Sem conexão"); ✅ respostas, progressão e histórico (passo 5); ✅ área do professor e do responsável (passo 8). Nenhuma tela lê mais o `mock.ts`
 - ✅ Migração 004: `Atividade.textoApoio` (palavra, frase ou texto mostrado à parte do enunciado; extra em relação ao diagrama)
 - ✅ Guardar o token de login no aparelho (`expo-secure-store`; `localStorage` no navegador)
 - ✅ API de autenticação (`/auth/*`), "middleware" `exigirLogin(perfil)` e cliente `src/services/api.ts`
@@ -417,11 +417,11 @@ Legenda: ✅ feito · 🟡 esqueleto/parcial (só no app, com dados em memória)
 
 ### Funcionalidades previstas na APF sem tela no app nem no Figma
 - ⬜ Administrador e professor: incluir/editar/inativar **atividades** (APF itens 25–31; o professor só mexe nas que criou) e, só o administrador, incluir/editar **níveis** — definir se será tela no app, painel web ou carga direta no banco. Escopo ampliado em 14/11 (passo 9)
-- 🟡 Professor: ✅ convidar aluno e desfazer vínculo ("Meus alunos", Passo 3.1); ⬜ criar/editar turma, pôr/mover/tirar aluno da turma (APF 20–24, passo 8, só alunos com vínculo aceito)
-- ⬜ O painel de Acompanhamento ainda lê `mock.ts`: aluno novo (vínculo aceito) só aparece em Conta › Meus alunos até o passo 8. O aluno que se cadastra sozinho não entra em turma
-- ⬜ Responsável: recomendações sobre as pessoas acompanhadas (passo 8; sem turma nem métricas detalhadas)
-- ✅ Instituição e administrador: inscrição, aprovação com código e aprovação de professores (Passo 3.1). ⬜ Revogar aprovação ou tirar professor da instituição (não previsto)
-- ⬜ Professor: corrigir manualmente uma resposta (APF 35)
+- ✅ Professor: convidar aluno e desfazer vínculo ("Meus alunos", Passo 3.1); criar/editar/encerrar/apagar turma e pôr/mover/tirar aluno da turma na aba Turmas, que mostra os alunos de cada turma (APF 20–24, passo 8, só alunos com vínculo aceito; desfazer o vínculo tira o aluno das turmas do professor)
+- ✅ O painel de Acompanhamento lista os alunos com vínculo aceito (pela API). O aluno que se cadastra sozinho aparece "sem turma" até o professor pôr numa turma
+- ✅ Responsável: até 3 dicas curtas embaixo de cada pessoa acompanhada (dias de treino na semana, conteúdo para treinar junto, etapa), com "Ouvir dicas" (passo 8; sem turma nem métricas detalhadas)
+- ✅ Instituição e administrador: inscrição, aprovação com código e aprovação de professores (Passo 3.1). ✅ A instituição cria turmas e escolhe o professor de cada uma (`/instituicao/turmas`, passo 8; vê só quantos alunos, não os nomes). ⬜ Revogar aprovação ou tirar professor da instituição (não previsto)
+- ✅ Professor: corrigir manualmente uma resposta (APF 35) na tela de métricas, com observação opcional; recalcula o DesempenhoConteudo, mas **não muda a etapa** do aluno (decisão do passo 8: a subida de etapa já aconteceu ou não)
 - ⬜ Aluno: editar preferências de voz, velocidade e tamanho da fonte (APF 17)
 - 🟡 Trocar/recuperar senha (APF 18): ✅ todos os perfis trocam a própria (inclusive o aluno, desde o Passo 3.1); ✅ senha provisória para qualquer perfil pelo administrador/script; 🟡 `/esqueci-senha` pede o e-mail e diz que mandou o link de redefinição, mas **não envia nada** (MVP, sem serviço de e-mail: na prática, a senha provisória continua sendo pelo administrador). Faltam as telas no Figma
 
@@ -438,7 +438,7 @@ Legenda: ✅ feito · 🟡 esqueleto/parcial (só no app, com dados em memória)
 - ⬜ Revisar com leitor de tela (TalkBack/VoiceOver) e tamanho de fonte do sistema aumentado
 
 ### Qualidade, segurança e privacidade
-- 🟡 Testes automatizados: ✅ servidor com `node --test` (`npm test`, 79 testes: regras de progressão e ofensiva, rotas do passo 5 e contas/aprovações/vínculos do Passo 3.1); ⬜ testes de tela no app (`jest-expo`) no passo 12
+- 🟡 Testes automatizados: ✅ servidor com `node --test` (`npm test`, 110 testes: regras de progressão e ofensiva, rotas do passo 5, contas/aprovações/vínculos do Passo 3.1 e área do professor/responsável do passo 8); ⬜ testes de tela no app (`jest-expo`) no passo 12
 - 🟡 Senha com hash no servidor (✅ scrypt) e comunicação só por HTTPS (⬜ RNF11; na demo é HTTP na rede local)
 - ⬜ Invalidar tokens antigos depois de troca/redefinição de senha (hoje valem até vencer, 30 dias) — passo 13
 - ⬜ Forçar troca da senha provisória no primeiro login (passo 13)

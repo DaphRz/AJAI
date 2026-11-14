@@ -1,5 +1,5 @@
 // npm run db:seed — apaga os DADOS (não o esquema) e recarrega os dados de demonstração.
-// FONTE DOS DADOS: src/data/mock.ts (a mesma que o app usa hoje). Para mudar atividades,
+// FONTE DOS DADOS: src/data/mock.ts (só o seed lê; o app usa a API). Para mudar atividades,
 // níveis ou alunos de exemplo, edite o mock.ts e rode `npm run db:seed`.
 // Requer Node 22.18+ (importa o .ts direto, sem compilar).
 import { abrirBanco, caminhoBanco, executadoDireto } from "./conectar.mjs";

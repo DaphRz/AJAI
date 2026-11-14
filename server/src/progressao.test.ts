@@ -4,6 +4,12 @@ import { describe, it } from "node:test";
 import {
   calcularOfensiva,
   definirNivelInicial,
+  diasEsperados,
+  diasNoPeriodo,
+  estaNoPeriodo,
+  recomendacoesParaFamilia,
+  serieDiaria,
+  situacaoDoAluno,
   deveAvancar,
   diaNoFuso,
   escolherProximaAtividade,
@@ -226,5 +232,68 @@ describe("frequenciaRecente", () => {
   it("usa o dia de Brasília na borda da janela", () => {
     // 23h de 07/11 em Brasília (02h UTC de 08/11): fora da janela que começa em 08/11
     assert.equal(frequenciaRecente(["2026-11-08T02:00:00.000Z"], agora).atividades, 0);
+  });
+});
+
+describe("área do professor (passo 8)", () => {
+  it("diasNoPeriodo conta início e fim, atravessando mês e ano", () => {
+    assert.equal(diasNoPeriodo("2026-11-08", "2026-11-14"), 7);
+    assert.equal(diasNoPeriodo("2026-12-30", "2027-01-02"), 4);
+    assert.equal(diasNoPeriodo("2026-11-14", "2026-11-14"), 1);
+  });
+
+  it("estaNoPeriodo usa o dia de Brasília", () => {
+    // 01h UTC de 15/11 = 22h de 14/11 em Brasília.
+    assert.equal(estaNoPeriodo("2026-11-15T01:00:00.000Z", "2026-11-08", "2026-11-14"), true);
+    assert.equal(estaNoPeriodo("2026-11-15T03:30:00.000Z", "2026-11-08", "2026-11-14"), false);
+  });
+
+  it("diasEsperados: 3 por semana, proporcional, mínimo 1", () => {
+    assert.equal(diasEsperados(7), 3);
+    assert.equal(diasEsperados(30), 13);
+    assert.equal(diasEsperados(1), 1);
+  });
+
+  it("situacaoDoAluno segue a regra documentada", () => {
+    const base = { diasNoPeriodo: 7, diasAtivos: 4, totalAtividades: 10, taxaAcerto: 0.8 };
+    assert.equal(situacaoDoAluno(base), "EM_DIA");
+    assert.equal(situacaoDoAluno({ ...base, totalAtividades: 0, taxaAcerto: 0 }), "ATENCAO");
+    assert.equal(situacaoDoAluno({ ...base, taxaAcerto: 0.59 }), "REFORCO");
+    assert.equal(situacaoDoAluno({ ...base, taxaAcerto: 0.6, diasAtivos: 3 }), "EM_DIA");
+    assert.equal(situacaoDoAluno({ ...base, diasAtivos: 2 }), "ATENCAO");
+    // Reforço tem prioridade sobre pouca frequência.
+    assert.equal(situacaoDoAluno({ ...base, diasAtivos: 1, taxaAcerto: 0.3 }), "REFORCO");
+  });
+
+  it("serieDiaria tem um ponto por dia, com null nos dias sem atividade", () => {
+    const serie = serieDiaria(
+      [
+        { dataHora: "2026-11-12T15:00:00.000Z", correta: true },
+        { dataHora: "2026-11-12T16:00:00.000Z", correta: false },
+        { dataHora: "2026-11-14T12:00:00.000Z", correta: true },
+        { dataHora: "2026-10-01T12:00:00.000Z", correta: true }, // fora do período
+      ],
+      "2026-11-12",
+      "2026-11-14",
+    );
+    assert.deepEqual(serie, [
+      { dia: "2026-11-12", atividades: 2, acertos: 1, taxaAcerto: 0.5 },
+      { dia: "2026-11-13", atividades: 0, acertos: 0, taxaAcerto: null },
+      { dia: "2026-11-14", atividades: 1, acertos: 1, taxaAcerto: 1 },
+    ]);
+  });
+
+  it("recomendacoesParaFamilia: até 3 frases positivas", () => {
+    assert.deepEqual(recomendacoesParaFamilia({ primeiroNome: "Maria", diasNaSemana: 0 }), [
+      "Maria ainda não começou. Ajude a fazer as primeiras perguntas no aplicativo.",
+    ]);
+    const frases = recomendacoesParaFamilia({ primeiroNome: "Bruno", diasNaSemana: 3, nomeEtapa: "Sílabas", conteudoParaTreinar: "Sílaba BO" });
+    assert.deepEqual(frases, [
+      "Bruno treinou 3 dias nos últimos 7 dias. Treinar um pouco todo dia ajuda.",
+      "Vale a pena treinar junto: Sílaba BO.",
+      "Bruno está na etapa Sílabas.",
+    ]);
+    assert.match(recomendacoesParaFamilia({ primeiroNome: "Ana", diasNaSemana: 5, nomeEtapa: "Letras" })[0], /Muito bem!/);
+    for (const f of frases) assert.doesNotMatch(f, /erro|falha|inválid/i);
   });
 });

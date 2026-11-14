@@ -158,3 +158,43 @@ export function gravarNivelInicial(idAluno: number, idNivel: number, agora: stri
   db.prepare("UPDATE Aluno SET idNivelInicial = ? WHERE idUsuario = ?").run(idNivel, idAluno);
   db.prepare("UPDATE Usuario SET atualizadoEm = ? WHERE idUsuario = ?").run(agora, idAluno);
 }
+
+/**
+ * Recalcula o DesempenhoConteudo de (aluno, nível, conteúdo) a partir de TODAS as respostas
+ * (usado depois da correção manual do professor). Sem respostas, apaga a linha.
+ */
+export function recalcularDesempenhoConteudo(idAluno: number, idNivel: number, conteudo: string, agora: string): void {
+  const db = banco();
+  const { tentativas, acertos } = db
+    .prepare(
+      `SELECT COUNT(*) AS tentativas, COALESCE(SUM(r.correta), 0) AS acertos
+         FROM Resposta r JOIN Atividade a ON a.idAtividade = r.idAtividade
+        WHERE r.idAluno = ? AND a.idNivel = ? AND a.conteudo = ?`,
+    )
+    .get(idAluno, idNivel, conteudo) as { tentativas: number; acertos: number };
+  if (tentativas === 0) {
+    db.prepare("DELETE FROM DesempenhoConteudo WHERE idAluno = ? AND idNivel = ? AND conteudo = ?").run(idAluno, idNivel, conteudo);
+    return;
+  }
+  db.prepare(
+    `INSERT INTO DesempenhoConteudo (idAluno, idNivel, conteudo, totalTentativas, totalAcertos, taxaAcerto, atualizadoEm)
+     VALUES (?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT (idAluno, idNivel, conteudo) DO UPDATE SET
+       totalTentativas = excluded.totalTentativas,
+       totalAcertos    = excluded.totalAcertos,
+       taxaAcerto      = excluded.taxaAcerto,
+       atualizadoEm    = excluded.atualizadoEm`,
+  ).run(idAluno, idNivel, conteudo, tentativas, acertos, acertos / tentativas, agora);
+}
+
+/** Mudanças de nível do aluno, da mais antiga para a mais recente. */
+export function historicoDeNiveis(idAluno: number): { idNivel: number; nome: string; ordem: number; dataMudanca: string }[] {
+  return banco()
+    .prepare(
+      `SELECT h.idNivel, n.nome, n.ordem, h.dataMudanca
+         FROM HistoricoNivel h JOIN Nivel n ON n.idNivel = h.idNivel
+        WHERE h.idAluno = ?
+        ORDER BY h.dataMudanca, h.idHistorico`,
+    )
+    .all(idAluno) as unknown as { idNivel: number; nome: string; ordem: number; dataMudanca: string }[];
+}

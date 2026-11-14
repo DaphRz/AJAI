@@ -88,3 +88,44 @@ export async function informarCodigoInstituicao(codigo: string): Promise<string>
   });
   return mensagem;
 }
+
+// ---------- Turmas da instituição (passo 8; server/src/rotas/turmasInstituicao.ts) ----------
+
+/** Turma como a instituição vê: o professor e QUANTOS alunos (sem os nomes). */
+export interface TurmaDaInstituicao {
+  idTurma: number;
+  nome: string;
+  periodo: string;
+  ativa: boolean;
+  professor: { idUsuario: number; nome: string };
+  totalAlunos: number;
+}
+
+/** Turmas dos professores da instituição e os professores aprovados (para escolher). */
+export function listarTurmasDaInstituicao(): Promise<{
+  turmas: TurmaDaInstituicao[];
+  professores: { idUsuario: number; nome: string }[];
+}> {
+  return chamarApi("/instituicao/turmas");
+}
+
+export async function incluirTurmaDaInstituicao(nome: string, periodo: string, idProfessor: number): Promise<TurmaDaInstituicao> {
+  const { turma } = await chamarApi<{ turma: TurmaDaInstituicao }>("/instituicao/turmas", {
+    metodo: "POST",
+    corpo: { nome, periodo, idProfessor },
+  });
+  return turma;
+}
+
+export async function editarTurmaDaInstituicao(
+  idTurma: number,
+  dados: { nome?: string; periodo?: string; ativa?: boolean; idProfessor?: number },
+): Promise<string> {
+  const { mensagem } = await chamarApi<{ mensagem: string }>(`/instituicao/turmas/${idTurma}`, { metodo: "PATCH", corpo: dados });
+  return mensagem;
+}
+
+export async function excluirTurmaDaInstituicao(idTurma: number): Promise<string> {
+  const { mensagem } = await chamarApi<{ mensagem: string }>(`/instituicao/turmas/${idTurma}`, { metodo: "DELETE" });
+  return mensagem;
+}
