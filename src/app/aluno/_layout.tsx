@@ -1,14 +1,11 @@
 import { Redirect, Stack } from "expo-router";
-import { useSessao } from "@/context/sessao";
-import { rotaInicial } from "@/services/auth";
+import { useAreaProtegida } from "@/hooks/useAreaProtegida";
 import { cores } from "@/theme/tokens";
 
-/** Área do aluno: só entra quem está logado com perfil ALUNO. */
-export default function AlunoLayout() {
-  const { usuario, carregando } = useSessao();
-  if (carregando) return null;
-  if (!usuario) return <Redirect href="/login" />;
-  // Perfil errado: manda para a área certa (cada perfil só vê a sua).
-  if (usuario.perfil !== "ALUNO") return <Redirect href={rotaInicial(usuario)} />;
+/** Área do aluno: só entra quem está logado com perfil ALUNO. Perfil errado: manda para a área certa. */
+export default function Layout() {
+  const acesso = useAreaProtegida("ALUNO");
+  if (acesso === "carregando") return null;
+  if (acesso !== "liberado") return <Redirect href={acesso} />;
   return <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: cores.fundo } }} />;
 }

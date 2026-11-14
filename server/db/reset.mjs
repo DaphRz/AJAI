@@ -13,8 +13,10 @@ await semear(db);
 const niveis = db.prepare("SELECT COUNT(*) AS n FROM Nivel").get().n;
 const atividades = db.prepare("SELECT COUNT(*) AS n FROM Atividade").get().n;
 const alunos = db.prepare("SELECT COUNT(*) AS n FROM Aluno").get().n;
+const codigo = db.prepare("SELECT codigo FROM Instituicao WHERE status = 'APROVADA' LIMIT 1").get()?.codigo;
 db.close();
 
 console.log(`Banco recriado em ${caminhoBanco}`);
 console.log(`  ${niveis} níveis, ${atividades} atividades, ${alunos} alunos de demonstração.`);
 console.log(`  Senha de todos os usuários de demonstração: ${SENHA_DEMO}`);
+if (codigo) console.log(`  Código da instituição de demonstração (cadastro de professor): ${codigo}`);

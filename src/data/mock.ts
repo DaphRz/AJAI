@@ -2,17 +2,20 @@
  * DADOS DE DEMONSTRAÇÃO — fonte do seed do banco (server/db/seed.mjs, `npm run db:seed`).
  *
  * Níveis, atividades, contas, respostas e progressão já vêm da API (passos 3 a 5). Só o painel
- * do professor (services/relatorios.ts) ainda lê estes arrays em memória até o passo 10.
+ * do professor (services/relatorios.ts) ainda lê estes arrays em memória até o passo 8.
  */
 import type {
   Administrador,
   Aluno,
   Atividade,
+  Instituicao,
   Matricula,
   Nivel,
   Professor,
+  Responsavel,
   Resposta,
   Turma,
+  Vinculo,
 } from "@/domain/modelos";
 
 const agora = new Date().toISOString();
@@ -150,21 +153,8 @@ export const atividades: Atividade[] = [
  */
 export const idsAtividadesNivelamento = [1, 3, 4, 5, 7];
 
-export const professores: Professor[] = [
-  {
-    idUsuario: 100,
-    nome: "Rafael Costa",
-    email: "rafael@ajai.app",
-    telefone: "11900000100",
-    perfil: "PROFESSOR",
-    ativo: true,
-    criadoEm: agora,
-    atualizadoEm: agora,
-  },
-];
-
 /**
- * Administrador (cadastra atividades e níveis – passo 11; redefine senha de professor).
+ * Administrador (aprova instituições; cadastra atividades e níveis – passo 9; gera senha provisória).
  * A senha de TODOS os usuários de demonstração é a do seed (server/db/seed.mjs, SENHA_DEMO).
  */
 export const administradores: Administrador[] = [
@@ -179,14 +169,92 @@ export const administradores: Administrador[] = [
   },
 ];
 
+/** Código fixo da instituição aprovada de demonstração (o professor informa no cadastro). */
+export const CODIGO_INSTITUICAO_DEMO = "EJAVV2";
+
+/** Instituições (Passo 3.1): uma APROVADA (com código) e uma PENDENTE, esperando o administrador. */
+export const instituicoes: Instituicao[] = [
+  {
+    idUsuario: 800,
+    nome: "Escola EJA Centro (demonstração)",
+    email: "instituicao@ajai.app",
+    telefone: "11900000800",
+    perfil: "INSTITUICAO",
+    cnpj: "11222333000181",
+    nomeResponsavel: "Helena Martins",
+    codigo: CODIGO_INSTITUICAO_DEMO,
+    status: "APROVADA",
+    decididoPor: 900,
+    decididoEm: agora,
+    ativo: true,
+    criadoEm: agora,
+    atualizadoEm: agora,
+  },
+  {
+    idUsuario: 801,
+    nome: "Instituto Aprender Sempre",
+    email: "aprender@ajai.app",
+    telefone: "11900000801",
+    perfil: "INSTITUICAO",
+    cnpj: "45287196000185",
+    nomeResponsavel: "Carlos Pereira",
+    status: "PENDENTE",
+    ativo: true,
+    criadoEm: agora,
+    atualizadoEm: agora,
+  },
+];
+
+/** Professores: Rafael já APROVADO pela instituição; Paula ainda PENDENTE. */
+export const professores: Professor[] = [
+  {
+    idUsuario: 100,
+    nome: "Rafael Costa",
+    email: "rafael@ajai.app",
+    telefone: "11900000100",
+    perfil: "PROFESSOR",
+    idInstituicao: 800,
+    statusVinculo: "APROVADO",
+    decididoEm: agora,
+    ativo: true,
+    criadoEm: agora,
+    atualizadoEm: agora,
+  },
+  {
+    idUsuario: 101,
+    nome: "Paula Ramos",
+    email: "paula@ajai.app",
+    telefone: "11900000101",
+    perfil: "PROFESSOR",
+    idInstituicao: 800,
+    statusVinculo: "PENDENTE",
+    ativo: true,
+    criadoEm: agora,
+    atualizadoEm: agora,
+  },
+];
+
+/** Responsável (familiar): acompanha no máximo 2 pessoas, sem turma. */
+export const responsaveis: Responsavel[] = [
+  {
+    idUsuario: 700,
+    nome: "Joana Lima",
+    email: "joana@ajai.app",
+    telefone: "11900000700",
+    perfil: "RESPONSAVEL",
+    ativo: true,
+    criadoEm: agora,
+    atualizadoEm: agora,
+  },
+];
+
 /** idNivelAtual ausente = aluno que ainda não fez o nivelamento (entra direto nele). */
 function alunoDemo(idUsuario: number, nome: string, idNivelAtual?: number): Aluno {
   return {
     idUsuario,
     nome,
-    // Aluno entra com nome de usuário (sem e-mail), e quem criou a conta foi o professor Rafael.
+    // Aluno de demonstração entra com nome de usuário (ex.: maria.silva).
     nomeUsuario: nome.toLowerCase().replace(" ", "."),
-    idCriador: 100,
     perfil: "ALUNO",
     ativo: true,
     criadoEm: agora,
@@ -215,6 +283,28 @@ export const matriculas: Matricula[] = alunos.map((a) => ({
   idTurma: 1,
   dataVinculo: agora,
 }));
+
+/** Vínculos aceitos: os 4 alunos com o professor Rafael, e Bruno também com a responsável Joana. */
+export const vinculos: Vinculo[] = [
+  ...alunos.map((a, i) => ({
+    idVinculo: i + 1,
+    idAluno: a.idUsuario,
+    idAcompanhante: 100,
+    status: "ACEITO" as const,
+    identificadorConvite: a.nomeUsuario,
+    criadoEm: agora,
+    decididoEm: agora,
+  })),
+  {
+    idVinculo: alunos.length + 1,
+    idAluno: 3,
+    idAcompanhante: 700,
+    status: "ACEITO",
+    identificadorConvite: "bruno.lima",
+    criadoEm: agora,
+    decididoEm: agora,
+  },
+];
 
 /**
  * Respostas: começa com um histórico fictício para Ana, Bruno e Clara

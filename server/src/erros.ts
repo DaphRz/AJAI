@@ -45,6 +45,13 @@ const mensagensPorCampo: Record<string, string> = {
   senhaAtual: "Escreva a senha que você usa hoje.",
   senhaNova: "A senha nova precisa ter pelo menos 6 letras ou números.",
   dataNascimento: "Confira a data de nascimento.",
+  cnpj: "Confira o CNPJ. São 14 números.",
+  nomeResponsavel: "Escreva o nome da pessoa responsável, com pelo menos 2 letras.",
+  codigo: "Confira o código da instituição. São 6 letras e números.",
+  aluno: "Escreva o usuário, o e-mail ou o telefone do aluno.",
+  decisao: "Escolha aprovar ou recusar.",
+  motivo: "Escreva o motivo em poucas palavras.",
+  aceitar: "Escolha aceitar ou recusar.",
 };
 
 function mensagemDeValidacao(erro: FastifyError): string | undefined {

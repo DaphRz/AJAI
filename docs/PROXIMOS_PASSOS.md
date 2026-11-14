@@ -1,6 +1,6 @@
 # Próximos passos do AJAI (04/11 → entrega 17/11)
 
-Roteiro do que falta até a entrega, **na ordem em que deve ser feito**. Cada passo tem prazo, dependências, critério de pronto e um **prompt pronto para colar** num assistente de IA (Claude, Copilot, Cursor...) aberto na pasta do projeto.
+Roteiro do que falta até a entrega. **A ordem de execução é a da tabela "Visão geral"** (as seções abaixo seguem a mesma ordem); os números dos passos são citados no README, no AGENTS.md e em TODOs do código; se renumerar, atualize todos. Cada passo tem prazo, dependências, critério de pronto e um **prompt pronto para colar** num assistente de IA (Claude, Copilot, Cursor...) aberto na pasta do projeto.
 
 > Como usar os prompts
 > 1. Abra o assistente **na raiz do repositório** (para ele ler `AGENTS.md`, `README.md` e o código).
@@ -17,7 +17,7 @@ Roteiro do que falta até a entrega, **na ordem em que deve ser feito**. Cada pa
 O `CLAUDE.md` da raiz carrega automaticamente `AGENTS.md` e este arquivo a cada sessão do Claude Code. Por isso, em qualquer passo:
 
 1. **Identifique o passo** em que a tarefa se encaixa e siga o critério "Pronto quando". Se a tarefa contrariar a stack (SQLite, Fastify, `ProvedorVoz`), pare e avise antes de mudar.
-2. **Cobertura do app inteiro:** a tarefa vale para aluno **e** professor **e** administrador, quando se aplicar. Confira a tabela "Telas do Figma × código" do README para não esquecer nenhuma tela.
+2. **Cobertura do app inteiro:** a tarefa vale para aluno, professor, responsável, instituição **e** administrador, quando se aplicar. Confira a tabela "Telas do Figma × código" do README para não esquecer nenhuma tela.
 3. **Regras de acessibilidade do AGENTS.md** em toda tela nova ou alterada (botão de áudio, texto nos botões, fonte e toque mínimos, mensagens positivas).
 4. **Banco:** mudou estrutura → migração nova (`npm run db:migrate`); mudou dados de exemplo → `src/data/mock.ts` + `npm run db:seed`; atualize `src/domain/modelos.ts`.
 5. **Ao terminar:** rode `npx expo lint`, `npx tsc --noEmit`, os testes que existirem e, se mexeu em banco, `npm run db:reset`; marque o passo neste arquivo (⬜ → 🟡 → ✅) e atualize "Pendências" no README.
@@ -36,22 +36,24 @@ Legenda: ⬜ a fazer · 🟡 em andamento · ✅ feito
 | 1 | Decisões de stack (SQLite, Fastify, `ProvedorVoz`) — feito | 05/11 | — |
 | 2 | Criar o servidor (API) sobre o banco SQLite — feito | 07/11 | 1 |
 | 3 | Cadastro e login de verdade — feito | 08/11 | 2 |
+| 3.1 | Modelo de contas revisado (perfis, instituição, vínculos) — feito | 14/11 | 3 |
 | 4 | Atividades e níveis vindos da API — feito | 09/11 | 2 |
 | 5 | Respostas, progressão e histórico no servidor — feito | 10/11 | 3, 4 |
-| 6 | Narração por voz e preferências de acessibilidade | 10/11 | 1 |
-| 7 | Conteúdo pedagógico completo | 10/11 | 4 |
-| 8 | Telas e recursos visuais que faltam no Figma | 11/11 | — (começar já) |
-| 9 | Home do aluno: ofensiva, frequência e tela de progresso | 12/11 | 5, 8 |
-| 10 | Área do professor completa | 13/11 | 5, 8 |
-| 11 | Cadastro de atividades e níveis (administrador) | 13/11 | 2 |
-| 12 | Testes automatizados | 13/11 | 5 |
-| 13 | Segurança e privacidade (LGPD) | 13/11 | 3 |
-| 14 | Testes integrados e de usabilidade | 15/11 | 9, 10 |
-| 15 | Correção de bugs e polimento | 16/11 | 14 |
-| 16 | Documentação final (PDF, APF, README) | 16/11 | 15 |
-| 17 | Preparar a apresentação e a demo | 17/11 | 16 |
+| 6 | Conteúdo pedagógico completo | 14/11 | 4 |
+| 7 | Home do aluno: ofensiva, frequência e tela de progresso | 15/11 | 5 |
+| 8 | Área do professor e do responsável | 15/11 | 5, 3.1 |
+| 9 | Cadastro de atividades e níveis (administrador) | 15/11 | 2 |
+| 10 | Narração por voz e preferências de acessibilidade | 15/11 | 1 |
+| 11 | Ajuste ao Figma e recursos visuais | 16/11 | — |
+| 12 | Testes automatizados | 16/11 | 5, 3.1 |
+| 13 | Segurança e privacidade (LGPD) | 16/11 | 3.1 |
+| 14 | Correção de bugs e polimento | 16/11 | 7, 8 |
+| 15 | Documentação final (PDF, APF, README) | 16/11 | 14 |
+| 16 | Preparar a apresentação e a demo | 17/11 | 15 |
 
-Sprints da documentação: **Sprint 3** vai até 10/11 (passos 0–7), **Sprint 4** de 10/11 a 17/11 (passos 8–17). Os passos 0 a 2 estavam atrasados em relação ao cronograma original (eram da Sprint 1) e foram concluídos em 05/11.
+Em 14/11 a ordem dos passos mudou e **os passos foram renumerados na ordem de execução** (a numeração antiga de 6 a 17 não vale mais; as referências no README, no AGENTS.md e nos comentários do código foram atualizadas). Os passos 7 e 8 (home do aluno e área do professor) usam as telas provisórias, e o ajuste ao Figma fica no passo 11. As telas que não têm frame no Figma não serão desenhadas: seguem o padrão das já desenhadas. O antigo passo de testes integrados e de usabilidade foi **retirado**; os casos manuais ficam no passo 12 e a correção de bugs no passo 14. Os prazos foram recalculados a partir de 14/11, mantendo a entrega em **17/11**; o dia 16/11 está cheio, então dividam os passos entre as pessoas (todos desenvolvem).
+
+Sprints da documentação: **Sprint 3** vai até 10/11 (passos 0–6), **Sprint 4** de 10/11 a 17/11 (passos 7–16). Os passos 0 a 2 estavam atrasados em relação ao cronograma original (eram da Sprint 1) e foram concluídos em 05/11.
 
 ---
 
@@ -75,6 +77,8 @@ Sprints da documentação: **Sprint 3** vai até 10/11 (passos 0–7), **Sprint 
 
 ## ✅ Passo 3 — Cadastro e login de verdade (RF01, RF02)
 
+> Modelo de contas revisado no Passo 3.1.
+
 **Feito em 08/11.** Login, cadastro e senha passam pela API, com senha em **scrypt** (`server/db/senha.mjs`, sem módulo nativo) e token **JWT** de 30 dias guardado no `expo-secure-store` (no navegador, `localStorage`). A sessão é restaurada ao abrir o app, com a splash, e funciona sem internet usando a cópia guardada. O "modo demonstração" saiu e o seed grava o hash da senha `demo1234` para todos, incluindo um administrador (`admin@ajai.app`). Modelo de contas:
 - só o **professor/responsável** se cadastra sozinho, em `/cadastro` (nome, e-mail, telefone, senha);
 - o **aluno** é cadastrado **pelo professor** (`/professor/contas/nova`), entra na turma dele, **não tem e-mail nem telefone** e entra com **nome de usuário** (`maria.silva`);
@@ -93,10 +97,50 @@ Sprints da documentação: **Sprint 3** vai até 10/11 (passos 0–7), **Sprint 
 **Testes:** login e cadastro testados no Expo Go pela equipe. O modelo de contas de aluno foi testado pela API (`app.inject`), junto com lint e typecheck (app e servidor).
 
 **Observações:**
-- o painel de Acompanhamento ainda lê `mock.ts`, então o aluno novo só aparece em Conta › Contas dos alunos até o passo 10;
+- o painel de Acompanhamento ainda lê `mock.ts`, então o aluno novo só aparece em Conta › Contas dos alunos até o passo 8;
 - o nível do aluno novo só vai para o servidor no passo 5;
 - depois de trocar a senha, os tokens antigos continuam valendo até vencer (passo 13).
 
+---
+
+## ✅ Passo 3.1 — Modelo de contas revisado: perfis, instituição e vínculos (RF01, RF02)
+
+**Feito em 14/11.** Revisa o modelo do Passo 3: agora **cada perfil cria a própria conta** e o professor deixa de cadastrar aluno.
+
+**Modelo novo:**
+- perfis **ALUNO**, **PROFESSOR**, **RESPONSAVEL** (novo), **INSTITUICAO** (novo) e **ADMINISTRADOR** (só por seed/script);
+- **aluno** se cadastra com nome, senha e pelo menos um entre nome de usuário (sugerido a partir do nome), e-mail ou telefone, e entra por qualquer um deles. Professor, responsável e instituição: e-mail e telefone obrigatórios;
+- **instituição** se inscreve (nome, CNPJ com dígitos validados, nome do responsável, e-mail, telefone, senha) e fica **PENDENTE**. O administrador aprova ou recusa no app (recusa com motivo). Ao aprovar, o servidor gera o **código** (6 caracteres maiúsculos, único, sem 0/O/1/I/L, com `crypto`);
+- **professor** informa o código ao se cadastrar e fica **PENDENTE** até a instituição aprovar. Recusado, vê o motivo e pode informar outro código;
+- conta pendente ou recusada entra no app, mas só vê a tela de espera (`/espera`, com "Verificar de novo"), e as rotas restritas devolvem **403** (`exigirContaLiberada` em `server/src/autenticacao.ts`);
+- **vínculo** acompanhante ↔ aluno: o professor (aprovado) ou o responsável convida pelo usuário, e-mail ou telefone do aluno; o aluno aceita ou recusa. Só com vínculo **ACEITO** o acompanhante vê o nome do aluno (antes, só o que ele mesmo digitou). Aluno e acompanhante podem desfazer. **Responsável: no máximo 2** (PENDENTE + ACEITO), conferido no servidor dentro da transação (409 "Você já acompanha 2 pessoas."); professor sem limite;
+- **todos trocam a própria senha**, inclusive o aluno. A senha provisória (rota do administrador e `npm run usuario:senha`) vale para todos os perfis, e o script aceita usuário, e-mail ou telefone.
+
+**Banco:** migração **005** recria `Usuario` (perfis novos e `CHECK` novo) e cria `Responsavel`, `Instituicao` e `Vinculo`. `Professor` ganhou `idInstituicao`, `statusVinculo`, `motivoRecusa` e `decididoEm`. O antigo `Aluno.idCriador` virou `Vinculo` ACEITO e saiu (com o índice), e a `vw_aluno` foi recriada. Em banco que já tinha professor, a migração cria a instituição de demonstração (APROVADA, código `EJAVV2`) e liga os professores a ela como APROVADOS. Extra em relação ao prompt: `Vinculo.identificadorConvite` (o que o acompanhante digitou, mostrado até o aceite). Seed: admin; instituição APROVADA (`instituicao@ajai.app`, código `EJAVV2`) e PENDENTE (`aprender@ajai.app`); professor APROVADO (Rafael) e PENDENTE (Paula); responsável (Joana); os 4 alunos ligados ao Rafael e Bruno também à Joana.
+
+**Servidor:**
+- `POST /auth/cadastro/{aluno,professor,responsavel,instituicao}` (com `limiteSenha`); o antigo `POST /auth/cadastro` saiu;
+- login e `/auth/eu` devolvem `usuario.situacao` (`{ status: PENDENTE|APROVADA|RECUSADA, motivo?, nomeInstituicao? }`);
+- `GET /admin/instituicoes?status=`, `PATCH /admin/instituicoes/:id`;
+- `GET /instituicao/eu`, `GET /instituicao/professores?status=`, `PATCH /instituicao/professores/:id` (só professores dela; outra = 404);
+- `PATCH /professor/instituicao { codigo }`;
+- `POST/GET/DELETE /vinculos`, `GET /alunos/eu/vinculos`, `PATCH`/`DELETE /alunos/eu/vinculos/:id`. `temVinculoAceito()` (em `rotas/vinculos.ts`) é o que o passo 8 deve usar antes de mostrar qualquer dado de aluno;
+- saíram `rotas/professorAlunos.ts` (`/professor/alunos*`) e a regra "aluno não usa senha provisória".
+
+**App:**
+- `/cadastro` virou "Eu sou: Aluno / Professor / Responsável / Instituição", com uma tela por perfil (`/cadastro/aluno`, `/professor`, `/responsavel`, `/instituicao`, componente `FormularioCadastro`);
+- `/espera`, `/instituicao` (código, professores pendentes com Aprovar/Recusar, aprovados), `/responsavel` (até 2 pessoas, convidar);
+- `/admin` com as instituições pendentes (Aprovar/Recusar e o código gerado);
+- professor: "Meus alunos" (`/professor/alunos`, componente `MeusAlunos`) no lugar de `professor/contas/*`;
+- aluno: em Minha conta, "Trocar minha senha" (`/aluno/senha`) e "Quem me acompanha" (`/aluno/acompanhamento`: Aceitar/Recusar e Desfazer), e aviso de convite na home;
+- `services/contasAlunos.ts` saiu (`sugerirNomeUsuario` foi para `services/auth.ts`); novos `services/instituicoes.ts`, `services/vinculos.ts` e `hooks/useAreaProtegida.ts` (layouts dos 5 perfis).
+
+**Testes:** `npm test` roda 63 testes (29 novos em `server/src/rotas/contas.test.ts`): cadastro de cada perfil, login do aluno por usuário/e-mail/telefone, instituição PENDENTE sem acesso, admin aprova e gera código único, admin não é criável, código inválido, professor PENDENTE bloqueado e APROVADO liberado, instituição só decide os dela, 409 no 3º vínculo do responsável, professor sem limite, nada do aluno sem vínculo ACEITO, aluno troca a senha e senha provisória para aluno. Lint, typecheck (app e servidor), `db:reset` e `npx expo export -p web` passam. O fluxo instituição → admin → professor → instituição → aluno → convite → aceite foi conferido contra o servidor rodando; **falta a equipe repetir o fluxo pelas telas no Expo Go**.
+
+**Observações:**
+- o painel do professor (Acompanhamento e métricas) continua lendo o `mock.ts` até o passo 8;
+- turmas e `Matricula` não mudaram; o aluno que se cadastra sozinho não entra em turma (passo 8);
+- depois de `git pull`, rode `npm run db:migrate` (ou `db:reset`) e abra o `npx expo start` uma vez antes do `npx tsc` (gera os tipos das rotas novas).
 ---
 
 ## ✅ Passo 4 — Atividades e níveis vindos da API
@@ -119,7 +163,7 @@ Sprints da documentação: **Sprint 3** vai até 10/11 (passos 0–7), **Sprint 
 - tipo `AtividadeDoAluno` (sem gabarito) em `modelos.ts`;
 - hook `useCarregar` (`src/hooks/`) e componente `Carregando`: "Carregando..." e "Sem conexão. Toque para tentar de novo.", com "Ouvir ajuda" nas telas do aluno;
 - telas ligadas à API: home, atividade, nivelamento (com barra de progresso, como no Figma), resultado do nivelamento e progresso;
-- o painel do professor continua lendo o mock (passo 10).
+- o painel do professor continua lendo o mock (passo 8).
 
 **`AtividadeView` tem um layout por tipo:**
 - LETRA: letra grande + alternativas com imagem;
@@ -138,7 +182,7 @@ O "Ouvir instrução" também lê as opções. Enquanto o servidor corrige, a te
   - depois de um acerto, "Continuar →" vai direto para a próxima atividade;
   - erro → "Tentar novamente" a mesma atividade (só os acertos contam);
   - na 5ª atividade acertada: "Voltar ao início" ou "Continuar treinando" (a próxima parada é na 10ª).
-- Ordem das atividades: primeiro as da etapa que o aluno ainda não acertou. Com poucas atividades por etapa (até o passo 7), as já acertadas se repetem, a mais antiga primeiro e nunca a mesma duas vezes seguidas.
+- Ordem das atividades: primeiro as da etapa que o aluno ainda não acertou. Com poucas atividades por etapa (até o passo 6), as já acertadas se repetem, a mais antiga primeiro e nunca a mesma duas vezes seguidas.
 
 **Testes:**
 - fluxo testado no Expo Go pela equipe em 09/11: nivelamento, sequência de 5 atividades e volta para a home;
@@ -146,10 +190,10 @@ O "Ouvir instrução" também lê as opções. Enquanto o servidor corrige, a te
 - lint, typecheck (app e servidor), `npx expo export -p web` e `npm run db:reset` passam.
 
 **Observações:**
-- na tela "Formar palavra", a **foto** da palavra (a casa) ainda não aparece: vem com as imagens do passo 8, usando `Atividade.urlImagem`, que já existe no banco;
+- na tela "Formar palavra", a **foto** da palavra (a casa) ainda não aparece: vem com as imagens do passo 11, usando `Atividade.urlImagem`, que já existe no banco;
 - respostas e subida de nível ficam só na memória do app até o passo 5: ao reabrir o app, o aluno novo refaz o nivelamento;
 - `POST /atividades/:id/corrigir` é provisória e sai no passo 5;
-- PALAVRA usa as alternativas como peças (várias `correta`), o que muda a validação do passo 11.
+- PALAVRA usa as alternativas como peças (várias `correta`), o que muda a validação do passo 9.
 
 ---
 
@@ -180,13 +224,146 @@ O "Ouvir instrução" também lê as opções. Enquanto o servidor corrige, a te
 **Observações:**
 - a **regra de progressão continua provisória** e precisa ser confirmada pela equipe: últimas 5 respostas da etapa ≥ `criterioAcerto`, conferida só depois de um acerto numa atividade da etapa atual. Se mudar, mude `server/src/progressao.ts`, os testes e o README;
 - pelos dados de exemplo, Ana e Clara sobem de etapa logo no primeiro acerto (bom para a demo);
-- o painel do professor e a tela de métricas do aluno ainda leem as respostas do mock, então as respostas novas só aparecem lá no passo 10.
+- o painel do professor e a tela de métricas do aluno ainda leem as respostas do mock, então as respostas novas só aparecem lá no passo 8.
 
 ---
 
-## ⬜ Passo 6 — Narração por voz e preferências (RNF04, APF 17)
+## ⬜ Passo 6 — Conteúdo pedagógico completo (RF04–RF11)
 
-**Prazo:** 10/11 · **Depende de:** passos 1 e 2
+**Prazo:** 14/11 · **Depende de:** passo 4
+
+**Pronto quando:** cada um dos 5 níveis tem pelo menos 6 atividades revisadas pela equipe (idealmente por um dos profissionais da EJA da pesquisa), cobrindo letra-som, cotidiano e interpretação de texto, e o `mock.ts` foi atualizado e `npm run db:seed` roda sem erro.
+
+```text
+Leia AGENTS.md, src/domain/modelos.ts (TipoAtividade), src/data/mock.ts e server/db/seed.mjs
+(o seed lê o mock.ts: é nele que se escrevem as atividades; depois rode `npm run db:seed`).
+
+Preciso do banco de atividades do AJAI para jovens, adultos e idosos em alfabetização
+(EJA). Público adulto: NADA infantilizado; use situações do cotidiano (ônibus, mercado,
+remédio, conta de luz, documento, placa de rua, receita, mensagem no celular).
+
+Gere, no formato de src/data/mock.ts (tipo Atividade), pelo menos 6 atividades por nível:
+1 Aprendendo Letras (reconhecer letra; associar letra e som – RF05)
+2 Formando Sílabas
+3 Formando Palavras (montar palavra com sílabas; escrita curta – RF09)
+4 Lendo Frases (frases do dia a dia – RF08, RF11)
+5 Entendendo Textos (texto de 2 a 4 linhas + pergunta – RF10)
+Regras: enunciado curto (até 12 palavras), 3 alternativas, só uma correta,
+distratores plausíveis, campo `conteudo` padronizado (ex.: "Letra B", "Sílaba BO")
+porque ele alimenta o relatório de dificuldades.
+Para RF05 (letra-som) e RF11 (cotidiano), proponha se viram novos valores de
+TipoAtividade ou só `conteudo` de tipos existentes, e explique o impacto no diagrama
+de classes e na APF. Liste no final as imagens que precisaremos (nome do arquivo +
+descrição) para a equipe de design produzir.
+Gere também as perguntas definitivas do NIVELAMENTO (RF03): uma ou duas por nível, em ordem
+crescente de dificuldade (campo ordemNivelamento), e proponha a regra para definir o nível
+inicial (hoje provisória: para no primeiro erro) para a equipe validar com os
+profissionais da EJA.
+Depois de revisado pela equipe: <colar aqui as correções>, atualize o mock.ts e rode
+`npm run db:seed` para conferir que o banco carrega sem erro.
+```
+
+---
+
+## ⬜ Passo 7 — Home do aluno: ofensiva, frequência e progresso (RF15, RF18, RF19)
+
+**Prazo:** 15/11 · **Depende de:** passo 5 (usa as telas provisórias; o ajuste ao Figma fica no passo 11)
+
+**Pronto quando:** o cartão "Ofensiva – X dias seguidos" mostra o número real, a tela de progresso segue o Figma e o aluno vê uma comemoração ao subir de nível.
+
+```text
+Leia AGENTS.md, src/app/aluno/index.tsx, src/app/aluno/progresso.tsx,
+src/app/aluno/resultado.tsx e o endpoint GET /alunos/eu/progresso.
+
+1. No servidor, calcule a ofensiva: quantos dias seguidos (até hoje ou ontem) o aluno
+   respondeu pelo menos 1 atividade, no fuso America/Sao_Paulo. Inclua em
+   /alunos/eu/progresso junto com atividades nos últimos 7 dias.
+2. Na home, mostre a ofensiva real com texto encorajador (nunca culpar quem parou:
+   se zerou, "Que bom ter você de volta!").
+3. Refaça /aluno/progresso (frame do Figma se já existir: <link>), com a trilha de níveis,
+   atividades feitas, taxa de acerto e "Vale a pena treinar" (dificuldades).
+4. Quando o servidor responder subiuDeNivel, mostre uma tela de comemoração
+   (frame do Figma se já existir) com narração.
+Escreva testes para o cálculo da ofensiva (virada de dia, dias sem uso, fuso).
+```
+
+---
+
+## ⬜ Passo 8 — Área do professor e do responsável (RF20, RF21, APF 20–24, 35, 40–43)
+
+**Prazo:** 15/11 · **Depende de:** passos 5 e 3.1 
+
+**Pronto quando:** o professor vê só os alunos com **vínculo ACEITO** com ele, filtra por período, abre métricas com gráfico de evolução, consulta relatórios da turma, cria turma, põe/tira alunos vinculados das turmas e corrige manualmente uma resposta; o responsável vê algumas recomendações sobre as (até 2) pessoas que acompanha.
+
+**A fazer depois (definido no Passo 3.1, não implementado ainda):**
+- turmas (criar/editar, mover aluno entre turmas, `Matricula`) e métricas detalhadas do aluno: **só PROFESSOR**, e só de alunos com vínculo ACEITO;
+- **responsável**: sem turma e sem métricas detalhadas; só algumas recomendações (ex.: "Maria treinou 3 dias esta semana", "Vale a pena treinar a letra B com ela");
+- toda rota que mostrar dado de aluno chama `temVinculoAceito(idAcompanhante, idAluno)` (`server/src/rotas/vinculos.ts`);
+- o aluno que se cadastra sozinho não está em turma: o professor coloca na turma depois de o aluno aceitar o convite.
+
+```text
+Leia AGENTS.md, src/services/relatorios.ts, src/app/professor/**, src/app/responsavel/**,
+server/src/rotas/vinculos.ts e server/.
+Frames do Figma: Dashboard do professor, Métricas de Ana Souza (telas sem frame seguem o padrão visual das desenhadas).
+
+No SERVIDOR (professor: exigirContaLiberada("PROFESSOR"); só retornam alunos com Vinculo ACEITO
+com ele, conferido com temVinculoAceito):
+- GET /professor/painel?inicio&fim → resumo por aluno (frequência em dias, total de
+  atividades, taxa de acerto/erro, nível, maior dificuldade, situação EM_DIA /
+  ATENCAO / REFORCO com regra documentada);
+- GET /professor/alunos/:id?inicio&fim → relatório individual + série diária de taxa
+  de acerto + histórico de níveis;
+- GET /professor/relatorios/frequencia e /professor/relatorios/dificuldades (por turma);
+- CRUD de turma e pôr/tirar/mover aluno entre as turmas DO PRÓPRIO professor (só alunos com
+  vínculo ACEITO; o aluno cria a própria conta e aceita o convite em /aluno/acompanhamento);
+- RESPONSÁVEL: GET /responsavel/recomendacoes → para cada aluno com vínculo ACEITO, 1 a 3 frases
+  curtas (dias de treino na semana, conteúdo para treinar). Sem turma e sem métricas detalhadas.
+- PATCH /respostas/:id/correcao (correção manual: muda `correta`, grava
+  correcaoProfessor e recalcula DesempenhoConteudo).
+
+No APP: seletor de período (Últimos 7 dias / 30 dias / personalizado), gráfico de
+evolução simples (barras com View, sem biblioteca, ou react-native-svg via
+`npx expo install` se necessário), aba Relatórios, gestão de turma na aba Conta,
+correção manual na tela de métricas. Recarregue os dados ao focar a aba
+(useFocusEffect). Mostre o aviso "Os dados complementam a avaliação do professor".
+A aba Conta mostra os dados do professor (editar nome), trocar senha (passo 3) e sair.
+Em /responsavel, mostre as recomendações embaixo de cada pessoa acompanhada.
+Cobertura: confira que TODA tela do professor e do responsável da tabela do README existe e
+funciona com dados reais (dashboard, métricas do aluno, relatórios, conta, meus alunos, gestão
+de turma, área do responsável). O dashboard deve listar os alunos com vínculo ACEITO (hoje lê o mock).
+```
+
+---
+
+## ⬜ Passo 9 — Cadastro de atividades e níveis (administrador, APF 25–31)
+
+**Prazo:** 15/11 · **Depende de:** passo 2
+
+**Pronto quando:** existe um jeito documentado de incluir, editar e inativar atividades e níveis sem mexer no código. Se não houver tempo para telas, um script/rotas protegidas bastam, e a APF/documentação deve dizer isso.
+
+```text
+Leia AGENTS.md, src/domain/modelos.ts e server/.
+O diagrama e a APF preveem o Administrador com IncluirAtividade, EditarAtividade,
+ExcluirAtividade (inativar), ListarAtividades, IncluirNivel e EditarNivel.
+Temos até 13/11. Implemente a opção <A ou B>:
+A) Rotas REST protegidas por perfil ADMINISTRADOR (o admin do seed já existe) +
+   instruções no README para cadastrar via um cliente HTTP (arquivo
+   server/admin.http com exemplos prontos).
+B) Telas simples no próprio app em /admin (lista de atividades por nível, formulário
+   com enunciado, tipo, conteúdo, 3 alternativas e qual é a correta, inativar).
+"Excluir" nunca apaga: muda status para INATIVA. Valide que toda atividade de múltipla
+escolha tem exatamente uma alternativa correta (PALAVRA usa as alternativas como peças
+e ESCRITA não tem alternativas). Inclua o campo textoApoio no formulário.
+Inclua também IncluirNivel/EditarNivel (nome, descrição, ordem, criterioAcerto) e a
+listagem de atividades por nível. O administrador entra pelo login (passo 3) e só ele
+acessa essas rotas/telas.
+```
+
+---
+
+## ⬜ Passo 10 — Narração por voz e preferências (RNF04, APF 17)
+
+**Prazo:** 15/11 · **Depende de:** passos 1 e 2 · **Ordem:** depois do 9, antes do 11 e do 12
 
 **Pronto quando:** todo botão "Ouvir ajuda / Ouvir instrução" fala em português do Brasil com a **API de voz escolhida pela equipe** (ainda não definida) e o `expo-speech` funcionando como alternativa e como reserva; o aluno pode mudar a velocidade da voz e o tamanho da letra, a preferência fica salva, e **trocar o provedor é mudar uma linha** (`PROVEDOR_PADRAO` em `src/services/voz/index.ts`).
 
@@ -251,54 +428,17 @@ Atualize README (Pendências) com o que foi feito.
 ```
 ---
 
-## ⬜ Passo 7 — Conteúdo pedagógico completo (RF04–RF11)
+## 🟡 Passo 11 — Recursos visuais (UX/UI)
 
-**Prazo:** 10/11 · **Depende de:** passo 4
+**Prazo:** 16/11 · **Ordem:** depois do 10, antes do 12
 
-**Pronto quando:** cada um dos 5 níveis tem pelo menos 6 atividades revisadas pela equipe (idealmente por um dos profissionais da EJA da pesquisa), cobrindo letra-som, cotidiano e interpretação de texto, e o `mock.ts` foi atualizado e `npm run db:seed` roda sem erro.
-
-```text
-Leia AGENTS.md, src/domain/modelos.ts (TipoAtividade), src/data/mock.ts e server/db/seed.mjs
-(o seed lê o mock.ts: é nele que se escrevem as atividades; depois rode `npm run db:seed`).
-
-Preciso do banco de atividades do AJAI para jovens, adultos e idosos em alfabetização
-(EJA). Público adulto: NADA infantilizado; use situações do cotidiano (ônibus, mercado,
-remédio, conta de luz, documento, placa de rua, receita, mensagem no celular).
-
-Gere, no formato de src/data/mock.ts (tipo Atividade), pelo menos 6 atividades por nível:
-1 Aprendendo Letras (reconhecer letra; associar letra e som – RF05)
-2 Formando Sílabas
-3 Formando Palavras (montar palavra com sílabas; escrita curta – RF09)
-4 Lendo Frases (frases do dia a dia – RF08, RF11)
-5 Entendendo Textos (texto de 2 a 4 linhas + pergunta – RF10)
-Regras: enunciado curto (até 12 palavras), 3 alternativas, só uma correta,
-distratores plausíveis, campo `conteudo` padronizado (ex.: "Letra B", "Sílaba BO")
-porque ele alimenta o relatório de dificuldades.
-Para RF05 (letra-som) e RF11 (cotidiano), proponha se viram novos valores de
-TipoAtividade ou só `conteudo` de tipos existentes, e explique o impacto no diagrama
-de classes e na APF. Liste no final as imagens que precisaremos (nome do arquivo +
-descrição) para a equipe de design produzir.
-Gere também as perguntas definitivas do NIVELAMENTO (RF03): uma ou duas por nível, em ordem
-crescente de dificuldade (campo ordemNivelamento), e proponha a regra para definir o nível
-inicial (hoje provisória: para no primeiro erro) para a equipe validar com os
-profissionais da EJA.
-Depois de revisado pela equipe: <colar aqui as correções>, atualize o mock.ts e rode
-`npm run db:seed` para conferir que o banco carrega sem erro.
-```
-
----
-
-## 🟡 Passo 8 — Telas e recursos visuais que faltam (UX/UI)
-
-**Prazo:** 11/11 · **Pode começar já**
-
-**Pronto quando:** o Figma tem as telas que faltam, os ícones e imagens foram exportados para `assets/`, a fonte Inter está carregada e o ícone/splash do app são do AJAI.
+**Pronto quando:** as telas seguem o mesmo padrão visual, os ícones e imagens foram exportados para `assets/`, a fonte Inter está carregada e o ícone/splash do app são do AJAI.
 
 **Feito em 09/11 (parcial):** todos os emojis de `src/` foram trocados por ícones de `@expo/vector-icons` (instalado): alto-falante do `BotaoAudio`, livro do `Logo` e da splash, abas do professor, trilha em `/aluno/progresso` e acerto/erro em `/aluno/resultado` (Ionicons). As figuras das alternativas do `mock.ts` viraram nomes de ícones do `MaterialCommunityIcons` na mesma coluna `Alternativa.ilustracao` (sem migração).
 
-**O que falta / o que fazer:** itens 1, 2, 3, 5 e 6 do prompt abaixo; no item 4, só as imagens finais das alternativas e da palavra em destaque (`urlImagem`).
+**O que falta / o que fazer:** itens 1, 2, 3 e 5 do prompt abaixo; no item 4, só as imagens finais das alternativas e da palavra em destaque (`urlImagem`).
 
-Telas a desenhar no Figma: progresso do aluno, preferências de acessibilidade, relatórios do professor, conta do professor, **contas dos alunos** (lista, mudar senha, "aluno cadastrado" com usuário e senha), gestão de turma, correção manual de resposta, "esqueceu a senha?", "minha conta" do aluno, estados "carregando" / "sem internet" / "nível sem atividades" / "subiu de nível". Atualizar no Figma: **Login** sem "Quem você é?" e sem "Ouvir ajuda", campo "Seu usuário ou e-mail"; **Cadastro de aluno** passa a ser tela do professor (nome, nome de usuário, senha; sem telefone do professor); **Cadastro de professor** sem "Ouvir ajuda".
+As telas que ainda não têm frame no Figma (progresso, preferências, relatórios, conta, turmas, cadastros por perfil, espera, área da instituição e do responsável, "Meus alunos", convites etc.) **não serão desenhadas**: seguem o padrão visual das telas já desenhadas (tokens, componentes e layout das telas existentes).
 
 ```text
 Leia AGENTS.md, src/theme/tokens.ts, src/components/** e as telas em src/app/.
@@ -317,123 +457,41 @@ Arquivo do Figma: https://www.figma.com/design/hXu6QCdfo7r7Qau5Rbia8M/AJAI
    imagem da palavra em destaque em "Formar palavra".
 5. Configure ícone do app, ícone adaptativo do Android e splash em app.json com os
    arquivos <listar arquivos>.
-6. Implemente as telas novas desenhadas: <listar frames/links>.
+Telas sem frame no Figma NÃO se desenham: siga o padrão das telas já desenhadas.
 Mantenha as regras de acessibilidade do AGENTS.md.
-```
-
----
-
-## ⬜ Passo 9 — Home do aluno: ofensiva, frequência e progresso (RF15, RF18, RF19)
-
-**Prazo:** 12/11 · **Depende de:** passos 5 e 8
-
-**Pronto quando:** o cartão "Ofensiva – X dias seguidos" mostra o número real, a tela de progresso segue o Figma e o aluno vê uma comemoração ao subir de nível.
-
-```text
-Leia AGENTS.md, src/app/aluno/index.tsx, src/app/aluno/progresso.tsx,
-src/app/aluno/resultado.tsx e o endpoint GET /alunos/eu/progresso.
-
-1. No servidor, calcule a ofensiva: quantos dias seguidos (até hoje ou ontem) o aluno
-   respondeu pelo menos 1 atividade, no fuso America/Sao_Paulo. Inclua em
-   /alunos/eu/progresso junto com atividades nos últimos 7 dias.
-2. Na home, mostre a ofensiva real com texto encorajador (nunca culpar quem parou:
-   se zerou, "Que bom ter você de volta!").
-3. Refaça /aluno/progresso conforme o frame do Figma <link>, com a trilha de níveis,
-   atividades feitas, taxa de acerto e "Vale a pena treinar" (dificuldades).
-4. Quando o servidor responder subiuDeNivel, mostre a tela de comemoração
-   <link do Figma> com narração.
-Escreva testes para o cálculo da ofensiva (virada de dia, dias sem uso, fuso).
-```
-
----
-
-## ⬜ Passo 10 — Área do professor completa (RF20, RF21, APF 20–24, 35, 40–43)
-
-**Prazo:** 13/11 · **Depende de:** passos 5 e 8
-
-**Pronto quando:** o professor vê só os próprios alunos, filtra por período, abre métricas com gráfico de evolução, consulta relatórios da turma, cria turma, vincula/desvincula alunos e corrige manualmente uma resposta.
-
-```text
-Leia AGENTS.md, src/services/relatorios.ts, src/app/professor/** e server/.
-Frames do Figma: Dashboard do professor, Métricas de Ana Souza, <novos frames do passo 8>.
-
-No SERVIDOR (todas exigem perfil PROFESSOR e só retornam alunos das turmas dele):
-- GET /professor/painel?inicio&fim → resumo por aluno (frequência em dias, total de
-  atividades, taxa de acerto/erro, nível, maior dificuldade, situação EM_DIA /
-  ATENCAO / REFORCO com regra documentada);
-- GET /professor/alunos/:id?inicio&fim → relatório individual + série diária de taxa
-  de acerto + histórico de níveis;
-- GET /professor/relatorios/frequencia e /professor/relatorios/dificuldades (por turma);
-- CRUD de turma e mover aluno entre as turmas DO PRÓPRIO professor (o aluno já é criado pelo
-  professor em POST /professor/alunos e entra na turma ativa dele; o aluno não tem e-mail);
-- PATCH /respostas/:id/correcao (correção manual: muda `correta`, grava
-  correcaoProfessor e recalcula DesempenhoConteudo).
-
-No APP: seletor de período (Últimos 7 dias / 30 dias / personalizado), gráfico de
-evolução simples (barras com View, sem biblioteca, ou react-native-svg via
-`npx expo install` se necessário), aba Relatórios, gestão de turma na aba Conta,
-correção manual na tela de métricas. Recarregue os dados ao focar a aba
-(useFocusEffect). Mostre o aviso "Os dados complementam a avaliação do professor".
-A aba Conta mostra os dados do professor (editar nome), trocar senha (passo 3) e sair.
-Cobertura: confira que TODA tela do professor da tabela do README existe e funciona
-com dados reais (dashboard, métricas do aluno, relatórios, conta, contas dos alunos, gestão
-de turma). O dashboard deve listar também os alunos cadastrados pelo professor (hoje lê o mock).
-```
-
----
-
-## ⬜ Passo 11 — Cadastro de atividades e níveis (administrador, APF 25–31)
-
-**Prazo:** 13/11 · **Depende de:** passo 2
-
-**Pronto quando:** existe um jeito documentado de incluir, editar e inativar atividades e níveis sem mexer no código. Se não houver tempo para telas, um script/rotas protegidas bastam, e a APF/documentação deve dizer isso.
-
-```text
-Leia AGENTS.md, src/domain/modelos.ts e server/.
-O diagrama e a APF preveem o Administrador com IncluirAtividade, EditarAtividade,
-ExcluirAtividade (inativar), ListarAtividades, IncluirNivel e EditarNivel.
-Temos até 13/11. Implemente a opção <A ou B>:
-A) Rotas REST protegidas por perfil ADMINISTRADOR + um usuário admin no seed +
-   instruções no README para cadastrar via um cliente HTTP (arquivo
-   server/admin.http com exemplos prontos).
-B) Telas simples no próprio app em /admin (lista de atividades por nível, formulário
-   com enunciado, tipo, conteúdo, 3 alternativas e qual é a correta, inativar).
-"Excluir" nunca apaga: muda status para INATIVA. Valide que toda atividade de múltipla
-escolha tem exatamente uma alternativa correta (PALAVRA usa as alternativas como peças
-e ESCRITA não tem alternativas). Inclua o campo textoApoio no formulário.
-Inclua também IncluirNivel/EditarNivel (nome, descrição, ordem, criterioAcerto) e a
-listagem de atividades por nível. O administrador entra pelo login (passo 3) e só ele
-acessa essas rotas/telas.
 ```
 
 ---
 
 ## ⬜ Passo 12 — Testes automatizados
 
-**Prazo:** 13/11 · **Depende de:** passo 5
+**Prazo:** 16/11 · **Depende de:** passos 5 e 3.1
 
-**Pronto quando:** `npm test` roda no app e no servidor, cobrindo correção, nivelamento, progressão, ofensiva, dificuldades e autorização do professor.
+**Pronto quando:** `npm test` roda no app e no servidor, cobrindo correção, nivelamento, progressão, ofensiva, dificuldades e autorização (perfis, aprovação e vínculos).
 
 ```text
 Leia AGENTS.md, src/services/** e server/.
 Configure testes:
 - no app: jest-expo (`npx expo install jest-expo jest @types/jest -- --save-dev`) e
   @testing-library/react-native; script `npm test`;
-- no servidor: o runner adequado à stack (vitest ou jest) e testes de API.
+- no servidor: já existe `node --test` (npm test, 63 testes em 14/11); complete os casos abaixo
+  que faltarem (ver server/src/rotas/contas.test.ts e progresso.test.ts).
 Escreva testes para:
 1. corrigirAutomaticamente (acentos, maiúsculas, espaços);
 2. definirNivelInicial (acerta tudo, erra a primeira, erra no meio);
 3. deveAvancar (menos de 5 respostas, exatamente no critério, abaixo);
 4. identificarDificuldades (ordenação, sem respostas);
 5. ofensiva (dias seguidos, quebra, fuso);
-6. API: professor NÃO vê aluno de outra turma; aluno não acessa rotas de professor;
-   aluno NÃO troca a própria senha; professor só muda a senha de aluno que ELE criou;
-   login por nome de usuário, e-mail e telefone; cadastro público só cria professor;
-   resposta não expõe a alternativa correta antes de responder;
+6. API: acompanhante NÃO vê aluno sem vínculo ACEITO (inclusive nas rotas do passo 8);
+   aluno não acessa rotas de professor; aluno troca a própria senha; login por nome de
+   usuário, e-mail e telefone; cadastro público cria aluno/professor/responsável/instituição
+   mas NUNCA administrador; professor e instituição PENDENTES recebem 403; responsável recebe
+   409 no 3º vínculo; resposta não expõe a alternativa correta antes de responder;
 7. um teste de tela: tocar na alternativa certa leva à tela "Muito bem!".
 Gere também docs/testes/casos-de-teste.md com os casos manuais dos fluxos principais
-(cadastro de professor, professor cadastra aluno, login do aluno por usuário, nivelamento,
-atividade, progressão, área do professor) no formato
+(instituição se inscreve, admin aprova, professor se cadastra com o código, instituição aprova,
+aluno cria a conta, professor/responsável convida, aluno aceita, login do aluno por usuário,
+nivelamento, atividade, progressão, área do professor e do responsável) no formato
 ID | pré-condição | passos | resultado esperado | resultado obtido.
 ```
 
@@ -441,7 +499,7 @@ ID | pré-condição | passos | resultado esperado | resultado obtido.
 
 ## ⬜ Passo 13 — Segurança e privacidade (RNF11, RNF12, LGPD)
 
-**Prazo:** 13/11 · **Depende de:** passo 3
+**Prazo:** 16/11 · **Depende de:** passos 3 e 3.1
 
 **Pronto quando:** há termo de uso e privacidade em linguagem simples (com áudio), o app pede só os dados necessários e o checklist abaixo foi revisado.
 
@@ -449,56 +507,33 @@ ID | pré-condição | passos | resultado esperado | resultado obtido.
 Leia AGENTS.md, src/domain/modelos.ts, src/app/cadastro/* e server/.
 Faça uma revisão de segurança e privacidade do AJAI e corrija o que for simples:
 - senhas só com hash; JWT com expiração; segredo em variável de ambiente; invalidar tokens
-  antigos quando a senha muda; o que fazer com a senha do aluno se o professor que o criou sair;
+  antigos quando a senha muda; forçar a troca da senha provisória no primeiro login;
 - nenhuma chave/segredo no repositório (procure no histórico do git também);
-- todas as rotas checam perfil e posse do dado (aluno só vê o próprio; professor só
-  os alunos das suas turmas);
+- todas as rotas checam perfil, conta liberada (professor/instituição aprovados) e posse do dado
+  (aluno só vê o próprio; professor e responsável só alunos com Vinculo ACEITO; instituição só
+  os professores dela);
+- CNPJ, e-mail e telefone da instituição e do professor: quem vê (admin e a instituição) e por quê;
 - validação de entrada no servidor; limite de tentativas de login;
 - dados coletados: confirme que cada campo é necessário (ex.: dataNascimento é
   usado para quê?). Proponha remover o que não for.
 Escreva docs/privacidade.md: termo de uso e privacidade em linguagem MUITO simples
 (frases curtas, para quem está aprendendo a ler), dizendo que dados coletamos, por
 quê, quem vê (o professor vinculado) e como pedir para apagar. Adicione um aceite
-"Li e concordo" no cadastro do professor e, para o aluno, um termo que o professor
-confirma ter lido com ele ao cadastrá-lo (com botão de ouvir o termo na primeira entrada).
+"Li e concordo" nos 4 cadastros (aluno, professor, responsável, instituição); no do aluno,
+com botão de ouvir o termo, e o convite de acompanhamento explica que quem aceitar vê o progresso.
 Liste o que ficou pendente.
 ```
 
 ---
 
-## ⬜ Passo 14 — Testes integrados e de usabilidade
+## ⬜ Passo 14 — Correção de bugs e polimento
 
-**Prazo:** 15/11 · **Depende de:** passos 9 e 10
-
-**Pronto quando:** todos os casos de `docs/testes/casos-de-teste.md` foram executados em pelo menos 1 Android e 1 iPhone (ou web), e pelo menos 3 pessoas do público-alvo (ou próximas a ele) usaram o app com o roteiro, com problemas registrados.
-
-```text
-Leia README.md, docs/testes/casos-de-teste.md e os requisitos RNF01–RNF15.
-Monte o kit de teste de usabilidade do AJAI em docs/testes/usabilidade.md:
-1. Perfil dos participantes (idade, escolaridade, uso de celular) e termo de
-   consentimento curto.
-2. Roteiro com 5 tarefas (ex.: "Entre no aplicativo", "Faça a primeira atividade",
-   "Ouça a instrução", "Veja quanto você já avançou"; para professor: "Descubra qual
-   aluno precisa de reforço e em quê"). Para cada tarefa: o que dizer ao
-   participante (sem ensinar o caminho), o que observar, critério de sucesso.
-3. Planilha de registro: tarefa, concluiu sim/não/com ajuda, tempo, erros,
-   comentários, gravidade do problema (crítico / alto / médio / baixo).
-4. Questionário final de 5 perguntas com respostas por carinhas (😀🙂😐🙁),
-   lido em voz alta.
-Depois que eu colar os resultados aqui: <colar resultados>, gere o resumo com os
-problemas priorizados e as correções sugeridas, ligando cada um a um RNF.
-```
-
----
-
-## ⬜ Passo 15 — Correção de bugs e polimento
-
-**Prazo:** 16/11 · **Depende de:** passo 14
+**Prazo:** 16/11 · **Depende de:** passos 7 e 8
 
 **Pronto quando:** não há bug crítico ou alto aberto, `lint`, `tsc` e `npm test` passam, e o app roda do zero seguindo só o README.
 
 ```text
-Leia AGENTS.md e a lista de problemas abaixo (testes integrados + usabilidade):
+Leia AGENTS.md e a lista de problemas abaixo (achados ao executar os casos de docs/testes/casos-de-teste.md, do passo 12, em pelo menos 1 Android e 1 iPhone ou web):
 <colar lista priorizada>
 Corrija na ordem de gravidade, um commit por problema, citando o ID do problema.
 Não adicione funcionalidades novas. Depois:
@@ -517,9 +552,9 @@ Não adicione funcionalidades novas. Depois:
 
 ---
 
-## ⬜ Passo 16 — Documentação final
+## ⬜ Passo 15 — Documentação final
 
-**Prazo:** 16/11 · **Depende de:** passo 15
+**Prazo:** 16/11 · **Depende de:** passo 14
 
 **Pronto quando:** PDF, planilha APF, diagrama de classes e README contam a mesma história do que foi entregue.
 
@@ -541,7 +576,7 @@ ABNT) e atualize README (Pendências → "Entregue" e "Trabalhos futuros").
 
 ---
 
-## ⬜ Passo 17 — Apresentação e demonstração
+## ⬜ Passo 16 — Apresentação e demonstração
 
 **Prazo:** 17/11
 
@@ -552,17 +587,18 @@ Leia README.md, docs/** e a documentação final.
 Prepare a apresentação final do AJAI (<N> minutos no total, 5 integrantes):
 1. Estrutura dos slides: problema (dados IBGE), pesquisa com profissionais da EJA e o
    que ela mudou no produto, solução, demonstração, métricas para o professor,
-   gestão do projeto (Scrum + Kanban, APF, custos, riscos), resultados dos testes de
-   usabilidade, limitações e próximos passos. Indique quem fala cada parte.
-2. Roteiro da demo ao vivo (máx. 5 min): professor cadastra um aluno novo (usuário e
-   senha) → aluno entra com o usuário → nivelamento →
-   atividade com áudio → erro e "tentar de novo" → acerto → sobe de nível;
-   professor → dashboard → aluno com dificuldade → métricas.
+   gestão do projeto (Scrum + Kanban, APF, custos, riscos), limitações e próximos passos. Indique quem fala cada parte.
+2. Roteiro da demo ao vivo (máx. 5 min): instituição se inscreve → admin aprova (código) →
+   professor cria a conta com o código → instituição aprova o professor → aluno cria a conta
+   → professor convida → aluno aceita → nivelamento → atividade com áudio → erro e "tentar de
+   novo" → acerto → sobe de nível; professor → dashboard → aluno com dificuldade → métricas.
+   Se o tempo apertar, use as contas do seed (código EJAVV2, professora Paula pendente).
    Liste os dados que precisam estar preparados no banco antes.
 3. Plano B e preparação técnica: como rodar a demo SEM internet da faculdade (servidor
    no notebook + celulares no mesmo Wi-Fi/ponto de acesso do celular; app via Expo Go
    ou build de desenvolvimento com EAS), checklist do dia (db:reset com dados de demo,
-   áudios já gerados com `npm run voz:preparar`, se a voz vier do servidor, EXPO_PUBLIC_API_URL com o IP
+   áudios já gerados com `npm run voz:preparar`, se a voz vier do servidor, código da instituição
+   de demonstração anotado (EJAVV2), EXPO_PUBLIC_API_URL com o IP
    certo, celular carregado, vídeo gravado de backup).
 4. Prováveis perguntas da banca e respostas curtas.
 ```

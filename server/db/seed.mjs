@@ -24,8 +24,11 @@ const TABELAS_DE_DADOS = [
   "Atividade",
   "Matricula",
   "Turma",
-  "Administrador",
+  "Vinculo",
   "Professor",
+  "Instituicao",
+  "Responsavel",
+  "Administrador",
   "Aluno",
   "Usuario",
   "Nivel",
@@ -64,16 +67,38 @@ export async function semear(db) {
       db.prepare("INSERT INTO Administrador (idUsuario) VALUES (?)").run(adm.idUsuario);
     }
 
+    for (const i of mock.instituicoes) {
+      inserirUsuarioBase(i);
+      db.prepare(
+        `INSERT INTO Instituicao (idUsuario, cnpj, nomeResponsavel, codigo, status, motivoRecusa, decididoPor, decididoEm)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      ).run(i.idUsuario, i.cnpj, i.nomeResponsavel, i.codigo ?? null, i.status, i.motivoRecusa ?? null,
+            i.decididoPor ?? null, i.decididoEm ?? null);
+    }
+
     for (const p of mock.professores) {
       inserirUsuarioBase(p);
-      db.prepare("INSERT INTO Professor (idUsuario) VALUES (?)").run(p.idUsuario);
+      db.prepare(
+        `INSERT INTO Professor (idUsuario, idInstituicao, statusVinculo, motivoRecusa, decididoEm)
+         VALUES (?, ?, ?, ?, ?)`,
+      ).run(p.idUsuario, p.idInstituicao ?? null, p.statusVinculo ?? "PENDENTE", p.motivoRecusa ?? null, p.decididoEm ?? null);
+    }
+    for (const r of mock.responsaveis) {
+      inserirUsuarioBase(r);
+      db.prepare("INSERT INTO Responsavel (idUsuario) VALUES (?)").run(r.idUsuario);
     }
     for (const a of mock.alunos) {
       inserirUsuarioBase(a);
       db.prepare(
-        `INSERT INTO Aluno (idUsuario, vozPreferida, velocidadeVoz, tamanhoFonte, idNivelInicial, idCriador)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-      ).run(a.idUsuario, a.vozPreferida, a.velocidadeVoz, a.tamanhoFonte, a.idNivelInicial ?? null, a.idCriador ?? null);
+        `INSERT INTO Aluno (idUsuario, vozPreferida, velocidadeVoz, tamanhoFonte, idNivelInicial)
+         VALUES (?, ?, ?, ?, ?)`,
+      ).run(a.idUsuario, a.vozPreferida, a.velocidadeVoz, a.tamanhoFonte, a.idNivelInicial ?? null);
+    }
+    for (const v of mock.vinculos) {
+      db.prepare(
+        `INSERT INTO Vinculo (idVinculo, idAluno, idAcompanhante, status, identificadorConvite, criadoEm, decididoEm)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      ).run(v.idVinculo, v.idAluno, v.idAcompanhante, v.status, v.identificadorConvite ?? null, v.criadoEm, v.decididoEm ?? null);
     }
 
     for (const t of mock.turmas) {
@@ -151,7 +176,7 @@ if (executadoDireto(import.meta.url)) {
   const db = abrirBanco();
   await semear(db);
   console.log(`Banco: ${caminhoBanco}`);
-  for (const t of ["Nivel", "Usuario", "Aluno", "Professor", "Administrador", "Turma", "Matricula", "Atividade", "Alternativa", "Resposta", "DesempenhoConteudo", "HistoricoNivel"]) {
+  for (const t of ["Nivel", "Usuario", "Aluno", "Professor", "Responsavel", "Instituicao", "Administrador", "Vinculo", "Turma", "Matricula", "Atividade", "Alternativa", "Resposta", "DesempenhoConteudo", "HistoricoNivel"]) {
     const { total } = db.prepare(`SELECT COUNT(*) AS total FROM ${t}`).get();
     console.log(`  ${t.padEnd(20)} ${total}`);
   }

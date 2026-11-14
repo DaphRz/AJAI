@@ -2,8 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Redirect, Tabs } from "expo-router";
 import type { ComponentProps } from "react";
 import type { ColorValue } from "react-native";
-import { useSessao } from "@/context/sessao";
-import { rotaInicial } from "@/services/auth";
+import { useAreaProtegida } from "@/hooks/useAreaProtegida";
 import { cores } from "@/theme/tokens";
 
 /** Ícone da aba (a aba já tem o título escrito; o ícone é só decorativo). */
@@ -14,13 +13,14 @@ function icone(nome: ComponentProps<typeof Ionicons>["name"]) {
   return IconeAba;
 }
 
-/** Área do professor (RF20): abas Acompanhamento / Relatórios / Conta, como no Figma. */
+/**
+ * Área do professor (RF20): abas Acompanhamento / Relatórios / Conta, como no Figma.
+ * Só com perfil PROFESSOR e conta APROVADA pela instituição (senão, /espera). Passo 3.1.
+ */
 export default function ProfessorLayout() {
-  const { usuario, carregando } = useSessao();
-  if (carregando) return null;
-  if (!usuario) return <Redirect href="/login" />;
-  // Perfil errado: manda para a área certa (cada perfil só vê a sua).
-  if (usuario.perfil !== "PROFESSOR") return <Redirect href={rotaInicial(usuario)} />;
+  const acesso = useAreaProtegida("PROFESSOR");
+  if (acesso === "carregando") return null;
+  if (acesso !== "liberado") return <Redirect href={acesso} />;
 
   return (
     <Tabs
@@ -38,9 +38,7 @@ export default function ProfessorLayout() {
       <Tabs.Screen name="conta" options={{ title: "Conta", tabBarIcon: icone("person") }} />
       <Tabs.Screen name="aluno/[id]" options={{ href: null }} />
       <Tabs.Screen name="senha" options={{ href: null }} />
-      <Tabs.Screen name="contas/index" options={{ href: null }} />
-      <Tabs.Screen name="contas/nova" options={{ href: null }} />
-      <Tabs.Screen name="contas/[id]" options={{ href: null }} />
+      <Tabs.Screen name="alunos" options={{ href: null }} />
     </Tabs>
   );
 }

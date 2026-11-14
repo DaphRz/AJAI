@@ -42,7 +42,7 @@ export function resumoDoAluno(aluno: Aluno): ResumoAluno {
 
   return {
     aluno,
-    // TODO (passo 10): o painel inteiro vem de GET /professor/painel; até lá, níveis do mock.
+    // TODO (passo 8): o painel inteiro vem de GET /professor/painel; até lá, níveis do mock.
     nomeNivel: niveis.find((n) => n.idNivel === aluno.idNivelAtual)?.nome ?? "Sem nivelamento",
     diasAtivos: dias.size,
     totalAtividades: lista.length,
@@ -56,7 +56,7 @@ export function visualizarPainel(idProfessor: number): ResumoAluno[] {
   return listarAlunosDoProfessor(idProfessor).map(resumoDoAluno);
 }
 
-/** Acertos por conteúdo de um aluno, pior primeiro. TODO (passo 10): GET /professor/alunos/:id. */
+/** Acertos por conteúdo de um aluno, pior primeiro. TODO (passo 8): GET /professor/alunos/:id. */
 export function dificuldadesDoAluno(idAluno: number) {
   return identificarDificuldades(
     respostas.filter((r) => r.idAluno === idAluno),

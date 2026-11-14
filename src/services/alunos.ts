@@ -38,7 +38,7 @@ export async function concluirNivelamento(
   return { nivel, alunoAtualizado: comNivel(aluno, nivel.idNivel, true) };
 }
 
-/** TODO (passo 10): o painel do professor ainda lê o mock; trocar por GET /professor/alunos/:id. */
+/** TODO (passo 8): o painel do professor ainda lê o mock; trocar por GET /professor/alunos/:id. */
 export function buscarAluno(idUsuario: number): Aluno | undefined {
   return alunos.find((a) => a.idUsuario === idUsuario);
 }

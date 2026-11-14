@@ -221,7 +221,7 @@ function Escrita({ atividade, onResponder, ocupado }: PropsTipo) {
 }
 
 function PalavraDestaque({ palavra }: { palavra: string }) {
-  // TODO (passo 8): foto/ilustração da palavra (Figma mostra a imagem acima da palavra).
+  // TODO (passo 11): foto/ilustração da palavra (Figma mostra a imagem acima da palavra).
   return (
     <View style={styles.cartaoPalavra}>
       <Text style={styles.palavra}>{palavra}</Text>
@@ -253,7 +253,7 @@ function ListaOpcoes({
         >
           {alt.ilustracao && alt.ilustracao in MaterialCommunityIcons.glyphMap ? (
             <View style={styles.ilustracao} importantForAccessibility="no" accessibilityElementsHidden>
-              {/* TODO (passo 8): trocar o ícone provisório pela imagem (alt.urlImagem). */}
+              {/* TODO (passo 11): trocar o ícone provisório pela imagem (alt.urlImagem). */}
               <MaterialCommunityIcons
                 name={alt.ilustracao as keyof typeof MaterialCommunityIcons.glyphMap}
                 size={fontes.ilustracao}

@@ -33,7 +33,7 @@ export default function DashboardProfessor() {
         <Subtitulo>Olá, {usuario?.nome.split(" ")[0]}. Veja como seus alunos estão.</Subtitulo>
       </View>
       {/* TODO: seletor de período ("Últimos 7 dias") */}
-      <Botao titulo="Cadastrar aluno" variante="secundario" onPress={() => router.push("/professor/contas/nova")} />
+      <Botao titulo="Meus alunos: convidar" variante="secundario" onPress={() => router.push("/professor/alunos")} />
 
       <View style={styles.resumo}>
         <Text style={styles.resumoTitulo}>RESUMO DOS ALUNOS</Text>

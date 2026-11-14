@@ -1,10 +1,13 @@
 // Autenticação (RF01, RF02, APF 18): cadastro, login, dados do usuário logado e troca de senha.
-//   POST  /auth/cadastro   SÓ professor/responsável → { token, usuario }
-//                          (o aluno é cadastrado pelo professor: rotas/professorAlunos.ts)
-//   POST  /auth/login      usuário (aluno), e-mail ou telefone + senha → { token, usuario }
-//                          (o perfil vem da conta; a tela de login não pergunta)
-//   GET   /auth/eu         usuário do token
-//   PATCH /auth/senha      professor/administrador troca a própria senha (aluno NÃO: só quem criou a conta dele)
+// Modelo de contas do Passo 3.1: cada perfil cria a própria conta (o administrador não).
+//   POST  /auth/cadastro/aluno         { nome, senha, nomeUsuario?, email?, telefone? } (pelo menos um dos 3)
+//   POST  /auth/cadastro/professor     { nome, email, telefone, senha, codigo } → fica PENDENTE até a instituição aprovar
+//   POST  /auth/cadastro/responsavel   { nome, email, telefone, senha }
+//   POST  /auth/cadastro/instituicao   { nome, cnpj, nomeResponsavel, email, telefone, senha } → PENDENTE até o administrador aprovar
+//                                      todos → { token, usuario } (usuario.situacao diz se a conta já está liberada)
+//   POST  /auth/login      usuário, e-mail ou telefone + senha → { token, usuario }
+//   GET   /auth/eu         usuário do token (com a situação da conta: o app usa em "Verificar de novo")
+//   PATCH /auth/senha      qualquer perfil troca a própria senha (inclusive o aluno)
 import type { FastifyInstance } from "fastify";
 import { conferirSenha, gerarHashSenha, HASH_FALSO } from "../../db/senha.mjs";
 import { exigirLogin, gerarToken } from "../autenticacao.ts";
@@ -15,13 +18,24 @@ import {
   buscarPorId,
   buscarPorIdentificador,
   esquemaUsuario,
+  nomeUsuarioLivre,
+  normalizarCnpj,
+  normalizarCodigo,
   normalizarEmail,
+  normalizarNomeUsuario,
   normalizarTelefone,
+  PADRAO_NOME_USUARIO,
+  type Perfil,
   usuarioPublico,
 } from "../usuarios.ts";
 
 export const SENHA = { type: "string", minLength: 6, maxLength: 128 } as const;
+const NOME = { type: "string", minLength: 2, maxLength: 100, pattern: "\\S" } as const;
+const EMAIL = { type: "string", format: "email", maxLength: 120 } as const;
 const TELEFONE = { type: "string", minLength: 8, maxLength: 20, pattern: "^[0-9()+ .-]+$" } as const;
+const NOME_USUARIO = { type: "string", minLength: 3, maxLength: 30, pattern: PADRAO_NOME_USUARIO } as const;
+/** Código da instituição: 6 caracteres (aceita minúsculas, espaço e traço; o servidor normaliza). */
+export const CODIGO = { type: "string", minLength: 6, maxLength: 12, pattern: "^[A-Za-z0-9 -]+$" } as const;
 
 const respostaComToken = {
   type: "object",
@@ -29,80 +43,221 @@ const respostaComToken = {
   required: ["token", "usuario"],
 } as const;
 
-/** Limite próprio (mais apertado) para as rotas que recebem senha. */
+/** Limite próprio (mais apertado) para as rotas que recebem senha ou código. */
 export const limiteSenha = { rateLimit: { max: config.limiteLoginPorMinuto, timeWindow: "1 minute" } };
 
-interface CorpoCadastro {
+const respostasCadastro = { 201: respostaComToken, 400: esquemaErro, 409: esquemaErro, 429: esquemaErro } as const;
+
+/** Nome digitado → sem espaços repetidos nem nas pontas. */
+function limparNome(nome: string): string {
+  return nome.trim().replace(/\s+/g, " ");
+}
+
+interface Contato {
+  nomeUsuario: string | null;
+  email: string | null;
+  telefone: string | null;
+}
+
+/** Normaliza e confere se e-mail, telefone e nome de usuário ainda estão livres (409 se não). */
+function conferirContato(dados: { nomeUsuario?: string; email?: string; telefone?: string }): Contato {
+  const db = banco();
+  const email = dados.email ? normalizarEmail(dados.email) : null;
+  let telefone: string | null = null;
+  if (dados.telefone) {
+    telefone = normalizarTelefone(dados.telefone);
+    if (!telefone) throw new ErroApi(400, "Confira o telefone. Escreva com DDD, só números.");
+  }
+  const nomeUsuario = dados.nomeUsuario ? normalizarNomeUsuario(dados.nomeUsuario) : null;
+  if (nomeUsuario && !/[a-z]/.test(nomeUsuario)) {
+    throw new ErroApi(400, "O nome de usuário precisa ter letras. Exemplo: maria.silva");
+  }
+
+  if (email && db.prepare("SELECT 1 FROM Usuario WHERE email = ?").get(email)) {
+    throw new ErroApi(409, "Este e-mail já tem conta. Volte e toque em Entrar.");
+  }
+  if (telefone && db.prepare("SELECT 1 FROM Usuario WHERE telefone = ?").get(telefone)) {
+    throw new ErroApi(409, "Este telefone já tem conta. Volte e toque em Entrar.");
+  }
+  if (nomeUsuario && db.prepare("SELECT 1 FROM Usuario WHERE nomeUsuario = ?").get(nomeUsuario)) {
+    throw new ErroApi(409, `O usuário ${nomeUsuario} já existe. Que tal ${nomeUsuarioLivre(nomeUsuario)}?`);
+  }
+  return { nomeUsuario, email, telefone };
+}
+
+/**
+ * Cria Usuario + a linha da especialização (dentro de uma transação) e devolve o id.
+ * `especializar` recebe o id novo e insere em Aluno/Professor/Responsavel/Instituicao.
+ */
+function criarUsuario(
+  perfil: Exclude<Perfil, "ADMINISTRADOR">,
+  nome: string,
+  contato: Contato,
+  senhaHash: string,
+  especializar: (idUsuario: number, agora: string) => void,
+): number {
+  const db = banco();
+  const agora = new Date().toISOString();
+  db.exec("BEGIN");
+  try {
+    const r = db
+      .prepare(
+        `INSERT INTO Usuario (nome, nomeUsuario, email, telefone, senhaHash, perfil, ativo, criadoEm, atualizadoEm)
+         VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?)`,
+      )
+      .run(nome, contato.nomeUsuario, contato.email, contato.telefone, senhaHash, perfil, agora, agora);
+    const idUsuario = Number(r.lastInsertRowid);
+    especializar(idUsuario, agora);
+    db.exec("COMMIT");
+    return idUsuario;
+  } catch (erro) {
+    db.exec("ROLLBACK");
+    // Corrida rara: outra pessoa cadastrou o mesmo dado entre a checagem e o INSERT.
+    if (erro instanceof Error && /UNIQUE/.test(erro.message)) {
+      throw new ErroApi(409, "Estes dados já têm conta. Volte e toque em Entrar.");
+    }
+    throw erro;
+  }
+}
+
+/** Instituição APROVADA com este código, ou 400 com mensagem curta (não diz se existe pendente). */
+export function instituicaoPeloCodigo(codigo: string): number {
+  const linha = banco()
+    .prepare("SELECT idUsuario FROM Instituicao WHERE codigo = ? AND status = 'APROVADA'")
+    .get(normalizarCodigo(codigo)) as { idUsuario: number } | undefined;
+  if (!linha) throw new ErroApi(400, "Não achamos este código. Confira com a sua instituição.");
+  return linha.idUsuario;
+}
+
+interface CorpoComContato {
   nome: string;
   email: string;
   telefone: string;
   senha: string;
-  dataNascimento?: string;
 }
 
 export async function rotasAuth(app: FastifyInstance): Promise<void> {
-  app.post<{ Body: CorpoCadastro }>(
-    "/auth/cadastro",
+  function responderComToken(idUsuario: number) {
+    const usuario = buscarPorId(idUsuario)!;
+    return { token: gerarToken(app, usuario), usuario: usuarioPublico(usuario) };
+  }
+
+  app.post<{ Body: { nome: string; senha: string; nomeUsuario?: string; email?: string; telefone?: string } }>(
+    "/auth/cadastro/aluno",
     {
       config: limiteSenha,
       schema: {
-        // Campos do Figma "Cadastro de professor ou responsável".
         body: {
           type: "object",
-          properties: {
-            nome: { type: "string", minLength: 2, maxLength: 100, pattern: "\\S" },
-            email: { type: "string", format: "email", maxLength: 120 },
-            telefone: TELEFONE,
-            senha: SENHA,
-            dataNascimento: { type: "string", format: "date" },
-          },
-          required: ["nome", "email", "telefone", "senha"],
+          properties: { nome: NOME, senha: SENHA, nomeUsuario: NOME_USUARIO, email: EMAIL, telefone: TELEFONE },
+          required: ["nome", "senha"],
         },
-        response: { 201: respostaComToken, 400: esquemaErro, 409: esquemaErro },
+        response: respostasCadastro,
       },
     },
     async (req, resposta) => {
-      const corpo = req.body;
-      const nome = corpo.nome.trim().replace(/\s+/g, " ");
-      const email = normalizarEmail(corpo.email);
-      const telefone = normalizarTelefone(corpo.telefone);
-      if (!telefone) throw new ErroApi(400, "Confira o telefone. Escreva com DDD, só números.");
-
-      const db = banco();
-      if (db.prepare("SELECT 1 FROM Usuario WHERE email = ?").get(email)) {
-        throw new ErroApi(409, "Este e-mail já tem conta. Volte e toque em Entrar.");
+      const { nomeUsuario, email, telefone } = req.body;
+      if (!nomeUsuario && !email && !telefone) {
+        throw new ErroApi(400, "Escreva um nome de usuário, um e-mail ou um telefone para entrar depois.");
       }
-      if (db.prepare("SELECT 1 FROM Usuario WHERE telefone = ?").get(telefone)) {
-        throw new ErroApi(409, "Este telefone já tem conta. Volte e toque em Entrar.");
-      }
-
-      const senhaHash = await gerarHashSenha(corpo.senha); // antes da transação (é assíncrono)
-      const agora = new Date().toISOString();
-
-      let idUsuario: number;
-      db.exec("BEGIN");
-      try {
-        const r = db
-          .prepare(
-            `INSERT INTO Usuario (nome, email, telefone, senhaHash, perfil, dataNascimento, ativo, criadoEm, atualizadoEm)
-             VALUES (?, ?, ?, ?, 'PROFESSOR', ?, 1, ?, ?)`,
-          )
-          .run(nome, email, telefone, senhaHash, corpo.dataNascimento ?? null, agora, agora);
-        idUsuario = Number(r.lastInsertRowid);
-        db.prepare("INSERT INTO Professor (idUsuario) VALUES (?)").run(idUsuario);
-        db.exec("COMMIT");
-      } catch (erro) {
-        db.exec("ROLLBACK");
-        // Corrida rara: outra pessoa cadastrou o mesmo e-mail/telefone entre a checagem e o INSERT.
-        if (erro instanceof Error && /UNIQUE/.test(erro.message)) {
-          throw new ErroApi(409, "Este e-mail ou telefone já tem conta. Volte e toque em Entrar.");
-        }
-        throw erro;
-      }
-
-      const usuario = buscarPorId(idUsuario)!;
+      const contato = conferirContato({ nomeUsuario, email, telefone });
+      const senhaHash = await gerarHashSenha(req.body.senha); // antes da transação (é assíncrono)
+      const id = criarUsuario("ALUNO", limparNome(req.body.nome), contato, senhaHash, (idUsuario) => {
+        // Preferências de voz e fonte ficam com os valores padrão da tabela.
+        banco().prepare("INSERT INTO Aluno (idUsuario) VALUES (?)").run(idUsuario);
+      });
       resposta.code(201);
-      return { token: gerarToken(app, usuario), usuario: usuarioPublico(usuario) };
+      return responderComToken(id);
+    },
+  );
+
+  app.post<{ Body: CorpoComContato & { codigo: string } }>(
+    "/auth/cadastro/professor",
+    {
+      config: limiteSenha,
+      schema: {
+        body: {
+          type: "object",
+          properties: { nome: NOME, email: EMAIL, telefone: TELEFONE, senha: SENHA, codigo: CODIGO },
+          required: ["nome", "email", "telefone", "senha", "codigo"],
+        },
+        response: respostasCadastro,
+      },
+    },
+    async (req, resposta) => {
+      const idInstituicao = instituicaoPeloCodigo(req.body.codigo);
+      const contato = conferirContato({ email: req.body.email, telefone: req.body.telefone });
+      const senhaHash = await gerarHashSenha(req.body.senha);
+      const id = criarUsuario("PROFESSOR", limparNome(req.body.nome), contato, senhaHash, (idUsuario) => {
+        banco()
+          .prepare("INSERT INTO Professor (idUsuario, idInstituicao, statusVinculo) VALUES (?, ?, 'PENDENTE')")
+          .run(idUsuario, idInstituicao);
+      });
+      resposta.code(201);
+      return responderComToken(id);
+    },
+  );
+
+  app.post<{ Body: CorpoComContato }>(
+    "/auth/cadastro/responsavel",
+    {
+      config: limiteSenha,
+      schema: {
+        body: {
+          type: "object",
+          properties: { nome: NOME, email: EMAIL, telefone: TELEFONE, senha: SENHA },
+          required: ["nome", "email", "telefone", "senha"],
+        },
+        response: respostasCadastro,
+      },
+    },
+    async (req, resposta) => {
+      const contato = conferirContato({ email: req.body.email, telefone: req.body.telefone });
+      const senhaHash = await gerarHashSenha(req.body.senha);
+      const id = criarUsuario("RESPONSAVEL", limparNome(req.body.nome), contato, senhaHash, (idUsuario) => {
+        banco().prepare("INSERT INTO Responsavel (idUsuario) VALUES (?)").run(idUsuario);
+      });
+      resposta.code(201);
+      return responderComToken(id);
+    },
+  );
+
+  app.post<{ Body: CorpoComContato & { cnpj: string; nomeResponsavel: string } }>(
+    "/auth/cadastro/instituicao",
+    {
+      config: limiteSenha,
+      schema: {
+        body: {
+          type: "object",
+          properties: {
+            nome: NOME,
+            cnpj: { type: "string", minLength: 14, maxLength: 20, pattern: "^[0-9./ -]+$" },
+            nomeResponsavel: NOME,
+            email: EMAIL,
+            telefone: TELEFONE,
+            senha: SENHA,
+          },
+          required: ["nome", "cnpj", "nomeResponsavel", "email", "telefone", "senha"],
+        },
+        response: respostasCadastro,
+      },
+    },
+    async (req, resposta) => {
+      const cnpj = normalizarCnpj(req.body.cnpj);
+      if (!cnpj) throw new ErroApi(400, "Confira o CNPJ. São 14 números.");
+      if (banco().prepare("SELECT 1 FROM Instituicao WHERE cnpj = ?").get(cnpj)) {
+        throw new ErroApi(409, "Este CNPJ já tem cadastro. Volte e toque em Entrar.");
+      }
+      const contato = conferirContato({ email: req.body.email, telefone: req.body.telefone });
+      const senhaHash = await gerarHashSenha(req.body.senha);
+      const id = criarUsuario("INSTITUICAO", limparNome(req.body.nome), contato, senhaHash, (idUsuario) => {
+        banco()
+          .prepare("INSERT INTO Instituicao (idUsuario, cnpj, nomeResponsavel, status) VALUES (?, ?, ?, 'PENDENTE')")
+          .run(idUsuario, cnpj, limparNome(req.body.nomeResponsavel));
+      });
+      req.log.info({ idUsuario: id }, "instituição inscrita, esperando o administrador");
+      resposta.code(201);
+      return responderComToken(id);
     },
   );
 
@@ -119,7 +274,7 @@ export async function rotasAuth(app: FastifyInstance): Promise<void> {
           },
           required: ["identificador", "senha"],
         },
-        response: { 200: respostaComToken, 400: esquemaErro, 401: esquemaErro },
+        response: { 200: respostaComToken, 400: esquemaErro, 401: esquemaErro, 429: esquemaErro },
       },
     },
     async (req) => {
@@ -151,7 +306,7 @@ export async function rotasAuth(app: FastifyInstance): Promise<void> {
   app.patch<{ Body: { senhaAtual: string; senhaNova: string } }>(
     "/auth/senha",
     {
-      // Aluno não troca a própria senha: só o professor que criou a conta dele (professorAlunos.ts).
+      // Todos os perfis trocam a própria senha (inclusive o aluno e quem ainda espera aprovação).
       preHandler: exigirLogin(),
       config: limiteSenha,
       schema: {
@@ -164,14 +319,10 @@ export async function rotasAuth(app: FastifyInstance): Promise<void> {
           200: { type: "object", properties: { mensagem: { type: "string" } }, required: ["mensagem"] },
           400: esquemaErro,
           401: esquemaErro,
-          403: esquemaErro,
         },
       },
     },
     async (req) => {
-      if (req.user.perfil === "ALUNO") {
-        throw new ErroApi(403, "Para mudar sua senha, fale com seu professor.");
-      }
       const usuario = buscarPorId(req.user.idUsuario)!;
       if (!(await conferirSenha(req.body.senhaAtual, usuario.senhaHash))) {
         throw new ErroApi(400, "A senha de hoje não confere. Tente de novo.");

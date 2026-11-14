@@ -1,7 +1,7 @@
 // Figma: "AJAI · Login"  |  RF02 – Autenticação e acesso
 // Diferenças do Figma: sem "Quem você é?" (o perfil vem da conta) e
-// sem "Ouvir ajuda" nas telas de login e cadastro. Aluno entra com nome de usuário (ex.: maria.silva);
-// professor/responsável e administrador, com e-mail ou telefone.
+// sem "Ouvir ajuda" nas telas de login e cadastro. Um campo só: aluno entra com usuário (ex.: maria.silva),
+// e-mail ou telefone; professor, responsável, instituição e administrador, com e-mail ou telefone.
 import { router } from "expo-router";
 import { useState } from "react";
 import { View } from "react-native";
@@ -64,7 +64,7 @@ export default function Login() {
       <Botao titulo={enviando ? "Entrando..." : "Entrar →"} desabilitado={enviando} onPress={aoEntrar} />
       <Botao titulo="Esqueci minha senha" variante="link" onPress={() => router.push("/esqueci-senha")} />
       <Botao
-        titulo="Professor ou responsável? Crie sua conta"
+        titulo="Ainda não tem conta? Crie a sua"
         variante="link"
         onPress={() => router.push("/cadastro")}
       />

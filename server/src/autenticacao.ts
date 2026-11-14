@@ -1,10 +1,11 @@
-// Login por token (JWT): registra o @fastify/jwt e oferece o "middleware" exigirLogin.
-// Uso numa rota:  app.get("/x", { preHandler: exigirLogin("PROFESSOR") }, async (req) => req.user.idUsuario)
+// Login por token (JWT): registra o @fastify/jwt e oferece os "middlewares" exigirLogin e
+// exigirContaLiberada.
+// Uso numa rota:  app.get("/x", { preHandler: exigirContaLiberada("PROFESSOR") }, async (req) => req.user.idUsuario)
 import jwt from "@fastify/jwt";
 import type { FastifyInstance, FastifyRequest, preHandlerAsyncHookHandler } from "fastify";
 import { config } from "./config.ts";
 import { ErroApi } from "./erros.ts";
-import { buscarPorId, type Perfil } from "./usuarios.ts";
+import { buscarPorId, situacaoDaConta, type Perfil } from "./usuarios.ts";
 
 /** O que vai dentro do token. Nada de dado pessoal: só o id e o perfil. */
 export interface DadosToken {
@@ -48,6 +49,34 @@ export function exigirLogin(...perfis: Perfil[]): preHandlerAsyncHookHandler {
     req.user = { idUsuario: usuario.idUsuario, perfil: usuario.perfil };
     if (perfis.length > 0 && !perfis.includes(usuario.perfil)) {
       throw new ErroApi(403, "Esta parte do aplicativo não é para o seu perfil.");
+    }
+  };
+}
+
+/** Mensagem do 403 de quem ainda não foi aprovado, por perfil. */
+const mensagemContaPresa: Partial<Record<Perfil, Record<"PENDENTE" | "RECUSADA", string>>> = {
+  PROFESSOR: {
+    PENDENTE: "Sua conta espera a instituição aprovar. Tente de novo mais tarde.",
+    RECUSADA: "A instituição não aprovou sua conta. Veja o motivo na tela inicial.",
+  },
+  INSTITUICAO: {
+    PENDENTE: "Sua instituição espera a aprovação do AJAI. Tente de novo mais tarde.",
+    RECUSADA: "O cadastro da instituição não foi aprovado. Veja o motivo na tela inicial.",
+  },
+};
+
+/**
+ * Como exigirLogin, e também exige a conta LIBERADA: professor aprovado pela instituição e
+ * instituição aprovada pelo administrador. Aluno, responsável e administrador já são liberados.
+ * Conta pendente ou recusada → 403 (o app mostra a tela de espera, pelo `situacao` do /auth/eu).
+ */
+export function exigirContaLiberada(...perfis: Perfil[]): preHandlerAsyncHookHandler {
+  const login = exigirLogin(...perfis);
+  return async function (this: unknown, req, resposta) {
+    await login.call(this as never, req, resposta);
+    const { status } = situacaoDaConta(req.user);
+    if (status !== "APROVADA") {
+      throw new ErroApi(403, mensagemContaPresa[req.user.perfil]?.[status] ?? "Sua conta ainda não foi liberada.");
     }
   };
 }

@@ -5,11 +5,19 @@ Leia também o [README](README.md), principalmente a seção **Pendências** e o
 
 ## Contexto do produto
 
-AJAI é um app mobile de alfabetização para **jovens, adultos e idosos** (público da EJA), muitos com pouca leitura e pouca familiaridade com celular. Tem duas áreas:
+AJAI é um app mobile de alfabetização para **jovens, adultos e idosos** (público da EJA), muitos com pouca leitura e pouca familiaridade com celular. Tem duas áreas principais (aluno e acompanhamento), mais a instituição e o administrador:
 
-- **Contas:** só o **professor/responsável** se cadastra sozinho (nome, e-mail, telefone, senha). O **aluno é cadastrado pelo professor**, dentro da conta dele, e já entra na turma dele. O aluno **não tem e-mail nem telefone**: entra com **nome de usuário** (ex.: `maria.silva`) e senha, e **não troca a própria senha**; só o professor que criou a conta (`Aluno.idCriador`) muda. O login tem um campo só (usuário, e-mail ou telefone) e o perfil vem da conta.
+- **Contas (Passo 3.1):** perfis `ALUNO`, `PROFESSOR`, `RESPONSAVEL`, `INSTITUICAO` e `ADMINISTRADOR`. Os quatro primeiros **criam a própria conta** (`/cadastro` → "Eu sou:"); o administrador só existe por seed/script. O login tem um campo só (usuário, e-mail ou telefone) e o perfil vem da conta. **Todos trocam a própria senha**; esqueceu, o administrador gera uma provisória (vale para todos).
+  - **Aluno:** nome, senha e pelo menos um entre **nome de usuário** (sugerido a partir do nome, ex.: `maria.silva`), e-mail ou telefone. Entra por qualquer um deles.
+  - **Instituição** (escola/ONG): nome, CNPJ (dígitos validados), nome do responsável, e-mail, telefone e senha. Fica **PENDENTE** até o administrador aprovar no app; ao aprovar, ganha um **código** de 6 caracteres.
+  - **Professor:** e-mail, telefone e o **código da instituição**. Fica **PENDENTE** até a instituição aprovar; recusado, informa outro código.
+  - **Responsável** (familiar): e-mail e telefone; sem código e sem turma; acompanha **no máximo 2** pessoas.
+  - Conta pendente ou recusada entra, mas só vê `/espera`; as rotas restritas devolvem 403 (`exigirContaLiberada`). A situação vem em `usuario.situacao` (login e `/auth/eu`).
+  - **Vínculo** (`Vinculo`): professor aprovado ou responsável convida o aluno pelo usuário, e-mail ou telefone; o aluno aceita ou recusa em "Quem me acompanha". **Só com vínculo ACEITO** o acompanhante vê dados do aluno (`temVinculoAceito`). Aluno e acompanhante podem desfazer.
 - **Aluno:** nivelamento inicial → atividades graduais (letra, sílaba, palavra, frase, escrita, interpretação) → correção imediata → progressão de nível → histórico.
-- **Professor/responsável:** acompanha frequência, taxa de acerto, nível e conteúdos de maior dificuldade dos alunos vinculados. O app **complementa** o professor, não o substitui.
+- **Professor:** acompanha frequência, taxa de acerto, nível e conteúdos de maior dificuldade dos alunos com vínculo aceito; turmas e métricas detalhadas são só dele (passo 8). O app **complementa** o professor, não o substitui.
+- **Responsável:** vê as (até 2) pessoas que acompanha e, no passo 8, algumas recomendações (sem turma nem métricas detalhadas).
+- **Instituição:** mostra o código e aprova ou recusa os professores dela. **Administrador:** aprova ou recusa instituições.
 
 Fontes de verdade, nesta ordem:
 1. Requisitos RF01–RF22 e RNF01–RNF15 da documentação do projeto (PDF).
@@ -23,8 +31,8 @@ Fontes de verdade, nesta ordem:
 
 - Expo **SDK 58**, React Native, React 19, TypeScript estrito, React Compiler ligado (`app.json › experiments.reactCompiler`).
 - Expo Router (rotas por arquivo em `src/app/`), typed routes ligado.
-- **Banco: SQLite em arquivo** (`server/data/ajai.db`), já criado com as 13 tabelas e seed (ver [Banco de dados](#banco-de-dados-sqlite)).
-- **API:** Node.js + TypeScript com **Fastify** em `server/src/` (`npm run server:dev`). Validação de entrada com esquemas JSON em **toda** rota; erros sempre `{ erro: string }` em português (lance `ErroApi` de `server/src/erros.ts`). O app chama a API **só** por `src/services/api.ts` (`chamarApi`, token no cabeçalho, erros já em mensagem amigável); login, cadastro e senha vêm da API (passo 3); níveis, atividades e nivelamento também (passo 4, **sem gabarito**: a correção é do servidor); respostas, progressão e histórico também (passo 5: `POST /respostas`, `POST /nivelamento/concluir`, `GET /alunos/eu/progresso`). Só o painel do professor ainda lê `src/data/mock.ts` em memória até o passo 10. Tela que espera a API: `useCarregar` (`src/hooks/`) + componente `Carregando`. Rota que exige login: `preHandler: exigirLogin("PROFESSOR")` de `server/src/autenticacao.ts` (`req.user` = `{ idUsuario, perfil }`).
+- **Banco: SQLite em arquivo** (`server/data/ajai.db`), já criado com as 16 tabelas e seed (ver [Banco de dados](#banco-de-dados-sqlite)).
+- **API:** Node.js + TypeScript com **Fastify** em `server/src/` (`npm run server:dev`). Validação de entrada com esquemas JSON em **toda** rota; erros sempre `{ erro: string }` em português (lance `ErroApi` de `server/src/erros.ts`). O app chama a API **só** por `src/services/api.ts` (`chamarApi`, token no cabeçalho, erros já em mensagem amigável); login, cadastro, senha, instituições e vínculos vêm da API (passos 3 e 3.1); níveis, atividades e nivelamento também (passo 4, **sem gabarito**: a correção é do servidor); respostas, progressão e histórico também (passo 5: `POST /respostas`, `POST /nivelamento/concluir`, `GET /alunos/eu/progresso`). Só o painel do professor ainda lê `src/data/mock.ts` em memória até o passo 8. Tela que espera a API: `useCarregar` (`src/hooks/`) + componente `Carregando`. Rota que exige login: `preHandler: exigirLogin("ALUNO")` de `server/src/autenticacao.ts` (`req.user` = `{ idUsuario, perfil }`); rota de professor ou instituição usa `exigirContaLiberada(...)` (também exige a conta aprovada). Rota que mostra dado de aluno a um acompanhante confere `temVinculoAceito` (`server/src/rotas/vinculos.ts`).
 - O servidor roda `.ts` direto no Node (type stripping): **sem `enum`/`namespace`** e imports relativos **com `.ts`** (ex.: `import { banco } from "../banco.ts"`). Rota nova = arquivo em `server/src/rotas/` registrado em `server/src/app.ts`. Typecheck do servidor: `npm run server:typecheck` (`npm run typecheck` faz app + servidor).
 - **Voz trocável**: o app usa a interface `ProvedorVoz` (`src/services/voz/`). A **API de voz ainda não foi definida**; `expo-speech` como alternativa e reserva. Ver [Narração por voz](#narração-por-voz-provedorvoz).
 
@@ -35,7 +43,7 @@ Fontes de verdade, nesta ordem:
 | `src/app/` | **Só telas** e layouts. Toda lógica de regra vai para `services/`. Arquivos fora de rota não ficam aqui. |
 | `src/components/` | Componentes visuais reutilizáveis (`Tela`, `Botao`, `BotaoAudio`, `Campo`, `AtividadeView`...). |
 | `src/services/` | Regras de negócio e acesso a dados. Nomes seguem o diagrama/APF: `incluirResposta`, `corrigirAutomaticamente`, `visualizarPainel`... Quando o backend existir, **só esta pasta muda**. |
-| `server/src/progressao.ts` | Funções **puras** (sem I/O, sem imports) de nivelamento, progressão, dificuldades e próxima atividade, com testes (`npm test`). Regra nova vai aqui. `src/services/progressao.ts` só reexporta para o painel do professor (mock) até o passo 10. |
+| `server/src/progressao.ts` | Funções **puras** (sem I/O, sem imports) de nivelamento, progressão, dificuldades e próxima atividade, com testes (`npm test`). Regra nova vai aqui. `src/services/progressao.ts` só reexporta para o painel do professor (mock) até o passo 8. |
 | `src/domain/modelos.ts` | Tipos do diagrama de classes. Mudou o diagrama? Mude aqui também. |
 | `src/data/mock.ts` | Dados de demonstração. Não importe direto nas telas; passe por `services/`. |
 | `src/theme/tokens.ts` | Cores, fontes e tamanhos do Figma. **Não use cor ou tamanho "solto"** nas telas. |
@@ -48,7 +56,7 @@ Fontes de verdade, nesta ordem:
 
 - Toda tela do **aluno** tem um `BotaoAudio` ("Ouvir ajuda"/"Ouvir instrução") com o texto da tela (RNF04). **Exceção:** as telas de login e cadastro **não** têm "Ouvir ajuda".
 - Botões com **texto escrito**, nunca só ícone (RNF03). Área de toque ≥ `toqueMinimo` (64).
-- **Não use emojis** na interface (nem como ícone, ilustração ou enfeite). Use ícones de biblioteca: **`@expo/vector-icons`** (padrão; instale com `npx expo install @expo/vector-icons`; Ionicons, MaterialIcons, Feather...) ou `lucide-react-native`. O `react-icons` **não serve**: é só para web (DOM) e não roda no React Native. Ícone decorativo ao lado de texto: `accessibilityElementsHidden` / `importantForAccessibility="no"`. Os emojis provisórios já saíram (09/11). As figuras das alternativas (`Alternativa.ilustracao`) guardam o **nome de um ícone do `MaterialCommunityIcons`** (ex.: `"home"`), nunca emoji, até as imagens do passo 8 (`urlImagem`).
+- **Não use emojis** na interface (nem como ícone, ilustração ou enfeite). Use ícones de biblioteca: **`@expo/vector-icons`** (padrão; instale com `npx expo install @expo/vector-icons`; Ionicons, MaterialIcons, Feather...) ou `lucide-react-native`. O `react-icons` **não serve**: é só para web (DOM) e não roda no React Native. Ícone decorativo ao lado de texto: `accessibilityElementsHidden` / `importantForAccessibility="no"`. Os emojis provisórios já saíram (09/11). As figuras das alternativas (`Alternativa.ilustracao`) guardam o **nome de um ícone do `MaterialCommunityIcons`** (ex.: `"home"`), nunca emoji, até as imagens do passo 11 (`urlImagem`).
 - Texto do aluno com no mínimo `fontes.corpo` (20). Títulos e enunciados maiores.
 - Poucos elementos por tela, uma ação principal clara (RNF05, RNF07).
 - Mensagens curtas, positivas e sem jargão: "Muito bem!", "Vamos tentar de novo?" (RNF06, RNF15). Nunca "Erro", "Inválido", "Falha".
@@ -63,10 +71,11 @@ Em `docs/PROXIMOS_PASSOS.md`: passo **concluído** (✅) = apagar o prompt, "Pra
 
 - React Compiler está ligado: **não mute objetos de estado** (ex.: `aluno.idNivelAtual = 2`). Crie um objeto novo e atualize via `entrar(...)` da sessão — veja `services/alunos.ts`.
 - Navegação: `router`, `Link`, `Redirect`, `useLocalSearchParams` de `expo-router`. Rotas dinâmicas no formato objeto: `router.push({ pathname: "/aluno/atividade/[id]", params: { id } })`.
-- Áreas protegidas: o `_layout.tsx` de `aluno/` e `professor/` redireciona quem não tem o perfil certo.
+- Áreas protegidas: o `_layout.tsx` de `aluno/`, `professor/`, `responsavel/`, `instituicao/` e `admin/` usa `useAreaProtegida(perfil)` (`src/hooks/`), que manda quem não tem o perfil certo para a área dele e quem ainda não foi aprovado para `/espera`.
 - Marque o que é provisório com `// TODO:` explicando o que falta.
 - Nenhuma senha, token ou chave no código. Variáveis em `.env.local` (ignorado pelo git).
-- Senha: só o servidor vê, e guarda o hash (scrypt, `server/db/senha.mjs`). O app guarda só o token (`services/armazenamento.ts`, `expo-secure-store`). Nunca envie `senhaHash` para o app. Contas de aluno: `services/contasAlunos.ts` ↔ `server/src/rotas/professorAlunos.ts`.
+- Senha: só o servidor vê, e guarda o hash (scrypt, `server/db/senha.mjs`). O app guarda só o token (`services/armazenamento.ts`, `expo-secure-store`). Nunca envie `senhaHash` para o app. Cadastro e login: `services/auth.ts` ↔ `server/src/rotas/auth.ts`; instituições: `services/instituicoes.ts` ↔ `rotas/instituicoes.ts`; vínculos: `services/vinculos.ts` ↔ `rotas/vinculos.ts`.
+- Segurança das contas (Passo 3.1): rotas com senha, código de instituição ou convite usam `limiteSenha`; o cadastro **nunca** cria `ADMINISTRADOR`; antes do aceite, o acompanhante só vê o que ele mesmo digitou (nada do aluno); "aluno não encontrado" e "não é aluno" têm a mesma resposta; a instituição só decide professores dela (outra = 404).
 
 ## Banco de dados (SQLite)
 

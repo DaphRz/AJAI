@@ -8,12 +8,20 @@ import { useCarregar } from "@/hooks/useCarregar";
 import { mensagemDeErro } from "@/services/api";
 import { visualizarProgresso } from "@/services/progresso";
 import { escolherProximaAtividade } from "@/services/sessaoDeEstudo";
+import { listarConvitesDoAluno } from "@/services/vinculos";
 import { cores, fontes } from "@/theme/tokens";
 
-/** Trilha e etapa atual do aluno, como o servidor guardou (GET /alunos/eu/progresso). */
+/**
+ * Trilha e etapa atual do aluno, como o servidor guardou (GET /alunos/eu/progresso), e quantos
+ * convites de acompanhamento esperam resposta (Passo 3.1). Os convites não impedem a home de abrir.
+ */
 async function carregarHome() {
-  const progresso = await visualizarProgresso();
-  return { trilha: progresso.trilha, nivel: progresso.nivelAtual ?? progresso.trilha[0] };
+  const [progresso, vinculos] = await Promise.all([visualizarProgresso(), listarConvitesDoAluno().catch(() => [])]);
+  return {
+    trilha: progresso.trilha,
+    nivel: progresso.nivelAtual ?? progresso.trilha[0],
+    convites: vinculos.filter((v) => v.status === "PENDENTE").length,
+  };
 }
 
 export default function HomeAluno() {
@@ -26,7 +34,7 @@ export default function HomeAluno() {
 
   return (
     <Carregando estado={estado} comAudio>
-      {({ trilha, nivel }) => {
+      {({ trilha, nivel, convites }) => {
         const etapasConcluidas = trilha.filter((n) => n.status === "CONCLUIDA").length;
 
         async function continuar() {
@@ -38,7 +46,7 @@ export default function HomeAluno() {
           try {
             const proxima = await escolherProximaAtividade();
             if (proxima === undefined) {
-              // TODO (passo 8): tela própria de "nível sem atividades".
+              // TODO (passo 11): tela própria de "nível sem atividades".
               setAviso("Esta etapa ainda não tem atividades. Fale com seu professor.");
             } else {
               router.push({ pathname: "/aluno/atividade/[id]", params: { id: String(proxima), concluidas: "0" } });
@@ -51,7 +59,13 @@ export default function HomeAluno() {
 
         return (
           <Tela
-            rodape={<BotaoAudio texto={`Olá, ${primeiroNome}! Toque em continuar para fazer a próxima atividade.`} />}
+            rodape={
+              <BotaoAudio
+                texto={`Olá, ${primeiroNome}! Toque em continuar para fazer a próxima atividade.${
+                  convites > 0 ? " Você tem um convite de acompanhamento. Toque em Ver convite." : ""
+                }`}
+              />
+            }
           >
             <Logo />
             <View>
@@ -74,9 +88,18 @@ export default function HomeAluno() {
 
             <Cartao>
               <Text style={styles.rotulo}>Ofensiva</Text>
-              {/* TODO: calcular dias seguidos a partir das Respostas (RF15, passo 9) */}
+              {/* TODO: calcular dias seguidos a partir das Respostas (RF15, passo 7) */}
               <Text style={[styles.valor, { color: cores.primaria, fontSize: fontes.titulo }]}>– dias seguidos</Text>
             </Cartao>
+
+            {convites > 0 ? (
+              <Cartao destaque>
+                <Text style={styles.legenda}>
+                  Você tem {convites === 1 ? "1 convite" : `${convites} convites`} de acompanhamento.
+                </Text>
+                <Botao titulo="Ver convite" variante="secundario" onPress={() => router.push("/aluno/acompanhamento")} />
+              </Cartao>
+            ) : null}
 
             <Botao titulo="Ver meu progresso" variante="secundario" onPress={() => router.push("/aluno/progresso")} />
             <Botao titulo="Minha conta" variante="link" onPress={() => router.push("/aluno/conta")} />

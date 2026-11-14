@@ -14,10 +14,10 @@ export type { OpcoesFala, ProvedorVoz } from "./provedor";
 
 const provedores: Record<string, ProvedorVoz> = {
   [provedorConsole.nome]: provedorConsole,
-  // TODO (passo 6): "servidor": provedorServidor (API de voz ainda não definida), "expo-speech": provedorExpoSpeech (alternativa e reserva)
+  // TODO (passo 10): "servidor": provedorServidor (API de voz ainda não definida), "expo-speech": provedorExpoSpeech (alternativa e reserva)
 };
 
-/** Provedor usado pelo app. TODO (passo 6): escolher conforme a API de voz (ainda não definida); "expo-speech" é a alternativa. */
+/** Provedor usado pelo app. TODO (passo 10): escolher conforme a API de voz (ainda não definida); "expo-speech" é a alternativa. */
 export const PROVEDOR_PADRAO = "console";
 
 let ativo: ProvedorVoz = provedores[PROVEDOR_PADRAO];

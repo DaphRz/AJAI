@@ -1,5 +1,5 @@
-// Usuario.EditarSenha (APF 18): a mesma tela serve professor e administrador
-// (rotas /professor/senha e /admin/senha). O ALUNO não troca a própria senha. Sem tela no Figma (passo 8).
+// Usuario.EditarSenha (APF 18): a mesma tela serve todos os perfis (Passo 3.1): /aluno/senha,
+// /professor/senha, /responsavel/senha, /instituicao/senha e /admin/senha. Sem tela no Figma (passo 11).
 import { router } from "expo-router";
 import { useState } from "react";
 import { mensagemDeErro } from "@/services/api";

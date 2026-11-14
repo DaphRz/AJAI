@@ -7,7 +7,31 @@
  * nos serviços em src/services/, não aqui.
  */
 
-export type Perfil = "ALUNO" | "PROFESSOR" | "ADMINISTRADOR";
+/**
+ * Perfis (Passo 3.1). ALUNO, PROFESSOR, RESPONSAVEL e INSTITUICAO criam a própria conta;
+ * ADMINISTRADOR só por seed/script. RESPONSAVEL e INSTITUICAO são EXTRAS em relação ao diagrama.
+ */
+export type Perfil = "ALUNO" | "PROFESSOR" | "RESPONSAVEL" | "INSTITUICAO" | "ADMINISTRADOR";
+
+/** Situação da instituição (decidida pelo administrador). */
+export type StatusInstituicao = "PENDENTE" | "APROVADA" | "RECUSADA";
+
+/** Situação do professor na instituição (decidida pela instituição). */
+export type StatusProfessor = "PENDENTE" | "APROVADO" | "RECUSADO";
+
+/** Situação do vínculo acompanhante ↔ aluno (decidida pelo aluno). */
+export type StatusVinculo = "PENDENTE" | "ACEITO" | "RECUSADO";
+
+/**
+ * Situação da conta, calculada pela API (login e GET /auth/eu) para o app decidir a tela.
+ * Professor e instituição começam PENDENTE; os outros perfis já vêm APROVADA.
+ */
+export interface SituacaoConta {
+  status: StatusInstituicao;
+  motivo?: string;
+  /** Professor: nome da instituição que vai aprovar. */
+  nomeInstituicao?: string;
+}
 
 export type StatusAtividade = "ATIVA" | "INATIVA";
 
@@ -23,13 +47,13 @@ export interface Usuario {
   idUsuario: number;
   nome: string;
   /**
-   * EXTRA (fora do diagrama, migração 003): login do ALUNO, ex.: "maria.silva".
-   * Só aluno tem; aluno NÃO tem e-mail nem telefone.
+   * EXTRA (fora do diagrama, migração 003): login do ALUNO, ex.: "maria.silva". Só aluno tem.
+   * Aluno tem pelo menos um entre nomeUsuario, email e telefone (migração 005).
    */
   nomeUsuario?: string;
-  /** Só professor/administrador (opcional desde a migração 002). */
+  /** Opcional desde a migração 002. Professor, responsável e instituição: obrigatório no cadastro. */
   email?: string;
-  /** EXTRA (fora do diagrama, migração 002): só professor/administrador; dígitos com DDD. */
+  /** EXTRA (fora do diagrama, migração 002): dígitos com DDD. */
   telefone?: string;
   /** Só existe no servidor: a API nunca envia a senha nem o hash para o app. */
   senhaHash?: string;
@@ -38,13 +62,12 @@ export interface Usuario {
   ativo: boolean;
   criadoEm: string; // ISO (DateTime)
   atualizadoEm: string;
+  /** Vem da API (não é coluna): situação da conta para o app decidir a tela. */
+  situacao?: SituacaoConta;
 }
 
 export interface Aluno extends Usuario {
   perfil: "ALUNO";
-  nomeUsuario: string;
-  /** EXTRA (fora do diagrama, migração 003): professor que criou a conta; só ele muda a senha. */
-  idCriador?: number;
   vozPreferida: string;
   velocidadeVoz: number; // 0.5 a 1.5
   tamanhoFonte: number;
@@ -54,6 +77,34 @@ export interface Aluno extends Usuario {
 
 export interface Professor extends Usuario {
   perfil: "PROFESSOR";
+  /** EXTRA (migração 005): instituição informada pelo código no cadastro. */
+  idInstituicao?: number;
+  /** EXTRA (migração 005): só com APROVADO o professor usa a área dele. */
+  statusVinculo?: StatusProfessor;
+  motivoRecusa?: string;
+  decididoEm?: string;
+}
+
+/** EXTRA (migração 005): acompanha até 2 alunos, sem turma. */
+export interface Responsavel extends Usuario {
+  perfil: "RESPONSAVEL";
+}
+
+/**
+ * EXTRA (migração 005): escola/ONG que aprova os professores. `nome` é o nome da instituição.
+ * Fica PENDENTE até o administrador aprovar; ao aprovar, ganha o `codigo` que o professor informa.
+ */
+export interface Instituicao extends Usuario {
+  perfil: "INSTITUICAO";
+  /** Só os 14 dígitos. */
+  cnpj: string;
+  nomeResponsavel: string;
+  /** 6 caracteres maiúsculos, sem 0/O e 1/I/L. Ausente até a aprovação. */
+  codigo?: string;
+  status: StatusInstituicao;
+  motivoRecusa?: string;
+  decididoPor?: number;
+  decididoEm?: string;
 }
 
 export interface Administrador extends Usuario {
@@ -66,6 +117,21 @@ export interface Turma {
   periodo: string;
   ativa: boolean;
   idProfessor: number; // associação "leciona"
+}
+
+/**
+ * EXTRA (migração 005): ligação acompanhante (professor ou responsável) ↔ aluno.
+ * Só com ACEITO o acompanhante vê dados do aluno. Responsável: no máximo 2 (PENDENTE + ACEITO).
+ */
+export interface Vinculo {
+  idVinculo: number;
+  idAluno: number;
+  idAcompanhante: number;
+  status: StatusVinculo;
+  /** O que o acompanhante digitou ao convidar (usuário, e-mail ou telefone do aluno). */
+  identificadorConvite?: string;
+  criadoEm: string;
+  decididoEm?: string;
 }
 
 /** Classe de associação Aluno–Turma. */

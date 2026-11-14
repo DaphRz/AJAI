@@ -2,7 +2,7 @@
 //
 // Funções PURAS (sem banco, sem Fastify, sem React): recebem dados e devolvem decisões.
 // Vieram de src/services/progressao.ts (passo 5) SEM mudar a lógica; o app reexporta este
-// arquivo (o painel do professor ainda calcula em cima do mock até o passo 10).
+// arquivo (o painel do professor ainda calcula em cima do mock até o passo 8).
 // Por isso este arquivo NÃO importa nada: os tipos abaixo são o mínimo de cada modelo
 // (compatíveis com Atividade, Nivel e Resposta de src/domain/modelos.ts).
 // Testes: progressao.test.ts (`npm run server:test`).
