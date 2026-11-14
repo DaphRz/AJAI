@@ -25,19 +25,28 @@ describe("taxaDeAcerto", () => {
 });
 
 describe("definirNivelInicial", () => {
-  const perguntas = [{ idNivel: 1 }, { idNivel: 2 }, { idNivel: 3 }];
+  // 2 perguntas por nível (um par), em ordem crescente; o aluno para no primeiro erro.
+  const perguntas = [{ idNivel: 1 }, { idNivel: 1 }, { idNivel: 2 }, { idNivel: 2 }, { idNivel: 3 }, { idNivel: 3 }];
 
-  it("acerta tudo: nível da última pergunta", () => {
-    assert.equal(definirNivelInicial(perguntas, [true, true, true], trilha).idNivel, 3);
+  it("acerta tudo: último nível", () => {
+    assert.equal(definirNivelInicial(perguntas, [true, true, true, true, true, true], trilha).idNivel, 3);
   });
   it("erra a primeira: começa na primeira etapa", () => {
     assert.equal(definirNivelInicial(perguntas, [false], trilha).idNivel, 1);
   });
-  it("erra no meio: nível da última acertada antes do erro", () => {
+  it("erra a 2ª do par: fica no nível do par (não domina)", () => {
+    assert.equal(definirNivelInicial(perguntas, [true, false], trilha).idNivel, 1);
+    assert.equal(definirNivelInicial(perguntas, [true, true, true, false], trilha).idNivel, 2);
+  });
+  it("acerta o par e erra a 1ª do próximo: começa no próximo nível", () => {
     assert.equal(definirNivelInicial(perguntas, [true, true, false], trilha).idNivel, 2);
+    assert.equal(definirNivelInicial(perguntas, [true, true, true, true, false], trilha).idNivel, 3);
   });
   it("ignora acertos depois do primeiro erro", () => {
-    assert.equal(definirNivelInicial(perguntas, [true, false, true], trilha).idNivel, 1);
+    assert.equal(definirNivelInicial(perguntas, [true, false, true, true], trilha).idNivel, 1);
+  });
+  it("parou no meio sem errar: nível da última pergunta respondida", () => {
+    assert.equal(definirNivelInicial(perguntas, [true, true, true], trilha).idNivel, 2);
   });
   it("sem perguntas: primeira etapa", () => {
     assert.equal(definirNivelInicial([], [], trilha).idNivel, 1);

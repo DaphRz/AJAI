@@ -351,7 +351,7 @@ O roteiro completo até a entrega, com prazo, critério de pronto e **um prompt 
 | 3.1 | Modelo de contas revisado (perfis, instituição, vínculos) — ✅ | 14/11 |
 | 4 | Atividades e níveis vindos da API — ✅ | 09/11 |
 | 5 | Respostas, progressão e histórico no servidor — ✅ | 10/11 |
-| 6 | Conteúdo pedagógico completo | 14/11 |
+| 6 | Conteúdo pedagógico completo — ✅ | 14/11 |
 | 7 | Home do aluno: ofensiva e progresso | 15/11 |
 | 8 | Área do professor e do responsável | 15/11 |
 | 9 | Cadastro de atividades e níveis (admin) | 15/11 |
@@ -376,19 +376,19 @@ Legenda: ✅ feito · 🟡 esqueleto/parcial (só no app, com dados em memória)
 - ✅ Banco de dados configurado: SQLite com as 13 tabelas do diagrama (16 com as do Passo 3.1) e seed (`npm run db:reset`), ligado ao app pela API
 - ✅ Cadastro e autenticação (RF01, RF02): pela API, senha com hash (scrypt), token JWT guardado no aparelho. Desde o **Passo 3.1 (14/11)** aluno, professor, responsável e instituição criam a própria conta; instituição aprovada pelo administrador, professor pela instituição; acompanhamento por vínculo que o aluno aceita. Testado pelos testes de API (`contas.test.ts`) e contra o servidor rodando; **falta a equipe repetir o fluxo completo pelas telas no Expo Go**
 - ✅ Aluno novo: o nivelamento é gravado no servidor (`POST /nivelamento/concluir`: respostas, nível inicial e HistoricoNivel); ao reabrir o app, o aluno continua na etapa dele
-- 🟡 Nivelamento inicial (RF03): perguntas vêm da API (`GET /nivelamento`, hoje 5, uma por nível), com barra de progresso, e o nível é decidido no servidor (que corrige de novo e só aceita as perguntas na ordem, sem pular); a regra ainda é provisória (para no primeiro erro) e faltam as perguntas definitivas validadas pela equipe/profissionais da EJA
+- ✅ Nivelamento inicial (RF03): 10 perguntas da API (`GET /nivelamento`, duas por nível), com barra de progresso; o aluno para no primeiro erro e o servidor decide o nível (corrige de novo e só aceita as perguntas na ordem, sem pular). Regra definida no passo 6: só passa de nível acertando **as 2 perguntas do par**, e começa no primeiro nível que não domina ([`docs/conteudo-pedagogico.md`](docs/conteudo-pedagogico.md))
 - ⬜ Testes do fluxo de acesso
 - ✅ Passo 0 (esqueleto): lint, tsc e expo-doctor passam, o banco recria e o fluxo foi validado no Expo Go. Node 22.18+ é necessário para `npm run db:*` (em 22.14 use `NODE_OPTIONS=--experimental-strip-types`)
 
 **Sprint 2 – Atividades Básicas (27/10 – 03/11)** — *atrasada*
-- 🟡 Atividades de letras e sílabas (RF04, RF06): telas prontas e vindas da API (passo 4, testado no Expo Go em 09/11); só 3 atividades de exemplo (conteúdo no passo 6)
-- ⬜ Associação letra-som (RF05): depende da narração por voz
+- ✅ Atividades de letras e sílabas (RF04, RF06): telas vindas da API (passo 4) e 7 atividades por nível do cotidiano adulto (passo 6, 14/11; [`docs/conteudo-pedagogico.md`](docs/conteudo-pedagogico.md)). Faltam só as imagens finais (passo 11)
+- 🟡 Associação letra-som (RF05): atividades LETRA "começa com o som da letra..." (passo 6), com as opções lidas no "Ouvir instrução"; falta a voz de verdade (passo 10)
 - ✅ Correção automática (RF12) **no servidor** desde o passo 4 (o app não recebe o gabarito) e feedback de acerto/erro (RF13)
 - ✅ Registro das respostas **no banco** (RF14): `POST /respostas` grava a Resposta e atualiza o DesempenhoConteudo (passo 5, testado no Expo Go em 09/11)
 
 **Sprint 3 – Atividades Avançadas e Progressão (03/11 – 10/11)** — *em andamento*
-- 🟡 Palavras, leitura de frases e escrita (RF07, RF08, RF09): telas de cada tipo prontas (montar palavra com sílabas e "Apagar", frase em destaque com "Ouvir frase", escrita tolerante a acentos); só 1 exemplo de cada (conteúdo no passo 6)
-- 🟡 Interpretação de textos simples (RF10): tela com o texto visível e "Ouvir texto", 1 exemplo (consulta no posto); atividades do cotidiano (RF11) no passo 6
+- ✅ Palavras, leitura de frases e escrita (RF07, RF08, RF09): telas de cada tipo (montar palavra com sílabas e "Apagar", frase em destaque com "Ouvir frase", escrita tolerante a acentos), com 7 atividades no nível 3 e 7 no nível 4 (passo 6)
+- ✅ Interpretação de textos simples (RF10) e cotidiano (RF11): tela com o texto visível e "Ouvir texto", 7 textos do cotidiano (consulta, receita, aviso de falta de água, mensagem da farmácia, ônibus, mercado; passo 6). O cotidiano é o tema de todas as atividades
 - 🟡 Progressão entre níveis (RF16): **no servidor** desde o passo 5, com HistoricoNivel (testado no Expo Go em 09/11). Regra provisória = taxa de acerto ≥ `criterioAcerto` do nível nas últimas 5 respostas daquele nível, conferida só depois de um acerto numa atividade da etapa atual ([`server/src/progressao.ts`](server/src/progressao.ts), com testes). **A equipe precisa validar essa regra.** Atenção na demo: pelos dados de exemplo, Ana e Clara sobem de etapa logo no primeiro acerto
 
 **Sprint 4 – Métricas, Área do Professor e Finalização (10/11 – 17/11)**
@@ -427,8 +427,8 @@ Legenda: ✅ feito · 🟡 esqueleto/parcial (só no app, com dados em memória)
 - 🟡 **Narração por voz (RNF04)** — a arquitetura trocável (`ProvedorVoz`) já existe, mas o único provedor é o `console` (o botão "Ouvir ajuda" só escreve no console). **A API de voz ainda NÃO foi definida**; o `expo-speech` será implementado como alternativa e reserva. Falta a equipe escolher a API e implementar os provedores (passo 10).
 
   ⚠️ Ao escolher a API, conferir custo e licença da voz e revisar na APF o `ServicoTTS`.
-- ⬜ Banco real de atividades (letras, sílabas, palavras, frases, escrita, interpretação, cotidiano), validado com os profissionais da EJA
-- ⬜ O enum `TipoAtividade` do diagrama não tem tipos para **letra-som** (RF05) nem **cotidiano** (RF11): incluir ou explicar no documento que entram como `conteudo` de outros tipos
+- ✅ Banco real de atividades (letras, sílabas, palavras, frases, escrita, interpretação, cotidiano): 35 atividades, 7 por nível (passo 6, 14/11)
+- 🟡 O enum `TipoAtividade` do diagrama não tem tipos para **letra-som** (RF05) nem **cotidiano** (RF11). Decidido no passo 6: **não criar tipos**; RF05 = LETRA e RF11 = tema/`conteudo` de todos os tipos, sem impacto no diagrama nem na APF (ver [`docs/conteudo-pedagogico.md`](docs/conteudo-pedagogico.md)). Falta explicar isso no PDF (passo 15)
 - ⬜ Imagens das alternativas e da palavra em destaque (o Figma usa fotos, ex.: a casa em "Formar palavra"; o app usa ícones provisórios do `MaterialCommunityIcons` e ainda não mostra a imagem da palavra)
 - ✅ Emojis trocados por ícones de `@expo/vector-icons` (09/11)
 - ⬜ Carregar a fonte Inter (`expo-font`)

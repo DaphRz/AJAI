@@ -32,18 +32,22 @@ export function taxaDeAcerto(lista: readonly Pick<RespostaParaProgressao, "corre
 }
 
 /**
- * Nivelamento: as perguntas vêm em ordem crescente de nível.
- * O nível inicial é o da última pergunta acertada antes do primeiro erro.
+ * Nivelamento (RF03, regra definida no passo 6): as perguntas vêm em pares, um par por nível,
+ * em ordem crescente, e o aluno para no primeiro erro. Ele só passa de nível acertando AS DUAS
+ * perguntas do par, então o nível inicial é o da pergunta que ele errou (o primeiro nível que
+ * ainda não domina). Sem erro: o nível da última pergunta respondida (acertou tudo = último nível).
+ * `perguntas` e `acertos` são das perguntas respondidas, na ordem.
  */
 export function definirNivelInicial<N extends { idNivel: number }>(
   perguntas: readonly { idNivel: number }[],
   acertos: readonly boolean[],
   trilha: readonly N[],
 ): N {
+  const respondidas = Math.min(perguntas.length, acertos.length);
   let idNivel = trilha[0].idNivel;
-  for (let i = 0; i < perguntas.length; i++) {
-    if (!acertos[i]) break;
+  for (let i = 0; i < respondidas; i++) {
     idNivel = perguntas[i].idNivel;
+    if (!acertos[i]) break;
   }
   return trilha.find((n) => n.idNivel === idNivel) ?? trilha[0];
 }

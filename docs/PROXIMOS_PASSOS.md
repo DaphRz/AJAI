@@ -39,7 +39,7 @@ Legenda: ⬜ a fazer · 🟡 em andamento · ✅ feito
 | 3.1 | Modelo de contas revisado (perfis, instituição, vínculos) — feito | 14/11 | 3 |
 | 4 | Atividades e níveis vindos da API — feito | 09/11 | 2 |
 | 5 | Respostas, progressão e histórico no servidor — feito | 10/11 | 3, 4 |
-| 6 | Conteúdo pedagógico completo | 14/11 | 4 |
+| 6 | Conteúdo pedagógico completo — feito | 14/11 | 4 |
 | 7 | Home do aluno: ofensiva, frequência e tela de progresso | 15/11 | 5 |
 | 8 | Área do professor e do responsável | 15/11 | 5, 3.1 |
 | 9 | Cadastro de atividades e níveis (administrador) | 15/11 | 2 |
@@ -228,40 +228,18 @@ O "Ouvir instrução" também lê as opções. Enquanto o servidor corrige, a te
 
 ---
 
-## ⬜ Passo 6 — Conteúdo pedagógico completo (RF04–RF11)
+## ✅ Passo 6 — Conteúdo pedagógico completo (RF04–RF11)
 
-**Prazo:** 14/11 · **Depende de:** passo 4
+**Feito em 14/11.** O banco tem **35 atividades, 7 por nível**, todas do cotidiano adulto (ônibus, remédio, conta de luz, mercado, placa, documento, receita, mensagem), aprovadas pela equipe sem correções. Tabelas, critérios, nivelamento e lista de imagens: [`docs/conteudo-pedagogico.md`](conteudo-pedagogico.md).
+- **`mock.ts`:** as atividades são criadas pelo helper `atividade()`. Ele numera as alternativas, tira o gabarito das opções e **faz o seed parar** se uma múltipla escolha não tiver exatamente 1 correta, se as peças de PALAVRA não formarem a palavra ou se uma ESCRITA vier sem resposta. Os ids 1 a 7 continuam os mesmos, mas a 1 virou "Banco" (era "Bola") e a 3 virou "BONÉ" (era "BOLA").
+- **`conteudo` padronizado:** "Letra B", "Sílaba BO", "Palavra CASA" / "Escrita PÃO", "Frase: horário" e "Texto: achar informação" / "entender o objetivo" / "tirar conclusão".
+- **RF05 e RF11:** **sem tipo novo**. Letra-som = LETRA ("começa com o som da letra P", com as opções narradas), e cotidiano = tema de todos os tipos. Nada muda no diagrama nem na APF; falta só explicar isso no PDF (passo 15).
+- **Nivelamento (RF03):** 10 perguntas, 2 por nível (ids 12, 1, 13, 3, 4, 21, 5, 25, 7, 34). **Regra nova** em `definirNivelInicial` (`server/src/progressao.ts`): o aluno para no primeiro erro e só passa de nível acertando as 2 perguntas do par. O nível inicial é o primeiro que ele não domina (o da pergunta errada); acertou tudo = nível 5. A regra antiga (nível da última pergunta acertada) saiu. O app não mudou.
+- **Testes:** `progressao.test.ts` ganhou os casos da regra nova (pares, erro na 1ª e na 2ª do par, parar no meio), e `rotas/progresso.test.ts` foi ajustado ao seed novo. `npm test` (65), lint, typecheck e `db:seed` passam, e o fluxo foi testado no app.
 
-**Pronto quando:** cada um dos 5 níveis tem pelo menos 6 atividades revisadas pela equipe (idealmente por um dos profissionais da EJA da pesquisa), cobrindo letra-som, cotidiano e interpretação de texto, e o `mock.ts` foi atualizado e `npm run db:seed` roda sem erro.
-
-```text
-Leia AGENTS.md, src/domain/modelos.ts (TipoAtividade), src/data/mock.ts e server/db/seed.mjs
-(o seed lê o mock.ts: é nele que se escrevem as atividades; depois rode `npm run db:seed`).
-
-Preciso do banco de atividades do AJAI para jovens, adultos e idosos em alfabetização
-(EJA). Público adulto: NADA infantilizado; use situações do cotidiano (ônibus, mercado,
-remédio, conta de luz, documento, placa de rua, receita, mensagem no celular).
-
-Gere, no formato de src/data/mock.ts (tipo Atividade), pelo menos 6 atividades por nível:
-1 Aprendendo Letras (reconhecer letra; associar letra e som – RF05)
-2 Formando Sílabas
-3 Formando Palavras (montar palavra com sílabas; escrita curta – RF09)
-4 Lendo Frases (frases do dia a dia – RF08, RF11)
-5 Entendendo Textos (texto de 2 a 4 linhas + pergunta – RF10)
-Regras: enunciado curto (até 12 palavras), 3 alternativas, só uma correta,
-distratores plausíveis, campo `conteudo` padronizado (ex.: "Letra B", "Sílaba BO")
-porque ele alimenta o relatório de dificuldades.
-Para RF05 (letra-som) e RF11 (cotidiano), proponha se viram novos valores de
-TipoAtividade ou só `conteudo` de tipos existentes, e explique o impacto no diagrama
-de classes e na APF. Liste no final as imagens que precisaremos (nome do arquivo +
-descrição) para a equipe de design produzir.
-Gere também as perguntas definitivas do NIVELAMENTO (RF03): uma ou duas por nível, em ordem
-crescente de dificuldade (campo ordemNivelamento), e proponha a regra para definir o nível
-inicial (hoje provisória: para no primeiro erro) para a equipe validar com os
-profissionais da EJA.
-Depois de revisado pela equipe: <colar aqui as correções>, atualize o mock.ts e rode
-`npm run db:seed` para conferir que o banco carrega sem erro.
-```
+**Observações:**
+- as figuras ainda são ícones provisórios (`Alternativa.ilustracao`). As imagens finais (25 arquivos obrigatórios e 5 opcionais, listados no documento) entram no passo 11;
+- depois de `git pull`, rode `npm run db:seed` (ou `db:reset`) para carregar as atividades novas.
 
 ---
 

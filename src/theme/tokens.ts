@@ -48,7 +48,7 @@ export const fontes = {
   legenda: 16,
   letraAtividade: 120, // a letra grande da tela "Reconhecimento"
   silaba: 48, // peças de sílaba ("Sílabas", "Formar palavra")
-  palavraDestaque: 40, // a palavra em destaque ("BOLA", "CASA")
+  palavraDestaque: 40, // a palavra em destaque ("BONÉ", "CASA")
   ilustracao: 48, // PROVISÓRIO: ícone das alternativas até as imagens do passo 11
 } as const;
 

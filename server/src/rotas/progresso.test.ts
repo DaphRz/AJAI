@@ -58,7 +58,7 @@ describe("POST /respostas", () => {
   });
 
   it("aluno sem nivelamento precisa fazer as perguntas do começo", async () => {
-    const r = await chamar("maria", "POST", "/respostas", { idAtividade: 1, respostaDada: "Bola" });
+    const r = await chamar("maria", "POST", "/respostas", { idAtividade: 1, respostaDada: "Banco" });
     assert.equal(r.statusCode, 409);
   });
 
@@ -91,7 +91,7 @@ describe("POST /respostas", () => {
     assert.equal(r.statusCode, 201);
     assert.equal(r.json().correta, false);
     assert.equal(r.json().subiuDeNivel, false);
-    assert.doesNotMatch(r.body, /respostaCorreta|Bola/);
+    assert.doesNotMatch(r.body, /respostaCorreta|Banco/);
   });
 });
 
@@ -103,12 +103,14 @@ describe("POST /nivelamento/concluir", () => {
   });
 
   it("corrige de novo no servidor, grava as respostas e define o nível inicial", async () => {
-    // Perguntas do nivelamento no seed: 1 (etapa 1), 3 (etapa 2), 4 (etapa 3), 5, 7. Erra a 3ª.
+    // Nivelamento no seed (2 por etapa): 12 e 1 (etapa 1), 13 e 3 (etapa 2), 4 e 21 (etapa 3)...
+    // Acerta o par da etapa 1 e a 1ª da etapa 2, e erra a 2ª (BONÉ): não domina a etapa 2, começa nela.
     const r = await chamar("maria", "POST", "/nivelamento/concluir", {
       respostas: [
-        { idAtividade: 1, respostaDada: "BOLA", tempoRespostaSeg: 5 },
-        { idAtividade: 3, respostaDada: "bo", tempoRespostaSeg: 6 },
-        { idAtividade: 4, respostaDada: "SACA", tempoRespostaSeg: 9 },
+        { idAtividade: 12, respostaDada: "onibus", tempoRespostaSeg: 4 },
+        { idAtividade: 1, respostaDada: "BANCO", tempoRespostaSeg: 5 },
+        { idAtividade: 13, respostaDada: "ca", tempoRespostaSeg: 5 },
+        { idAtividade: 3, respostaDada: "BA", tempoRespostaSeg: 6 },
       ],
     });
     assert.equal(r.statusCode, 201, r.body);
@@ -116,7 +118,7 @@ describe("POST /nivelamento/concluir", () => {
     assert.equal(nivelNoBanco(1), 2);
     const db = banco();
     assert.equal((db.prepare("SELECT idNivelInicial FROM Aluno WHERE idUsuario = 1").get() as { idNivelInicial: number }).idNivelInicial, 2);
-    assert.equal((db.prepare("SELECT COUNT(*) AS n FROM Resposta WHERE idAluno = 1").get() as { n: number }).n, 3);
+    assert.equal((db.prepare("SELECT COUNT(*) AS n FROM Resposta WHERE idAluno = 1").get() as { n: number }).n, 4);
     assert.equal((db.prepare("SELECT COUNT(*) AS n FROM HistoricoNivel WHERE idAluno = 1").get() as { n: number }).n, 1);
 
     // O login (GET /auth/eu) já devolve o nível: o aluno continua de onde parou ao reabrir o app.
@@ -142,30 +144,30 @@ describe("GET /alunos/eu/progresso", () => {
     const p = r.json();
     assert.equal(p.nivelAtual.idNivel, 2);
     assert.deepEqual(p.trilha.map((n: { status: string }) => n.status), ["CONCLUIDA", "ATUAL", "BLOQUEADA", "BLOQUEADA", "BLOQUEADA"]);
-    assert.equal(p.totalAtividades, 3);
-    assert.equal(p.totalAcertos, 2);
+    assert.equal(p.totalAtividades, 4);
+    assert.equal(p.totalAcertos, 3);
     assert.equal(p.dificuldades.length, 1);
     assert.equal(p.dificuldades[0].erros, 1);
-    // Etapa 2 só tem a atividade 3, que ela já acertou: repete (é a única).
+    // Etapa 2 = atividades 3, 13 a 18; ela só acertou a 13: a próxima é a 1ª não acertada (a 3).
     assert.equal(p.proximaAtividade, 3);
   });
 
-  it("etapa com uma atividade só: repete ela mesmo sendo a anterior", async () => {
+  it("não repete a atividade que o aluno acabou de fazer", async () => {
     const r = await chamar("maria", "GET", "/alunos/eu/progresso?anterior=3");
     assert.equal(r.statusCode, 200);
-    assert.equal(r.json().proximaAtividade, 3);
+    assert.equal(r.json().proximaAtividade, 14);
   });
 });
 
 describe("POST /atividades/:id/corrigir", () => {
   it("só corrige perguntas do nivelamento", async () => {
-    assert.equal((await chamar("ana", "POST", "/atividades/1/corrigir", { respostaDada: "Bola" })).json().correta, true);
+    assert.equal((await chamar("ana", "POST", "/atividades/1/corrigir", { respostaDada: "Banco" })).json().correta, true);
     assert.equal((await chamar("ana", "POST", "/atividades/2/corrigir", { respostaDada: "Mão" })).statusCode, 404);
   });
 });
 
-// Depende do estado deixado acima: Maria na etapa 2 (criterioAcerto 0,7), com 1 acerto nela
-// (a pergunta 3 do nivelamento). A etapa 2 do seed só tem a atividade 3 ("BO").
+// Depende do estado deixado acima: Maria na etapa 2 (criterioAcerto 0,7), com 1 acerto e 1 erro
+// nela (as perguntas 13 e 3 do nivelamento). A atividade 3 é "BO".
 describe("progressão de nível (RF16)", () => {
   it("sobe quando as últimas 5 respostas da etapa batem o critério, e grava o HistoricoNivel", async () => {
     const responder = async (respostaDada: string) => {
@@ -173,7 +175,6 @@ describe("progressão de nível (RF16)", () => {
       assert.equal(r.statusCode, 201, r.body);
       return r.json() as { correta: boolean; subiuDeNivel: boolean; nivelAtual: { idNivel: number } };
     };
-    assert.equal((await responder("BA")).subiuDeNivel, false); // [C, E]
     assert.equal((await responder("BO")).subiuDeNivel, false); // [C, E, C]: menos de 5
     assert.equal((await responder("bo")).subiuDeNivel, false); // [C, E, C, C]
     const quinta = await responder("Bo"); // [C, E, C, C, C] = 4/5 = 0,8 >= 0,7
