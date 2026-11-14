@@ -4,6 +4,7 @@ export { Campo } from "./Campo";
 export { Carregando } from "./Carregando";
 export { CartaoDecisao } from "./CartaoDecisao";
 export { FormularioCadastro, type CampoCadastro } from "./FormularioCadastro";
+export { FormularioAtividade, ListaAtividades, type AreaCadastro } from "./GestaoAtividades";
 export { GraficoBarras, type Barra } from "./GraficoBarras";
 export { MeusAlunos } from "./MeusAlunos";
 export { Opcao } from "./Opcao";

@@ -8,6 +8,7 @@ import { config } from "./config.ts";
 import { registrarTratamentoDeErros } from "./erros.ts";
 import { rotasAtividades } from "./rotas/atividades.ts";
 import { rotasAuth } from "./rotas/auth.ts";
+import { rotasCadastroAtividades } from "./rotas/cadastroAtividades.ts";
 import { rotasInstituicoes } from "./rotas/instituicoes.ts";
 import { rotasProfessor } from "./rotas/professor.ts";
 import { rotasProgresso } from "./rotas/progresso.ts";
@@ -61,6 +62,7 @@ export async function construirApp(opcoes: { log?: boolean } = {}): Promise<Fast
   await app.register(rotasProfessor);
   await app.register(rotasResponsavel);
   await app.register(rotasTurmasInstituicao);
+  await app.register(rotasCadastroAtividades);
 
   return app;
 }

@@ -106,10 +106,13 @@ export async function rotasProgresso(app: FastifyInstance): Promise<void> {
 
         // Progressão (RF16): só depois de um ACERTO numa atividade da etapa atual
         // (subir logo depois de um erro confundiria o aluno). Na última etapa, não há para onde subir.
+        // Passo 9: etapa nova criada pelo administrador SEM atividades ativas conta como fim da trilha
+        // (o aluno não sobe para uma etapa vazia; sobe quando ela ganhar atividades).
         const atual = trilha.find((n) => n.idNivel === idNivelAtual);
         if (!correta || !atual || atividade.idNivel !== atual.idNivel) return atual;
         const proximo = trilha.find((n) => n.ordem > atual.ordem);
-        if (!proximo || !deveAvancar(atual, respostasDoAluno(idAluno, atual.idNivel))) return atual;
+        if (!proximo || idsAtividadesDoNivel(proximo.idNivel).length === 0) return atual;
+        if (!deveAvancar(atual, respostasDoAluno(idAluno, atual.idNivel))) return atual;
         gravarHistoricoNivel(idAluno, proximo.idNivel, agora);
         return proximo;
       });

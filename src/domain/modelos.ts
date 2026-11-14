@@ -75,6 +75,11 @@ export interface Aluno extends Usuario {
   idNivelAtual?: number; // derivado do HistoricoNivel mais recente
 }
 
+/**
+ * Métodos do diagrama (ficam nos serviços): além do acompanhamento, desde o passo 9 o professor
+ * aprovado também tem IncluirAtividade, EditarAtividade e ExcluirAtividade (inativar), só das
+ * atividades que ELE criou (Atividade.idCriador). Ver src/services/cadastroAtividades.ts.
+ */
 export interface Professor extends Usuario {
   perfil: "PROFESSOR";
   /** EXTRA (migração 005): instituição informada pelo código no cadastro. */
@@ -107,6 +112,11 @@ export interface Instituicao extends Usuario {
   decididoEm?: string;
 }
 
+/**
+ * Métodos do diagrama (passo 9, src/services/cadastroAtividades.ts): IncluirAtividade, EditarAtividade,
+ * ExcluirAtividade (inativar) e ListarAtividades de TODAS as atividades, e IncluirNivel/EditarNivel
+ * (níveis são só do administrador).
+ */
 export interface Administrador extends Usuario {
   perfil: "ADMINISTRADOR";
 }
@@ -180,6 +190,11 @@ export interface Atividade {
   /** EXTRA (fora do diagrama): posição no nivelamento inicial; ausente = fora do nivelamento. */
   ordemNivelamento?: number;
   status: StatusAtividade;
+  /**
+   * EXTRA (fora do diagrama, migração 006): quem cadastrou (administrador ou professor).
+   * Ausente = conteúdo do seed, que só o administrador muda. O professor só muda as que criou.
+   */
+  idCriador?: number;
   alternativas: Alternativa[]; // composição
   criadoEm: string;
   atualizadoEm: string;

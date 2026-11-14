@@ -1,7 +1,7 @@
 // Área do administrador. Passo 3.1: aprova ou recusa as instituições inscritas (ao aprovar, o servidor
 // gera o código que os professores informam no cadastro). Também: trocar senha e sair.
 // Senha esquecida (qualquer perfil): POST /admin/usuarios/:id/senha-provisoria ou `npm run usuario:senha`.
-// TODO (passo 9): cadastro de atividades e níveis (ou rotas REST + server/admin.http).
+// Passo 9: "Atividades" (todas, por etapa: incluir, editar, inativar) e "Etapas" (incluir/editar níveis).
 import { router } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, Text } from "react-native";
@@ -25,6 +25,9 @@ export default function InicioAdmin() {
       <Logo />
       <Titulo>Administração</Titulo>
       <Subtitulo>{usuario?.nome}</Subtitulo>
+
+      <Botao titulo="Atividades" onPress={() => router.push("/admin/atividades")} />
+      <Botao titulo="Etapas" variante="secundario" onPress={() => router.push("/admin/niveis")} />
 
       {aprovada ? (
         <Aviso tipo="sucesso">
@@ -75,7 +78,6 @@ export default function InicioAdmin() {
           Senha esquecida (de qualquer perfil): POST /admin/usuarios/:id/senha-provisoria, ou no servidor: npm run
           usuario:senha -- usuário, e-mail ou telefone.
         </Corpo>
-        <Corpo>O cadastro de atividades e níveis chega no passo 9.</Corpo>
       </Cartao>
       <Botao titulo="Trocar senha" variante="secundario" onPress={() => router.push("/admin/senha")} />
       <Botao

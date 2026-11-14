@@ -42,7 +42,7 @@ Legenda: ⬜ a fazer · 🟡 em andamento · ✅ feito
 | 6 | Conteúdo pedagógico completo — feito | 14/11 | 4 |
 | 7 | Home do aluno: ofensiva, frequência e tela de progresso — feito | 15/11 | 5 |
 | 8 | Área do professor e do responsável — feito | 15/11 | 5, 3.1 |
-| 9 | Cadastro de atividades (administrador e professor) e níveis (administrador) | 15/11 | 2, 3.1 |
+| 9 | Cadastro de atividades (administrador e professor) e níveis (administrador) — feito | 15/11 | 2, 3.1 |
 | 10 | Narração por voz e preferências de acessibilidade | 15/11 | 1 |
 | 11 | Ajuste ao Figma e recursos visuais | 16/11 | — |
 | 12 | Testes automatizados | 16/11 | 5, 3.1 |
@@ -301,39 +301,32 @@ O "Ouvir instrução" também lê as opções. Enquanto o servidor corrige, a te
 
 ---
 
-## ⬜ Passo 9 — Cadastro de atividades (administrador e professor) e de níveis (administrador) (APF 25–31)
+## ✅ Passo 9 — Cadastro de atividades (administrador e professor) e de níveis (administrador) (APF 25–31)
 
-**Prazo:** 15/11 · **Depende de:** passos 2 e 3.1
+**Feito em 14/11.** Foi feita a **opção B** (telas no app), com as rotas da opção A e o `server/admin.http` de bônus. O administrador e o **professor aprovado** incluem, editam e inativam atividades sem mexer no código; níveis (etapas) só o administrador.
 
-**Mudança de escopo (14/11):** além do administrador, o **professor aprovado** também pode incluir atividades. Regras:
-- **atividades:** administrador e professor (conta liberada, `exigirContaLiberada("PROFESSOR")`) incluem, editam e inativam; o professor só edita/inativa as **que ele criou** (nova coluna `Atividade.idCriador`, migração nova; as do seed ficam sem criador, só o administrador mexe), e o administrador mexe em todas;
-- **níveis:** continuam **só do administrador** (IncluirNivel/EditarNivel);
-- a mesma validação vale para os dois perfis (uma correta na múltipla escolha, peças de PALAVRA, ESCRITA sem alternativas);
-- o app do aluno continua sem receber o gabarito; as atividades do professor entram na trilha como as demais (ATIVA).
-- **Pendente de decidir com a equipe:** a atividade do professor vale para todos os alunos ou só para os que ele acompanha (vínculo ACEITO)? Sem decisão, vale para todos.
+**Servidor** (`server/src/rotas/cadastroAtividades.ts`; prefixo `/gestao`, separado das rotas do aluno porque **traz o gabarito**):
+- atividades (`exigirContaLiberada("ADMINISTRADOR", "PROFESSOR")`): `GET /gestao/niveis` (com total de ativas/inativas), `GET /gestao/atividades?idNivel&status&minhas`, `GET /gestao/atividades/:id`, `POST`, `PUT /gestao/atividades/:id` (troca tudo, inclusive as alternativas), `DELETE` (**só inativa**, nunca apaga) e `PATCH /gestao/atividades/:id/status` (reativar). Cada atividade vem com `podeEditar` e `nomeCriador`;
+- o professor vê todas, mas só edita/inativa as que **ele** criou; as do seed (sem criador) e as de outro professor = **403**. O administrador mexe em todas;
+- níveis (`exigirLogin("ADMINISTRADOR")`): `POST /gestao/niveis` e `PATCH /gestao/niveis/:id` (nome, descrição, ordem, `criterioAcerto` de 0,1 a 1). Ordem repetida = 409;
+- **validação** em função pura (`server/src/validarAtividade.ts`), a mesma para os dois perfis e com as regras do helper do `mock.ts`: múltipla escolha = 2 a 4 alternativas diferentes e **exatamente 1 certa**; PALAVRA = as peças marcadas formam a palavra do `textoApoio` em alguma ordem (testa as combinações, aceita acento); ESCRITA = sem alternativas e com `respostaCorreta`; LETRA = conteúdo "Letra X" (a letra grande sai daí); SILABA, PALAVRA, FRASE e INTERPRETACAO exigem `textoApoio`. Mensagens curtas para quem cadastra;
+- **travas** para não quebrar a trilha (409): pergunta do nivelamento não é inativada nem muda de etapa; a última atividade ativa de uma etapa não é inativada nem muda de etapa. Em `POST /respostas` (`rotas/progresso.ts`), etapa **sem atividade ativa** conta como fim da trilha: o aluno não sobe para uma etapa nova vazia;
+- ao editar, as imagens das alternativas (`urlImagem`, passo 11) com o mesmo texto são mantidas, e o ícone provisório (`ilustracao`) vai e volta pelo formulário.
 
-**Pronto quando:** existe um jeito documentado de o administrador e o professor incluírem, editarem e inativarem atividades (e o administrador, níveis) sem mexer no código. Se não houver tempo para telas, um script/rotas protegidas bastam, e a APF/documentação deve dizer isso.
+**Banco:** migração **006** (`Atividade.idCriador` → Usuario, com índice; NULL = conteúdo do seed). `modelos.ts`: `Atividade.idCriador` e os métodos do diagrama documentados em `Professor` e `Administrador`.
 
-```text
-Leia AGENTS.md, src/domain/modelos.ts e server/.
-O diagrama e a APF preveem o Administrador com IncluirAtividade, EditarAtividade,
-ExcluirAtividade (inativar), ListarAtividades, IncluirNivel e EditarNivel.
-ESCOPO: o PROFESSOR (conta liberada) também inclui, edita e inativa atividades, mas só as que
-ele criou (migração nova com Atividade.idCriador; o administrador mexe em todas). Níveis: só administrador.
-Atualize src/domain/modelos.ts (Professor.IncluirAtividade/EditarAtividade/ExcluirAtividade).
-Temos até 13/11. Implemente a opção <A ou B>:
-A) Rotas REST protegidas por perfil ADMINISTRADOR ou PROFESSOR liberado (o admin do seed já existe) +
-   instruções no README para cadastrar via um cliente HTTP (arquivo
-   server/admin.http com exemplos prontos).
-B) Telas simples no próprio app em /admin e na área do professor (lista de atividades por nível, formulário
-   com enunciado, tipo, conteúdo, 3 alternativas e qual é a correta, inativar).
-"Excluir" nunca apaga: muda status para INATIVA. Valide que toda atividade de múltipla
-escolha tem exatamente uma alternativa correta (PALAVRA usa as alternativas como peças
-e ESCRITA não tem alternativas). Inclua o campo textoApoio no formulário.
-Inclua também IncluirNivel/EditarNivel (nome, descrição, ordem, criterioAcerto) e a
-listagem de atividades por nível. Rotas de atividade: administrador e professor liberado;
-rotas de nível: só o administrador. Teste que o professor não edita atividade de outro (403/404).
-```
+**App:** `services/cadastroAtividades.ts` e componente `GestaoAtividades` (`ListaAtividades` e `FormularioAtividade`, os mesmos para os dois perfis):
+- **administrador:** botões "Atividades" (`/admin/atividades`, por etapa) e "Etapas" (`/admin/niveis`: incluir e editar, critério em %, aviso de etapa sem atividades) na tela inicial;
+- **professor:** Conta › "Atividades" (`/professor/atividades`): "Minhas atividades" ou "Todas por etapa" (as dos outros só para consulta);
+- **formulário** (`/admin/atividade` e `/professor/atividade`, `?id=` para editar): etapa, tipo, conteúdo, enunciado, texto de apoio com rótulo e exemplo por tipo, 3 alternativas (até 4) com "É a certa", peças com "Faz parte da palavra" (até 8) ou "Resposta certa" na escrita. O servidor dá a palavra final.
+
+**Testes:** `npm test` roda **136 testes** (26 novos): `validarAtividade.test.ts` (regras de cada tipo, peças fora de ordem, repetidas, LETRA) e `rotas/cadastroAtividades.test.ts` (aluno e professor PENDENTE = 403; professor não edita as do seed; **outro professor não edita nem inativa = 403** e o administrador pode; a atividade nova aparece para o aluno **sem gabarito** e é corrigida pelo gabarito novo; editar troca as alternativas; inativar não apaga, a resposta continua e a atividade some da trilha; reativar; travas do nivelamento e da última ativa; níveis só do administrador, ordem repetida = 409). Lint, typecheck (app e servidor), `db:reset` e `npx expo export -p web` passam. As telas foram percorridas no navegador (Playwright): professor inclui (com o aviso "Marque exatamente uma alternativa certa."), lista, inativa, edita; administrador vê as etapas e as atividades.
+
+**Observações:**
+- **decisão pendente da equipe:** a atividade do professor vale para **todos** os alunos (como ficou) ou só para os que ele acompanha? Se for "só os dele", o filtro entra em `idsAtividadesDoNivel`/`GET /niveis/:id/atividades`;
+- o formulário não envia imagem (`urlImagem`): as imagens das atividades cadastradas ficam para o passo 11;
+- mudar o `conteudo` ou a etapa de uma atividade que já tem respostas não refaz o DesempenhoConteudo antigo (as respostas novas já entram no conteúdo novo);
+- **falta a equipe abrir as telas no Expo Go** (`admin@ajai.app` e `rafael@ajai.app`, senha `demo1234`); depois de `git pull`, rode `npm run db:migrate` e abra o `npx expo start` uma vez antes do `npx tsc` (gera os tipos das rotas novas).
 
 ---
 
@@ -450,7 +443,7 @@ Leia AGENTS.md, src/services/** e server/.
 Configure testes:
 - no app: jest-expo (`npx expo install jest-expo jest @types/jest -- --save-dev`) e
   @testing-library/react-native; script `npm test`;
-- no servidor: já existe `node --test` (npm test, 110 testes em 14/11, incluindo as rotas do passo 8 em professor.test.ts); complete os casos abaixo
+- no servidor: já existe `node --test` (npm test, 136 testes em 14/11, incluindo as rotas do passo 8 em professor.test.ts e as do passo 9 em cadastroAtividades.test.ts); complete os casos abaixo
   que faltarem (ver server/src/rotas/contas.test.ts e progresso.test.ts).
 Escreva testes para:
 1. corrigirAutomaticamente (acentos, maiúsculas, espaços);

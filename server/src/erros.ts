@@ -60,6 +60,18 @@ const mensagensPorCampo: Record<string, string> = {
   ativa: "Escolha se a turma está ativa.",
   correta: "Escolha certa ou errada.",
   observacao: "Escreva a observação em até 200 letras.",
+  // Cadastro de atividades e níveis (passo 9)
+  idNivel: "Escolha a etapa.",
+  tipo: "Escolha o tipo da atividade.",
+  conteudo: "Escreva o conteúdo em até 60 letras. Exemplo: Letra B.",
+  enunciado: "Escreva o enunciado em até 300 letras.",
+  textoApoio: "O texto de apoio pode ter até 600 letras.",
+  respostaCorreta: "Escreva a resposta certa em até 100 letras.",
+  alternativas: "Cada alternativa tem até 40 letras, e são no máximo 8.",
+  descricao: "Escreva a descrição da etapa, com 2 a 200 letras.",
+  ordem: "Escreva a ordem da etapa: um número de 1 a 99.",
+  criterioAcerto: "O critério de acerto vai de 10% a 100%.",
+  status: "Escolha ativa ou inativa.",
 };
 
 function mensagemDeValidacao(erro: FastifyError): string | undefined {

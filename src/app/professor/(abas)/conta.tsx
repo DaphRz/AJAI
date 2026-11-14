@@ -1,5 +1,5 @@
 // Professor › Conta (passo 8): dados (editar nome), instituição, "Meus alunos" (convites/vínculos),
-// trocar senha e sair. As turmas têm aba própria. Sem frame no Figma: segue o padrão das telas desenhadas.
+// "Atividades" (passo 9: incluir, editar e inativar as que ele criou), trocar senha e sair. As turmas têm aba própria. Sem frame no Figma: segue o padrão das telas desenhadas.
 import { router } from "expo-router";
 import { useState } from "react";
 import { Aviso, Botao, Campo, Cartao, Corpo, Subtitulo, Tela, Titulo } from "@/components";
@@ -57,6 +57,7 @@ export default function Conta() {
       </Cartao>
       {aviso ? <Aviso tipo={aviso.tipo}>{aviso.texto}</Aviso> : null}
       <Botao titulo="Meus alunos" onPress={() => router.push("/professor/alunos")} />
+      <Botao titulo="Atividades" variante="secundario" onPress={() => router.push("/professor/atividades")} />
       <Botao titulo="Trocar minha senha" variante="secundario" onPress={() => router.push("/professor/senha")} />
       <Botao
         titulo="Sair"

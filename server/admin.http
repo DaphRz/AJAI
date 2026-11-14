@@ -1,0 +1,124 @@
+### Cadastro de atividades e níveis pela API (passo 9). O app já tem as telas
+### (/admin/atividades, /admin/niveis e Professor › Conta › Atividades); use este arquivo para
+### testar ou carregar várias atividades de uma vez.
+### Como usar: extensão "REST Client" do VS Code (ou o cliente HTTP do JetBrains). Suba a API
+### (npm run server:dev), rode o "login" e depois as outras requisições ("Send Request").
+### Usuários de demonstração (senha demo1234): admin@ajai.app (tudo) e rafael@ajai.app (professor:
+### só as atividades que ele criou; níveis não).
+
+@api = http://localhost:3333
+@token = {{login.response.body.token}}
+
+# @name login
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{ "identificador": "admin@ajai.app", "senha": "demo1234" }
+
+### Etapas (níveis) com o total de atividades ativas e inativas
+GET {{api}}/gestao/niveis
+Authorization: Bearer {{token}}
+
+### Atividades de uma etapa, COM o gabarito (filtros: idNivel, status=ATIVA|INATIVA, minhas=true)
+GET {{api}}/gestao/atividades?idNivel=2
+Authorization: Bearer {{token}}
+
+### Uma atividade
+GET {{api}}/gestao/atividades/1
+Authorization: Bearer {{token}}
+
+### Incluir: múltipla escolha (LETRA, SILABA, FRASE, INTERPRETACAO) = 2 a 4 alternativas, UMA correta.
+### LETRA: conteudo "Letra X" (a letra grande da tela sai daqui). FRASE e INTERPRETACAO: textoApoio obrigatório.
+# @name nova
+POST {{api}}/gestao/atividades
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "idNivel": 2,
+  "tipo": "SILABA",
+  "conteudo": "Sílaba MA",
+  "enunciado": "Qual sílaba começa a palavra?",
+  "textoApoio": "MALA",
+  "alternativas": [
+    { "texto": "LA" },
+    { "texto": "MA", "correta": true, "ilustracao": "bag-suitcase" },
+    { "texto": "PA" }
+  ]
+}
+
+### Incluir: PALAVRA = as alternativas são as peças; as corretas, em qualquer ordem, formam o textoApoio
+POST {{api}}/gestao/atividades
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "idNivel": 3,
+  "tipo": "PALAVRA",
+  "conteudo": "Palavra PANELA",
+  "enunciado": "Toque nas sílabas para formar a palavra",
+  "textoApoio": "PANELA",
+  "alternativas": [
+    { "texto": "NE", "correta": true },
+    { "texto": "LA", "correta": true },
+    { "texto": "BA" },
+    { "texto": "PA", "correta": true }
+  ]
+}
+
+### Incluir: ESCRITA = sem alternativas, com respostaCorreta (corrigida sem ligar para acento e maiúscula)
+POST {{api}}/gestao/atividades
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "idNivel": 3,
+  "tipo": "ESCRITA",
+  "conteudo": "Escrita SAL",
+  "enunciado": "Escreva o nome do tempero branco que vai na comida",
+  "respostaCorreta": "SAL"
+}
+
+### Editar (troca tudo, inclusive as alternativas). O professor só edita as que criou (senão, 403).
+PUT {{api}}/gestao/atividades/{{nova.response.body.atividade.idAtividade}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "idNivel": 2,
+  "tipo": "SILABA",
+  "conteudo": "Sílaba MA",
+  "enunciado": "Com qual sílaba começa a palavra MALA?",
+  "textoApoio": "MALA",
+  "alternativas": [
+    { "texto": "MA", "correta": true },
+    { "texto": "NA" },
+    { "texto": "LA" }
+  ]
+}
+
+### "Excluir" = INATIVAR (nunca apaga). Pergunta do nivelamento e última ativa da etapa: 409.
+DELETE {{api}}/gestao/atividades/{{nova.response.body.atividade.idAtividade}}
+Authorization: Bearer {{token}}
+
+### Reativar
+PATCH {{api}}/gestao/atividades/{{nova.response.body.atividade.idAtividade}}/status
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "status": "ATIVA" }
+
+### Incluir etapa (só administrador). criterioAcerto de 0.1 a 1; ordem não pode repetir (409).
+### Etapa sem atividade ativa: o aluno não sobe para ela até ganhar atividades.
+POST {{api}}/gestao/niveis
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "nome": "Lendo Avisos", "descricao": "Ler avisos e bilhetes do dia a dia.", "ordem": 6, "criterioAcerto": 0.8 }
+
+### Editar etapa (só administrador; mande só o que muda)
+PATCH {{api}}/gestao/niveis/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "criterioAcerto": 0.7 }

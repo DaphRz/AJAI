@@ -121,7 +121,7 @@ O login é de verdade: **o servidor precisa estar rodando** (passo 5) e o banco 
 | Responsável | `joana@ajai.app` | área do responsável (acompanha Bruno) |
 | Instituição (aprovada) | `instituicao@ajai.app` | área da instituição: código **`EJAVV2`** e a Paula esperando aprovação |
 | Instituição (pendente) | `aprender@ajai.app` | tela de espera ("Aguardando aprovação") |
-| Administrador | `admin@ajai.app` | aprovação de instituições |
+| Administrador | `admin@ajai.app` | aprovação de instituições, **Atividades** e **Etapas** (passo 9) |
 
 Modelo de contas (Passo 3.1):
 - **Criar conta:** no login, "Ainda não tem conta? Crie a sua" → **Eu sou: Aluno / Professor / Responsável / Instituição**. O administrador não é criável pelo app.
@@ -140,8 +140,11 @@ Rotas da API:
 - **Vínculos:** `POST`/`GET /vinculos`, `DELETE /vinculos/:id` (professor aprovado ou responsável); `GET /alunos/eu/vinculos`, `PATCH`/`DELETE /alunos/eu/vinculos/:id` (aluno).
 - **Atividades** (passo 4, qualquer perfil logado): `GET /niveis`, `GET /niveis/:id/atividades`, `GET /atividades/:id`, `GET /nivelamento` (sem o gabarito) e `POST /atividades/:id/corrigir` (só perguntas do nivelamento).
 - **Respostas e progresso** (passo 5, só aluno, sobre ele mesmo): `POST /respostas`, `POST /nivelamento/concluir` e `GET /alunos/eu/progresso`.
+- **Cadastro de atividades e etapas** (passo 9; administrador e professor aprovado; **com o gabarito**): `GET /gestao/niveis`, `GET /gestao/atividades?idNivel&status&minhas`, `GET /gestao/atividades/:id`, `POST /gestao/atividades`, `PUT /gestao/atividades/:id`, `DELETE /gestao/atividades/:id` (só **inativa**) e `PATCH /gestao/atividades/:id/status` (reativar). O professor só edita e inativa as que **ele** criou (`Atividade.idCriador`; as do seed só o administrador muda; outro dono = 403). Etapas, **só o administrador**: `POST /gestao/niveis` e `PATCH /gestao/niveis/:id`. Exemplos prontos em [`server/admin.http`](server/admin.http) (extensão REST Client do VS Code).
 
-**Testes do servidor:** `npm test` (ou `npm run server:test`) roda os testes com o executor nativo do Node (`node --test`, sem instalar nada): regras de progressão (`server/src/progressao.test.ts`), rotas de respostas/nivelamento/progresso (`server/src/rotas/progresso.test.ts`) e contas, aprovações e vínculos (`server/src/rotas/contas.test.ts`), num banco temporário: o seu `ajai.db` não é tocado.
+**Cadastrar atividades pelo app (passo 9):** administrador → tela inicial › **Atividades** (todas, por etapa) e **Etapas**; professor → Conta › **Atividades** ("Minhas atividades" ou "Todas por etapa"). O formulário tem etapa, tipo, conteúdo, enunciado, texto de apoio (palavra, frase ou texto, conforme o tipo) e as alternativas com a certa marcada; o servidor confere o gabarito (múltipla escolha = exatamente 1 certa; "Formar palavra" = as peças marcadas formam a palavra; escrita = sem alternativas e com a resposta) e explica o que falta. A atividade nova entra na trilha de **todos** os alunos na hora. Travas: pergunta do nivelamento não é inativada nem muda de etapa, e a última atividade ativa de uma etapa não é inativada (409). Etapa nova sem atividades: o aluno não sobe para ela até ela ganhar atividades.
+
+**Testes do servidor:** `npm test` (ou `npm run server:test`) roda os testes com o executor nativo do Node (`node --test`, sem instalar nada): regras de progressão (`server/src/progressao.test.ts`), rotas de respostas/nivelamento/progresso (`server/src/rotas/progresso.test.ts`) e contas, aprovações e vínculos (`server/src/rotas/contas.test.ts`), área do professor (`professor.test.ts`) e cadastro de atividades e etapas (`cadastroAtividades.test.ts` e `server/src/validarAtividade.test.ts`), num banco temporário: o seu `ajai.db` não é tocado.
 
 > **Depois de `git pull` com rotas novas no app:** rode `npx expo start` uma vez antes do `npx tsc --noEmit`. É ele que gera os tipos das rotas (`.expo/types/router.d.ts`); sem isso o `tsc` reclama das rotas novas.
 
@@ -232,7 +235,7 @@ Qualquer programa que abra SQLite serve: [DB Browser for SQLite](https://sqliteb
 Os nomes de tabelas e colunas são os do diagrama. Diferenças (registrar na documentação final):
 
 - `Aluno.idNivelAtual` **não é coluna**: é o registro mais recente de `HistoricoNivel`. A view `vw_aluno` já devolve o aluno com esse campo calculado.
-- Colunas extras: `Atividade.ordemNivelamento` (ordem das perguntas do nivelamento; vazio = fora do nivelamento), `Atividade.textoApoio`, `AudioCache.provedor` (qual serviço gerou o áudio), `Usuario.telefone` e `Usuario.nomeUsuario`.
+- Colunas extras: `Atividade.ordemNivelamento` (ordem das perguntas do nivelamento; vazio = fora do nivelamento), `Atividade.textoApoio`, `Atividade.idCriador`, `AudioCache.provedor` (qual serviço gerou o áudio), `Usuario.telefone` e `Usuario.nomeUsuario`.
 - Tabelas extras (Passo 3.1, migração 005): `Responsavel`, `Instituicao` (CNPJ, código, status da aprovação) e `Vinculo` (acompanhante ↔ aluno, com `identificadorConvite`); `Professor` ganhou `idInstituicao`, `statusVinculo`, `motivoRecusa` e `decididoEm`. O antigo `Aluno.idCriador` saiu (virou `Vinculo` ACEITO).
 - Booleanos são `0`/`1`; datas são texto ISO 8601; enums são texto com `CHECK`.
 
@@ -336,6 +339,7 @@ docs/
 | Métricas de Ana Souza | `/professor/aluno/[id]` | ✅ gráfico de evolução, histórico de etapas, correção manual (passo 8) |
 | *(sem tela no Figma)* | `/aluno/progresso`, `/aluno/comemoracao` | ✅ passo 7, no padrão da Home e do Acerto |
 | *(sem tela no Figma)* | `/professor/relatorios`, `/professor/conta`, `/professor/turmas`, `/instituicao/turmas` | ✅ passo 8 (relatórios por turma, editar nome, aba Turmas, turmas criadas pela instituição), no padrão do Dashboard |
+| *(sem tela no Figma)* | `/admin/atividades`, `/admin/atividade`, `/admin/niveis`, `/professor/atividades`, `/professor/atividade` | ✅ passo 9 (cadastro de atividades e etapas), no padrão das telas desenhadas |
 | *(sem tela no Figma)* | `/esqueci-senha`, `/aluno/conta`, `/aluno/senha`, `/aluno/acompanhamento`, `/professor/alunos`, `/professor/senha`, `/responsavel`, `/responsavel/senha`, `/instituicao`, `/instituicao/senha`, `/admin`, `/admin/senha` | provisórias (passos 3 e 3.1) – desenhar no passo 11 |
 
 ---
@@ -356,7 +360,7 @@ O roteiro completo até a entrega, com prazo, critério de pronto e **um prompt 
 | 6 | Conteúdo pedagógico completo — ✅ | 14/11 |
 | 7 | Home do aluno: ofensiva e progresso ✅ | 15/11 |
 | 8 | Área do professor e do responsável — ✅ | 15/11 |
-| 9 | Cadastro de atividades (admin e professor) e níveis (admin) | 15/11 |
+| 9 | Cadastro de atividades (admin e professor) e níveis (admin) — ✅ | 15/11 |
 | 10 | Narração por voz e preferências | 15/11 |
 | 11 | Ajuste ao Figma e recursos visuais | 16/11 |
 | 12 | Testes automatizados | 16/11 |
@@ -407,16 +411,17 @@ Legenda: ✅ feito · 🟡 esqueleto/parcial (só no app, com dados em memória)
 - ✅ **Banco decidido: SQLite em arquivo** (`server/data/ajai.db`)
 - ✅ Tabelas do diagrama de classes criadas (Usuario, Aluno, Professor, Administrador, Turma, Matricula, Nivel, Atividade, Alternativa, AudioCache, Resposta, DesempenhoConteudo, HistoricoNivel) + as extras do Passo 3.1 (Responsavel, Instituicao, Vinculo) + dados iniciais
 - ✅ **Servidor da API criado** com Fastify em `server/src/` (`npm run server:dev`, `GET /health`, erros padronizados em `{ erro }`, CORS e limite de requisições). `@fastify/jwt` já instalado, registrado no passo 3
-- ⬜ API para as funções contadas na APF (Incluir/Editar/Excluir/Listar/Visualizar de cada módulo)
+- 🟡 API para as funções contadas na APF (Incluir/Editar/Excluir/Listar/Visualizar de cada módulo): ✅ contas, vínculos, turmas, respostas, relatórios e **cadastro de atividades e níveis** (passo 9); ⬜ preferências do aluno (passo 10)
 - ✅ Trocar `src/data/mock.ts` pelas chamadas à API dentro de `src/services/`: ✅ contas (passo 3); ✅ níveis, atividades e nivelamento (passo 4, telas com "Carregando..." e "Sem conexão"); ✅ respostas, progressão e histórico (passo 5); ✅ área do professor e do responsável (passo 8). Nenhuma tela lê mais o `mock.ts`
 - ✅ Migração 004: `Atividade.textoApoio` (palavra, frase ou texto mostrado à parte do enunciado; extra em relação ao diagrama)
 - ✅ Guardar o token de login no aparelho (`expo-secure-store`; `localStorage` no navegador)
 - ✅ API de autenticação (`/auth/*`), "middleware" `exigirLogin(perfil)` e cliente `src/services/api.ts`
 - ✅ Migrações 002 e 003: `Usuario.telefone`, `Usuario.email` opcional, `Usuario.nomeUsuario` (login do aluno)
+- ✅ Migração 006 (passo 9): `Atividade.idCriador` (quem cadastrou; vazio = conteúdo do seed). Extra em relação ao diagrama: registrar na documentação
 - ✅ Migração 005 (Passo 3.1): perfis `RESPONSAVEL` e `INSTITUICAO`, tabelas `Responsavel`, `Instituicao` e `Vinculo`, colunas novas em `Professor`; `Aluno.idCriador` saiu (virou `Vinculo`). Extras em relação ao diagrama: registrar na documentação
 
 ### Funcionalidades previstas na APF sem tela no app nem no Figma
-- ⬜ Administrador e professor: incluir/editar/inativar **atividades** (APF itens 25–31; o professor só mexe nas que criou) e, só o administrador, incluir/editar **níveis** — definir se será tela no app, painel web ou carga direta no banco. Escopo ampliado em 14/11 (passo 9)
+- ✅ Administrador e professor: incluir/editar/inativar **atividades** (APF itens 25–31; o professor só mexe nas que criou) e, só o administrador, incluir/editar **níveis**: telas no app e rotas `/gestao/*` (passo 9, 14/11; exemplos em `server/admin.http`). ⬜ **Decidir com a equipe** se a atividade do professor vale para todos os alunos (hoje) ou só para os que ele acompanha. ⬜ Imagens nas atividades cadastradas (o formulário ainda não envia `urlImagem`; passo 11). Falta a equipe abrir as telas no Expo Go
 - ✅ Professor: convidar aluno e desfazer vínculo ("Meus alunos", Passo 3.1); criar/editar/encerrar/apagar turma e pôr/mover/tirar aluno da turma na aba Turmas, que mostra os alunos de cada turma (APF 20–24, passo 8, só alunos com vínculo aceito; desfazer o vínculo tira o aluno das turmas do professor)
 - ✅ O painel de Acompanhamento lista os alunos com vínculo aceito (pela API). O aluno que se cadastra sozinho aparece "sem turma" até o professor pôr numa turma
 - ✅ Responsável: até 3 dicas curtas embaixo de cada pessoa acompanhada (dias de treino na semana, conteúdo para treinar junto, etapa), com "Ouvir dicas" (passo 8; sem turma nem métricas detalhadas)
@@ -438,7 +443,7 @@ Legenda: ✅ feito · 🟡 esqueleto/parcial (só no app, com dados em memória)
 - ⬜ Revisar com leitor de tela (TalkBack/VoiceOver) e tamanho de fonte do sistema aumentado
 
 ### Qualidade, segurança e privacidade
-- 🟡 Testes automatizados: ✅ servidor com `node --test` (`npm test`, 110 testes: regras de progressão e ofensiva, rotas do passo 5, contas/aprovações/vínculos do Passo 3.1 e área do professor/responsável do passo 8); ⬜ testes de tela no app (`jest-expo`) no passo 12
+- 🟡 Testes automatizados: ✅ servidor com `node --test` (`npm test`, 136 testes: regras de progressão e ofensiva, rotas do passo 5, contas/aprovações/vínculos do Passo 3.1, área do professor/responsável do passo 8 e cadastro de atividades/etapas do passo 9); ⬜ testes de tela no app (`jest-expo`) no passo 12
 - 🟡 Senha com hash no servidor (✅ scrypt) e comunicação só por HTTPS (⬜ RNF11; na demo é HTTP na rede local)
 - ⬜ Invalidar tokens antigos depois de troca/redefinição de senha (hoje valem até vencer, 30 dias) — passo 13
 - ⬜ Forçar troca da senha provisória no primeiro login (passo 13)
