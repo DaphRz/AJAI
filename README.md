@@ -356,7 +356,7 @@ O roteiro completo até a entrega, com prazo, critério de pronto e **um prompt 
 | 6 | Conteúdo pedagógico completo — ✅ | 14/11 |
 | 7 | Home do aluno: ofensiva e progresso ✅ | 15/11 |
 | 8 | Área do professor e do responsável | 15/11 |
-| 9 | Cadastro de atividades e níveis (admin) | 15/11 |
+| 9 | Cadastro de atividades (admin e professor) e níveis (admin) | 15/11 |
 | 10 | Narração por voz e preferências | 15/11 |
 | 11 | Ajuste ao Figma e recursos visuais | 16/11 |
 | 12 | Testes automatizados | 16/11 |
@@ -416,14 +416,14 @@ Legenda: ✅ feito · 🟡 esqueleto/parcial (só no app, com dados em memória)
 - ✅ Migração 005 (Passo 3.1): perfis `RESPONSAVEL` e `INSTITUICAO`, tabelas `Responsavel`, `Instituicao` e `Vinculo`, colunas novas em `Professor`; `Aluno.idCriador` saiu (virou `Vinculo`). Extras em relação ao diagrama: registrar na documentação
 
 ### Funcionalidades previstas na APF sem tela no app nem no Figma
-- ⬜ Administrador: incluir/editar/inativar atividades e níveis (APF itens 25–31) — definir se será tela no app, painel web ou carga direta no banco
+- ⬜ Administrador e professor: incluir/editar/inativar **atividades** (APF itens 25–31; o professor só mexe nas que criou) e, só o administrador, incluir/editar **níveis** — definir se será tela no app, painel web ou carga direta no banco. Escopo ampliado em 14/11 (passo 9)
 - 🟡 Professor: ✅ convidar aluno e desfazer vínculo ("Meus alunos", Passo 3.1); ⬜ criar/editar turma, pôr/mover/tirar aluno da turma (APF 20–24, passo 8, só alunos com vínculo aceito)
 - ⬜ O painel de Acompanhamento ainda lê `mock.ts`: aluno novo (vínculo aceito) só aparece em Conta › Meus alunos até o passo 8. O aluno que se cadastra sozinho não entra em turma
 - ⬜ Responsável: recomendações sobre as pessoas acompanhadas (passo 8; sem turma nem métricas detalhadas)
 - ✅ Instituição e administrador: inscrição, aprovação com código e aprovação de professores (Passo 3.1). ⬜ Revogar aprovação ou tirar professor da instituição (não previsto)
 - ⬜ Professor: corrigir manualmente uma resposta (APF 35)
 - ⬜ Aluno: editar preferências de voz, velocidade e tamanho da fonte (APF 17)
-- 🟡 Trocar/recuperar senha (APF 18): ✅ todos os perfis trocam a própria (inclusive o aluno, desde o Passo 3.1); ✅ senha provisória para qualquer perfil pelo administrador/script. Faltam as telas no Figma
+- 🟡 Trocar/recuperar senha (APF 18): ✅ todos os perfis trocam a própria (inclusive o aluno, desde o Passo 3.1); ✅ senha provisória para qualquer perfil pelo administrador/script; 🟡 `/esqueci-senha` pede o e-mail e diz que mandou o link de redefinição, mas **não envia nada** (MVP, sem serviço de e-mail: na prática, a senha provisória continua sendo pelo administrador). Faltam as telas no Figma
 
 ### Acessibilidade e conteúdo
 - 🟡 **Narração por voz (RNF04)** — a arquitetura trocável (`ProvedorVoz`) já existe, mas o único provedor é o `console` (o botão "Ouvir ajuda" só escreve no console). **A API de voz ainda NÃO foi definida**; o `expo-speech` será implementado como alternativa e reserva. Falta a equipe escolher a API e implementar os provedores (passo 10).

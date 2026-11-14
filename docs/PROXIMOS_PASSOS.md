@@ -42,7 +42,7 @@ Legenda: ⬜ a fazer · 🟡 em andamento · ✅ feito
 | 6 | Conteúdo pedagógico completo — feito | 14/11 | 4 |
 | 7 | Home do aluno: ofensiva, frequência e tela de progresso — feito | 15/11 | 5 |
 | 8 | Área do professor e do responsável | 15/11 | 5, 3.1 |
-| 9 | Cadastro de atividades e níveis (administrador) | 15/11 | 2 |
+| 9 | Cadastro de atividades (administrador e professor) e níveis (administrador) | 15/11 | 2, 3.1 |
 | 10 | Narração por voz e preferências de acessibilidade | 15/11 | 1 |
 | 11 | Ajuste ao Figma e recursos visuais | 16/11 | — |
 | 12 | Testes automatizados | 16/11 | 5, 3.1 |
@@ -306,28 +306,38 @@ de turma, área do responsável). O dashboard deve listar os alunos com vínculo
 
 ---
 
-## ⬜ Passo 9 — Cadastro de atividades e níveis (administrador, APF 25–31)
+## ⬜ Passo 9 — Cadastro de atividades (administrador e professor) e de níveis (administrador) (APF 25–31)
 
-**Prazo:** 15/11 · **Depende de:** passo 2
+**Prazo:** 15/11 · **Depende de:** passos 2 e 3.1
 
-**Pronto quando:** existe um jeito documentado de incluir, editar e inativar atividades e níveis sem mexer no código. Se não houver tempo para telas, um script/rotas protegidas bastam, e a APF/documentação deve dizer isso.
+**Mudança de escopo (14/11):** além do administrador, o **professor aprovado** também pode incluir atividades. Regras:
+- **atividades:** administrador e professor (conta liberada, `exigirContaLiberada("PROFESSOR")`) incluem, editam e inativam; o professor só edita/inativa as **que ele criou** (nova coluna `Atividade.idCriador`, migração nova; as do seed ficam sem criador, só o administrador mexe), e o administrador mexe em todas;
+- **níveis:** continuam **só do administrador** (IncluirNivel/EditarNivel);
+- a mesma validação vale para os dois perfis (uma correta na múltipla escolha, peças de PALAVRA, ESCRITA sem alternativas);
+- o app do aluno continua sem receber o gabarito; as atividades do professor entram na trilha como as demais (ATIVA).
+- **Pendente de decidir com a equipe:** a atividade do professor vale para todos os alunos ou só para os que ele acompanha (vínculo ACEITO)? Sem decisão, vale para todos.
+
+**Pronto quando:** existe um jeito documentado de o administrador e o professor incluírem, editarem e inativarem atividades (e o administrador, níveis) sem mexer no código. Se não houver tempo para telas, um script/rotas protegidas bastam, e a APF/documentação deve dizer isso.
 
 ```text
 Leia AGENTS.md, src/domain/modelos.ts e server/.
 O diagrama e a APF preveem o Administrador com IncluirAtividade, EditarAtividade,
 ExcluirAtividade (inativar), ListarAtividades, IncluirNivel e EditarNivel.
+ESCOPO: o PROFESSOR (conta liberada) também inclui, edita e inativa atividades, mas só as que
+ele criou (migração nova com Atividade.idCriador; o administrador mexe em todas). Níveis: só administrador.
+Atualize src/domain/modelos.ts (Professor.IncluirAtividade/EditarAtividade/ExcluirAtividade).
 Temos até 13/11. Implemente a opção <A ou B>:
-A) Rotas REST protegidas por perfil ADMINISTRADOR (o admin do seed já existe) +
+A) Rotas REST protegidas por perfil ADMINISTRADOR ou PROFESSOR liberado (o admin do seed já existe) +
    instruções no README para cadastrar via um cliente HTTP (arquivo
    server/admin.http com exemplos prontos).
-B) Telas simples no próprio app em /admin (lista de atividades por nível, formulário
+B) Telas simples no próprio app em /admin e na área do professor (lista de atividades por nível, formulário
    com enunciado, tipo, conteúdo, 3 alternativas e qual é a correta, inativar).
 "Excluir" nunca apaga: muda status para INATIVA. Valide que toda atividade de múltipla
 escolha tem exatamente uma alternativa correta (PALAVRA usa as alternativas como peças
 e ESCRITA não tem alternativas). Inclua o campo textoApoio no formulário.
 Inclua também IncluirNivel/EditarNivel (nome, descrição, ordem, criterioAcerto) e a
-listagem de atividades por nível. O administrador entra pelo login (passo 3) e só ele
-acessa essas rotas/telas.
+listagem de atividades por nível. Rotas de atividade: administrador e professor liberado;
+rotas de nível: só o administrador. Teste que o professor não edita atividade de outro (403/404).
 ```
 
 ---

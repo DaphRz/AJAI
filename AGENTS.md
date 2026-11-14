@@ -15,7 +15,7 @@ AJAI é um app mobile de alfabetização para **jovens, adultos e idosos** (púb
   - Conta pendente ou recusada entra, mas só vê `/espera`; as rotas restritas devolvem 403 (`exigirContaLiberada`). A situação vem em `usuario.situacao` (login e `/auth/eu`).
   - **Vínculo** (`Vinculo`): professor aprovado ou responsável convida o aluno pelo usuário, e-mail ou telefone; o aluno aceita ou recusa em "Quem me acompanha". **Só com vínculo ACEITO** o acompanhante vê dados do aluno (`temVinculoAceito`). Aluno e acompanhante podem desfazer.
 - **Aluno:** nivelamento inicial → atividades graduais (letra, sílaba, palavra, frase, escrita, interpretação) → correção imediata → progressão de nível → histórico.
-- **Professor:** acompanha frequência, taxa de acerto, nível e conteúdos de maior dificuldade dos alunos com vínculo aceito; turmas e métricas detalhadas são só dele (passo 8). O app **complementa** o professor, não o substitui.
+- **Professor:** acompanha frequência, taxa de acerto, nível e conteúdos de maior dificuldade dos alunos com vínculo aceito; turmas e métricas detalhadas são só dele (passo 8). Também **cadastra atividades** (incluir, editar e inativar as que ele criou; passo 9; níveis continuam só do administrador). O app **complementa** o professor, não o substitui.
 - **Responsável:** vê as (até 2) pessoas que acompanha e, no passo 8, algumas recomendações (sem turma nem métricas detalhadas).
 - **Instituição:** mostra o código e aprova ou recusa os professores dela. **Administrador:** aprova ou recusa instituições.
 
