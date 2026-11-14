@@ -281,6 +281,7 @@ src/
       atividade/[id].tsx  Realizar uma atividade
       resultado.tsx       "Acerto" / "Tentar novamente"
       progresso.tsx       Histórico e evolução
+      comemoracao.tsx     Comemoração ao subir de etapa (passo 7)
       conta.tsx, senha.tsx, acompanhamento.tsx   Minha conta, trocar senha, quem me acompanha
     professor/            Área do professor (protegida, com abas)
       index.tsx           Dashboard de acompanhamento
@@ -328,12 +329,13 @@ docs/
 | *(sem tela no Figma)* | `/cadastro` ("Eu sou:"), `/cadastro/instituicao`, `/espera` | ✅ Passo 3.1 – desenhar no passo 11 |
 | Nivelamento · Pergunta | `/aluno/nivelamento` | esqueleto |
 | Nivelamento · Resultado | `/aluno/nivelamento/resultado` | esqueleto |
-| Home do aluno | `/aluno` | esqueleto ("Ofensiva" sem cálculo) |
+| Home do aluno | `/aluno` | ✅ ofensiva real e frequência da semana (passo 7) |
 | Reconhecimento / Sílabas / Formar palavra / Ler frase | `/aluno/atividade/[id]` | um componente para todos os tipos |
 | Acerto / Tentar novamente | `/aluno/resultado` | esqueleto |
 | Dashboard do professor | `/professor` | esqueleto (sem filtro de período) |
 | Métricas de Ana Souza | `/professor/aluno/[id]` | esqueleto (sem gráfico) |
-| *(sem tela no Figma)* | `/aluno/progresso`, `/professor/relatorios`, `/professor/conta` | provisórias |
+| *(sem tela no Figma)* | `/aluno/progresso`, `/aluno/comemoracao` | ✅ passo 7, no padrão da Home e do Acerto |
+| *(sem tela no Figma)* | `/professor/relatorios`, `/professor/conta` | provisórias |
 | *(sem tela no Figma)* | `/esqueci-senha`, `/aluno/conta`, `/aluno/senha`, `/aluno/acompanhamento`, `/professor/alunos`, `/professor/senha`, `/responsavel`, `/responsavel/senha`, `/instituicao`, `/instituicao/senha`, `/admin`, `/admin/senha` | provisórias (passos 3 e 3.1) – desenhar no passo 11 |
 
 ---
@@ -352,7 +354,7 @@ O roteiro completo até a entrega, com prazo, critério de pronto e **um prompt 
 | 4 | Atividades e níveis vindos da API — ✅ | 09/11 |
 | 5 | Respostas, progressão e histórico no servidor — ✅ | 10/11 |
 | 6 | Conteúdo pedagógico completo — ✅ | 14/11 |
-| 7 | Home do aluno: ofensiva e progresso | 15/11 |
+| 7 | Home do aluno: ofensiva e progresso ✅ | 15/11 |
 | 8 | Área do professor e do responsável | 15/11 |
 | 9 | Cadastro de atividades e níveis (admin) | 15/11 |
 | 10 | Narração por voz e preferências | 15/11 |
@@ -392,10 +394,10 @@ Legenda: ✅ feito · 🟡 esqueleto/parcial (só no app, com dados em memória)
 - 🟡 Progressão entre níveis (RF16): **no servidor** desde o passo 5, com HistoricoNivel (testado no Expo Go em 09/11). Regra provisória = taxa de acerto ≥ `criterioAcerto` do nível nas últimas 5 respostas daquele nível, conferida só depois de um acerto numa atividade da etapa atual ([`server/src/progressao.ts`](server/src/progressao.ts), com testes). **A equipe precisa validar essa regra.** Atenção na demo: pelos dados de exemplo, Ana e Clara sobem de etapa logo no primeiro acerto
 
 **Sprint 4 – Métricas, Área do Professor e Finalização (10/11 – 17/11)**
-- 🟡 Histórico e evolução do aluno (RF18, RF19): dados reais de `GET /alunos/eu/progresso` (trilha, atividades feitas, acertos, "Vale a pena treinar"); tela simples, **sem desenho no Figma**
+- ✅ Histórico e evolução do aluno (RF18, RF19): `/aluno/progresso` refeita no passo 7 com dados de `GET /alunos/eu/progresso` (trilha com a situação de cada etapa, atividades feitas, taxa de acerto com barra, ofensiva e "Vale a pena treinar"); **sem frame no Figma**, segue o padrão das telas desenhadas. Comemoração com narração ao subir de etapa (`/aluno/comemoracao`). Falta a equipe abrir as telas no Expo Go
 - 🟡 Área do professor (RF20, RF21): dashboard e métricas por aluno; faltam filtro de período, gráfico de evolução, aba Relatórios
 - 🟡 Identificação de dificuldades (RF17): calculada por conteúdo
-- ⬜ Registro de frequência / "Ofensiva – dias seguidos" (RF15)
+- ✅ Registro de frequência / "Ofensiva – dias seguidos" (RF15): calculada no servidor (`calcularOfensiva` e `frequenciaRecente` em `server/src/progressao.ts`, fuso America/Sao_Paulo, com testes) e mostrada na home e no progresso com texto encorajador (passo 7)
 - 🟡 Continuidade do aprendizado (RF22): o CONTINUAR abre uma **sessão de 5 atividades** seguidas (acertos); depois de um acerto vai direto para a próxima, e só no fim do bloco oferece "Voltar ao início" ou "Continuar treinando" (`services/sessaoDeEstudo.ts`, `ATIVIDADES_POR_SESSAO`). A próxima atividade vem do servidor (`GET /alunos/eu/progresso`), então continua certa entre aberturas do app
 - ⬜ Testes integrados (casos manuais do passo 12) em Android e iPhone/web
 - ⬜ Correção de bugs residuais
@@ -436,7 +438,7 @@ Legenda: ✅ feito · 🟡 esqueleto/parcial (só no app, com dados em memória)
 - ⬜ Revisar com leitor de tela (TalkBack/VoiceOver) e tamanho de fonte do sistema aumentado
 
 ### Qualidade, segurança e privacidade
-- 🟡 Testes automatizados: ✅ servidor com `node --test` (`npm test`, 63 testes: regras de progressão, rotas do passo 5 e contas/aprovações/vínculos do Passo 3.1); ⬜ testes de tela no app (`jest-expo`) no passo 12
+- 🟡 Testes automatizados: ✅ servidor com `node --test` (`npm test`, 79 testes: regras de progressão e ofensiva, rotas do passo 5 e contas/aprovações/vínculos do Passo 3.1); ⬜ testes de tela no app (`jest-expo`) no passo 12
 - 🟡 Senha com hash no servidor (✅ scrypt) e comunicação só por HTTPS (⬜ RNF11; na demo é HTTP na rede local)
 - ⬜ Invalidar tokens antigos depois de troca/redefinição de senha (hoje valem até vencer, 30 dias) — passo 13
 - ⬜ Forçar troca da senha provisória no primeiro login (passo 13)

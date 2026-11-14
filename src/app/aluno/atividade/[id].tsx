@@ -40,13 +40,22 @@ export default function TelaAtividade() {
               tempoRespostaSeg: Math.round((Date.now() - inicio) / 1000),
             });
             if (r.alunoAtualizado) entrar(r.alunoAtualizado);
+            const concluidasAgora = String(r.correta ? concluidas + 1 : concluidas);
+            if (r.subiuDeNivel) {
+              // Passo 7: subiu de etapa → tela de comemoração (com narração) no lugar do "Muito bem!".
+              router.replace({
+                pathname: "/aluno/comemoracao",
+                params: { id: String(atividade.idAtividade), etapa: r.nivelAtual.nome, concluidas: concluidasAgora },
+              });
+              return;
+            }
             router.replace({
               pathname: "/aluno/resultado",
               params: {
                 id: String(atividade.idAtividade),
                 correta: r.correta ? "1" : "0",
                 subiu: r.subiuDeNivel ? "1" : "0",
-                concluidas: String(r.correta ? concluidas + 1 : concluidas),
+                concluidas: concluidasAgora,
               },
             });
           } catch (erro) {

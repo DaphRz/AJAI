@@ -159,6 +159,28 @@ describe("GET /alunos/eu/progresso", () => {
   });
 });
 
+describe("ofensiva em GET /alunos/eu/progresso (RF15)", () => {
+  it("conta os dias seguidos e as atividades dos últimos 7 dias", async () => {
+    // Aluno de teste: respostas de ontem e de hoje (fuso America/Sao_Paulo), gravadas direto no banco.
+    const db = banco();
+    const idAluno = 2;
+    db.prepare("DELETE FROM Resposta WHERE idAluno = ?").run(idAluno);
+    const agora = Date.now();
+    const inserir = db.prepare(
+      "INSERT INTO Resposta (idAluno, idAtividade, respostaDada, correta, dataHora, tempoRespostaSeg) VALUES (?, 1, 'x', 0, ?, 0)",
+    );
+    inserir.run(idAluno, new Date(agora).toISOString());
+    inserir.run(idAluno, new Date(agora - 24 * 3600 * 1000).toISOString());
+    inserir.run(idAluno, new Date(agora - 24 * 3600 * 1000).toISOString());
+    inserir.run(idAluno, new Date(agora - 30 * 24 * 3600 * 1000).toISOString());
+
+    const r = await chamar("ana", "GET", "/alunos/eu/progresso");
+    assert.equal(r.statusCode, 200, r.body);
+    assert.deepEqual(r.json().ofensiva, { dias: 2, praticouHoje: true });
+    assert.deepEqual(r.json().ultimos7Dias, { atividades: 3, diasComAtividade: 2 });
+  });
+});
+
 describe("POST /atividades/:id/corrigir", () => {
   it("só corrige perguntas do nivelamento", async () => {
     assert.equal((await chamar("ana", "POST", "/atividades/1/corrigir", { respostaDada: "Banco" })).json().correta, true);

@@ -2,10 +2,14 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+  calcularOfensiva,
   definirNivelInicial,
   deveAvancar,
+  diaNoFuso,
   escolherProximaAtividade,
+  frequenciaRecente,
   identificarDificuldades,
+  somarDias,
   JANELA_PROGRESSAO,
   statusDaTrilha,
   taxaDeAcerto,
@@ -134,5 +138,93 @@ describe("statusDaTrilha", () => {
       statusDaTrilha(trilha, undefined).map((n) => n.status),
       ["BLOQUEADA", "BLOQUEADA", "BLOQUEADA"],
     );
+  });
+});
+
+// Ofensiva (RF15, passo 7). Brasília é UTC-3 (sem horário de verão desde 2019):
+// 12h de Brasília = 15h UTC; 23h de Brasília = 02h UTC do dia seguinte.
+const meioDia = (dia: string) => `${dia}T15:00:00.000Z`;
+
+describe("diaNoFuso e somarDias", () => {
+  it("usa o dia de Brasília, não o dia UTC", () => {
+    assert.equal(diaNoFuso("2026-11-15T02:30:00.000Z"), "2026-11-14"); // 23h30 do dia 14 em Brasília
+    assert.equal(diaNoFuso("2026-11-15T03:00:00.000Z"), "2026-11-15"); // meia-noite do dia 15
+  });
+  it("soma dias atravessando mês e ano", () => {
+    assert.equal(somarDias("2026-03-01", -1), "2026-02-28");
+    assert.equal(somarDias("2026-12-31", 1), "2027-01-01");
+  });
+});
+
+describe("calcularOfensiva", () => {
+  const agora = new Date(meioDia("2026-11-14"));
+
+  it("sem respostas é 0", () => assert.deepEqual(calcularOfensiva([], agora), { dias: 0, praticouHoje: false }));
+
+  it("conta os dias seguidos até hoje (várias respostas no mesmo dia contam 1)", () => {
+    const datas = [meioDia("2026-11-12"), meioDia("2026-11-13"), meioDia("2026-11-14"), "2026-11-14T20:00:00.000Z"];
+    assert.deepEqual(calcularOfensiva(datas, agora), { dias: 3, praticouHoje: true });
+  });
+
+  it("ainda não treinou hoje: a sequência até ontem continua valendo", () => {
+    const datas = [meioDia("2026-11-12"), meioDia("2026-11-13")];
+    assert.deepEqual(calcularOfensiva(datas, agora), { dias: 2, praticouHoje: false });
+  });
+
+  it("um dia sem uso quebra a sequência", () => {
+    // treinou 10, 11 e 12; ficou sem usar no dia 13; hoje é 14 sem treino → zerou
+    const datas = [meioDia("2026-11-10"), meioDia("2026-11-11"), meioDia("2026-11-12")];
+    assert.equal(calcularOfensiva(datas, agora).dias, 0);
+    // voltou hoje: recomeça em 1
+    assert.deepEqual(calcularOfensiva([...datas, meioDia("2026-11-14")], agora), { dias: 1, praticouHoje: true });
+  });
+
+  it("a ordem das respostas não importa", () => {
+    const datas = [meioDia("2026-11-14"), meioDia("2026-11-12"), meioDia("2026-11-13")];
+    assert.equal(calcularOfensiva(datas, agora).dias, 3);
+  });
+
+  it("virada de dia: 23h de Brasília ainda é o mesmo dia (já é o dia seguinte em UTC)", () => {
+    // respondeu às 23h de 13/11 (02h UTC de 14/11); agora são 10h de 14/11
+    const datas = ["2026-11-14T02:00:00.000Z"];
+    const r = calcularOfensiva(datas, new Date("2026-11-14T13:00:00.000Z"));
+    assert.deepEqual(r, { dias: 1, praticouHoje: false });
+  });
+
+  it("virada de dia: depois da meia-noite de Brasília o 'hoje' muda", () => {
+    const datas = [meioDia("2026-11-13")];
+    // 23h59 de 13/11 em Brasília: treinou hoje
+    assert.equal(calcularOfensiva(datas, new Date("2026-11-14T02:59:00.000Z")).praticouHoje, true);
+    // 00h01 de 14/11 em Brasília: não treinou hoje, mas a ofensiva continua (foi ontem)
+    assert.deepEqual(calcularOfensiva(datas, new Date("2026-11-14T03:01:00.000Z")), { dias: 1, praticouHoje: false });
+    // 00h01 de 15/11: passou um dia inteiro sem treino → zerou
+    assert.equal(calcularOfensiva(datas, new Date("2026-11-15T03:01:00.000Z")).dias, 0);
+  });
+
+  it("respeita outro fuso quando pedido", () => {
+    const datas = ["2026-11-14T02:00:00.000Z"]; // 13/11 em Brasília, 14/11 em UTC
+    assert.equal(calcularOfensiva(datas, new Date("2026-11-14T13:00:00.000Z"), "UTC").praticouHoje, true);
+  });
+});
+
+describe("frequenciaRecente", () => {
+  const agora = new Date(meioDia("2026-11-14"));
+
+  it("conta atividades e dias dos últimos 7 dias, hoje incluído", () => {
+    const datas = [
+      meioDia("2026-11-07"), // 8 dias atrás contando hoje: fora
+      meioDia("2026-11-08"), // 1º dia da janela
+      meioDia("2026-11-10"),
+      meioDia("2026-11-10"),
+      meioDia("2026-11-14"),
+    ];
+    assert.deepEqual(frequenciaRecente(datas, agora), { atividades: 4, diasComAtividade: 3 });
+  });
+
+  it("sem respostas: zero", () => assert.deepEqual(frequenciaRecente([], agora), { atividades: 0, diasComAtividade: 0 }));
+
+  it("usa o dia de Brasília na borda da janela", () => {
+    // 23h de 07/11 em Brasília (02h UTC de 08/11): fora da janela que começa em 08/11
+    assert.equal(frequenciaRecente(["2026-11-08T02:00:00.000Z"], agora).atividades, 0);
   });
 });

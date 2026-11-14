@@ -1,4 +1,5 @@
-// Figma: "AJAI · Home do aluno"  |  RF19, RF22 – continuidade do aprendizado
+// Figma: "AJAI · Home do aluno"  |  RF15 – ofensiva e frequência; RF19, RF22 – continuidade do aprendizado
+import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
@@ -6,7 +7,7 @@ import { Aviso, Botao, BotaoAudio, Carregando, Cartao, Logo, Subtitulo, Tela, Ti
 import { useAluno } from "@/hooks/useAluno";
 import { useCarregar } from "@/hooks/useCarregar";
 import { mensagemDeErro } from "@/services/api";
-import { visualizarProgresso } from "@/services/progresso";
+import { textoDaOfensiva, textoDaSemana, visualizarProgresso } from "@/services/progresso";
 import { escolherProximaAtividade } from "@/services/sessaoDeEstudo";
 import { listarConvitesDoAluno } from "@/services/vinculos";
 import { cores, fontes } from "@/theme/tokens";
@@ -21,6 +22,8 @@ async function carregarHome() {
     trilha: progresso.trilha,
     nivel: progresso.nivelAtual ?? progresso.trilha[0],
     convites: vinculos.filter((v) => v.status === "PENDENTE").length,
+    ofensiva: textoDaOfensiva(progresso.ofensiva),
+    semana: textoDaSemana(progresso.ultimos7Dias),
   };
 }
 
@@ -34,7 +37,7 @@ export default function HomeAluno() {
 
   return (
     <Carregando estado={estado} comAudio>
-      {({ trilha, nivel, convites }) => {
+      {({ trilha, nivel, convites, ofensiva, semana }) => {
         const etapasConcluidas = trilha.filter((n) => n.status === "CONCLUIDA").length;
 
         async function continuar() {
@@ -61,7 +64,7 @@ export default function HomeAluno() {
           <Tela
             rodape={
               <BotaoAudio
-                texto={`Olá, ${primeiroNome}! Toque em continuar para fazer a próxima atividade.${
+                texto={`Olá, ${primeiroNome}! Toque em continuar para fazer a próxima atividade. Ofensiva: ${ofensiva.numero} ${ofensiva.mensagem}${
                   convites > 0 ? " Você tem um convite de acompanhamento. Toque em Ver convite." : ""
                 }`}
               />
@@ -86,10 +89,15 @@ export default function HomeAluno() {
             <Botao titulo={indo ? "Carregando..." : "CONTINUAR →"} grande desabilitado={indo} onPress={continuar} />
             {aviso ? <Aviso>{aviso}</Aviso> : null}
 
+            {/* RF15: ofensiva calculada no servidor (dias seguidos, fuso America/Sao_Paulo). */}
             <Cartao>
               <Text style={styles.rotulo}>Ofensiva</Text>
-              {/* TODO: calcular dias seguidos a partir das Respostas (RF15, passo 7) */}
-              <Text style={[styles.valor, { color: cores.primaria, fontSize: fontes.titulo }]}>– dias seguidos</Text>
+              <View style={styles.linha}>
+                <Ionicons name="flame" size={32} color={cores.primaria} accessibilityElementsHidden importantForAccessibility="no" />
+                <Text style={[styles.valor, styles.ofensiva]}>{ofensiva.numero}</Text>
+              </View>
+              <Text style={styles.legenda}>{ofensiva.mensagem}</Text>
+              <Text style={styles.legenda}>{semana}</Text>
             </Cartao>
 
             {convites > 0 ? (
@@ -113,5 +121,7 @@ export default function HomeAluno() {
 const styles = StyleSheet.create({
   rotulo: { fontSize: fontes.legenda, color: cores.textoSuave, fontWeight: "600" },
   valor: { fontSize: fontes.subtitulo, fontWeight: "800", color: cores.texto },
-  legenda: { fontSize: fontes.legenda, color: cores.texto },
+  legenda: { fontSize: fontes.corpo, color: cores.texto },
+  linha: { flexDirection: "row", alignItems: "center", gap: 8 },
+  ofensiva: { color: cores.primaria, fontSize: fontes.titulo, flexShrink: 1 },
 });

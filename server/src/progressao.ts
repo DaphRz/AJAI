@@ -131,3 +131,68 @@ export function statusDaTrilha<N extends { idNivel: number; ordem: number }>(
     status: !atual ? "BLOQUEADA" : n.ordem < atual.ordem ? "CONCLUIDA" : n.idNivel === atual.idNivel ? "ATUAL" : "BLOQUEADA",
   }));
 }
+
+// ---------------------------------------------------------------------------------------------
+// Frequência e ofensiva (RF15, passo 7).
+// "Dia" é o dia do calendário no fuso do aluno (America/Sao_Paulo), não o dia UTC: uma resposta
+// às 22h de segunda em Brasília (01h de terça em UTC) conta como segunda.
+
+/** Fuso usado para decidir em que dia cada resposta aconteceu. */
+export const FUSO_PADRAO = "America/Sao_Paulo";
+
+/** Dia do calendário ("AAAA-MM-DD") de um instante, no fuso pedido. */
+export function diaNoFuso(instante: string | Date, fuso: string = FUSO_PADRAO): string {
+  const data = typeof instante === "string" ? new Date(instante) : instante;
+  // en-CA formata como AAAA-MM-DD.
+  return new Intl.DateTimeFormat("en-CA", { timeZone: fuso, year: "numeric", month: "2-digit", day: "2-digit" }).format(data);
+}
+
+/** Soma `dias` (pode ser negativo) a um dia "AAAA-MM-DD". Conta no calendário, sem fuso nem horário de verão. */
+export function somarDias(dia: string, dias: number): string {
+  const [ano, mes, d] = dia.split("-").map(Number);
+  return new Date(Date.UTC(ano, mes - 1, d + dias)).toISOString().slice(0, 10);
+}
+
+export interface Ofensiva {
+  /** Dias seguidos com pelo menos 1 resposta, terminando hoje ou ontem (0 = a sequência acabou). */
+  dias: number;
+  /** Respondeu alguma atividade hoje. */
+  praticouHoje: boolean;
+}
+
+/**
+ * Ofensiva: quantos dias seguidos o aluno respondeu pelo menos 1 atividade. A sequência pode
+ * terminar hoje OU ontem (quem ainda não treinou hoje não perde a ofensiva antes do dia acabar).
+ * `datas`: dataHora (ISO 8601) das respostas, em qualquer ordem.
+ */
+export function calcularOfensiva(datas: readonly string[], agora: Date, fuso: string = FUSO_PADRAO): Ofensiva {
+  const diasComResposta = new Set(datas.map((d) => diaNoFuso(d, fuso)));
+  const hoje = diaNoFuso(agora, fuso);
+  const praticouHoje = diasComResposta.has(hoje);
+  let dia = praticouHoje ? hoje : somarDias(hoje, -1);
+  let dias = 0;
+  while (diasComResposta.has(dia)) {
+    dias++;
+    dia = somarDias(dia, -1);
+  }
+  return { dias, praticouHoje };
+}
+
+export interface FrequenciaRecente {
+  /** Respostas nos últimos `dias` dias (hoje incluído). */
+  atividades: number;
+  /** Em quantos desses dias o aluno respondeu pelo menos 1 atividade. */
+  diasComAtividade: number;
+}
+
+/** Atividades respondidas nos últimos `dias` dias do calendário, contando hoje. */
+export function frequenciaRecente(
+  datas: readonly string[],
+  agora: Date,
+  dias = 7,
+  fuso: string = FUSO_PADRAO,
+): FrequenciaRecente {
+  const primeiroDia = somarDias(diaNoFuso(agora, fuso), -(dias - 1));
+  const recentes = datas.map((d) => diaNoFuso(d, fuso)).filter((dia) => dia >= primeiroDia);
+  return { atividades: recentes.length, diasComAtividade: new Set(recentes).size };
+}

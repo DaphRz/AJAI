@@ -40,7 +40,7 @@ Legenda: ⬜ a fazer · 🟡 em andamento · ✅ feito
 | 4 | Atividades e níveis vindos da API — feito | 09/11 | 2 |
 | 5 | Respostas, progressão e histórico no servidor — feito | 10/11 | 3, 4 |
 | 6 | Conteúdo pedagógico completo — feito | 14/11 | 4 |
-| 7 | Home do aluno: ofensiva, frequência e tela de progresso | 15/11 | 5 |
+| 7 | Home do aluno: ofensiva, frequência e tela de progresso — feito | 15/11 | 5 |
 | 8 | Área do professor e do responsável | 15/11 | 5, 3.1 |
 | 9 | Cadastro de atividades e níveis (administrador) | 15/11 | 2 |
 | 10 | Narração por voz e preferências de acessibilidade | 15/11 | 1 |
@@ -243,27 +243,20 @@ O "Ouvir instrução" também lê as opções. Enquanto o servidor corrige, a te
 
 ---
 
-## ⬜ Passo 7 — Home do aluno: ofensiva, frequência e progresso (RF15, RF18, RF19)
+## ✅ Passo 7 — Home do aluno: ofensiva, frequência e progresso (RF15, RF18, RF19)
 
-**Prazo:** 15/11 · **Depende de:** passo 5 (usa as telas provisórias; o ajuste ao Figma fica no passo 11)
+**Feito em 14/11.** A home mostra a ofensiva real, a tela de progresso foi refeita e o aluno vê uma comemoração ao subir de etapa.
+- **Servidor:** funções puras em `server/src/progressao.ts`: `calcularOfensiva` (dias seguidos com pelo menos 1 resposta, terminando **hoje ou ontem**, para quem ainda não treinou hoje não perder a sequência antes do dia acabar), `frequenciaRecente` (atividades e dias com atividade nos últimos 7 dias, hoje incluído), `diaNoFuso` e `somarDias`. O "dia" é o do calendário em **America/Sao_Paulo** (`FUSO_PADRAO`): 23h de Brasília ainda conta como o mesmo dia. Contam **todas** as respostas (nivelamento e treino). `GET /alunos/eu/progresso` ganhou `ofensiva { dias, praticouHoje }` e `ultimos7Dias { atividades, diasComAtividade }`. Nenhuma migração.
+- **Home (`/aluno`):** cartão "Ofensiva" com ícone, o número de dias e a frequência da semana. Textos em `textoDaOfensiva`/`textoDaSemana` (`src/services/progresso.ts`), sempre positivos: zerou → "Que bom ter você de volta!"; sem treino hoje → "Faça uma atividade hoje para continuar a sequência." O "Ouvir ajuda" lê a ofensiva. As legendas da home subiram para `fontes.corpo` (20).
+- **`/aluno/progresso`:** trilha com o nome e a situação de cada etapa em texto ("Concluída", "Você está aqui", "Próxima"), atividades feitas e taxa de acerto com barra, ofensiva e semana, e "Vale a pena treinar" (ou "Você está indo bem em tudo"). O "Ouvir ajuda" lê tudo isso.
+- **Comemoração (`/aluno/comemoracao`):** quando `POST /respostas` devolve `subiuDeNivel`, a atividade abre esta tela no lugar do "Muito bem!": troféu, "Parabéns! Você passou para a etapa X", **narração automática ao abrir** (para ao sair), "Continuar →" (primeira atividade da etapa nova, mantendo a contagem da sessão), "Ver meu progresso" e "Voltar ao início".
+- **Figma:** progresso e comemoração não têm frame; seguem o padrão das telas desenhadas (Home e Acerto).
+- **Testes:** `npm test` roda 79 testes (14 novos): virada de dia em Brasília (23h59 × 00h01), dia sem uso quebrando a sequência, sequência até ontem, ordem das respostas, outro fuso, borda da janela de 7 dias e a rota devolvendo `ofensiva`/`ultimos7Dias`. Lint, typecheck (app e servidor) e `npx expo export -p web` passam, e o endpoint foi conferido com o servidor rodando.
 
-**Pronto quando:** o cartão "Ofensiva – X dias seguidos" mostra o número real, a tela de progresso segue o Figma e o aluno vê uma comemoração ao subir de nível.
-
-```text
-Leia AGENTS.md, src/app/aluno/index.tsx, src/app/aluno/progresso.tsx,
-src/app/aluno/resultado.tsx e o endpoint GET /alunos/eu/progresso.
-
-1. No servidor, calcule a ofensiva: quantos dias seguidos (até hoje ou ontem) o aluno
-   respondeu pelo menos 1 atividade, no fuso America/Sao_Paulo. Inclua em
-   /alunos/eu/progresso junto com atividades nos últimos 7 dias.
-2. Na home, mostre a ofensiva real com texto encorajador (nunca culpar quem parou:
-   se zerou, "Que bom ter você de volta!").
-3. Refaça /aluno/progresso (frame do Figma se já existir: <link>), com a trilha de níveis,
-   atividades feitas, taxa de acerto e "Vale a pena treinar" (dificuldades).
-4. Quando o servidor responder subiuDeNivel, mostre uma tela de comemoração
-   (frame do Figma se já existir) com narração.
-Escreva testes para o cálculo da ofensiva (virada de dia, dias sem uso, fuso).
-```
+**Observações:**
+- **falta a equipe abrir as três telas no Expo Go** (home, progresso e comemoração; para ver a comemoração, entre como Ana ou Clara, que sobem de etapa no primeiro acerto);
+- a home recarrega quando o nível muda ou ao voltar por `router.replace`; ao voltar com o botão "Voltar" do aparelho, a ofensiva pode ficar com o número de antes até reabrir a tela;
+- depois de `git pull`, abra o `npx expo start` uma vez antes do `npx tsc` (gera o tipo da rota nova `/aluno/comemoracao`).
 
 ---
 
@@ -452,7 +445,7 @@ Leia AGENTS.md, src/services/** e server/.
 Configure testes:
 - no app: jest-expo (`npx expo install jest-expo jest @types/jest -- --save-dev`) e
   @testing-library/react-native; script `npm test`;
-- no servidor: já existe `node --test` (npm test, 63 testes em 14/11); complete os casos abaixo
+- no servidor: já existe `node --test` (npm test, 79 testes em 14/11); complete os casos abaixo
   que faltarem (ver server/src/rotas/contas.test.ts e progresso.test.ts).
 Escreva testes para:
 1. corrigirAutomaticamente (acentos, maiúsculas, espaços);

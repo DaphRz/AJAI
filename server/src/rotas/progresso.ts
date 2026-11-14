@@ -3,7 +3,8 @@
 //   POST /respostas               { idAtividade, respostaDada, tempoRespostaSeg }
 //                                 → { correta, subiuDeNivel, nivelAtual }
 //   POST /nivelamento/concluir    { respostas: [{ idAtividade, respostaDada, tempoRespostaSeg }] } → { nivel }
-//   GET  /alunos/eu/progresso     ?anterior=<idAtividade> → nível, trilha, totais, dificuldades, próxima atividade
+//   GET  /alunos/eu/progresso     ?anterior=<idAtividade> → nível, trilha, totais, dificuldades, próxima atividade,
+//                                 ofensiva e frequência dos últimos 7 dias (passo 7, fuso America/Sao_Paulo)
 //
 // A correção e as decisões de nível acontecem AQUI (o app não tem o gabarito). Regras em progressao.ts.
 import type { FastifyInstance } from "fastify";
@@ -24,9 +25,11 @@ import {
 } from "../desempenho.ts";
 import { ErroApi, esquemaErro } from "../erros.ts";
 import {
+  calcularOfensiva,
   definirNivelInicial,
   deveAvancar,
   escolherProximaAtividade,
+  frequenciaRecente,
   identificarDificuldades,
   statusDaTrilha,
   taxaDeAcerto,
@@ -34,6 +37,9 @@ import {
 
 /** Quantos conteúdos aparecem em "Vale a pena treinar". */
 const MAXIMO_DIFICULDADES = 3;
+
+/** Janela da frequência recente mostrada ao aluno (RF15). */
+const DIAS_FREQUENCIA = 7;
 
 const esquemaNivel = {
   type: "object",
@@ -220,8 +226,18 @@ export async function rotasProgresso(app: FastifyInstance): Promise<void> {
                 },
               },
               proximaAtividade: { type: "integer" },
+              ofensiva: {
+                type: "object",
+                properties: { dias: { type: "integer" }, praticouHoje: { type: "boolean" } },
+                required: ["dias", "praticouHoje"],
+              },
+              ultimos7Dias: {
+                type: "object",
+                properties: { atividades: { type: "integer" }, diasComAtividade: { type: "integer" } },
+                required: ["atividades", "diasComAtividade"],
+              },
             },
-            required: ["trilha", "totalAtividades", "totalAcertos", "taxaAcerto", "dificuldades"],
+            required: ["trilha", "totalAtividades", "totalAcertos", "taxaAcerto", "dificuldades", "ofensiva", "ultimos7Dias"],
           },
           ...errosComuns,
         },
@@ -243,6 +259,10 @@ export async function rotasProgresso(app: FastifyInstance): Promise<void> {
         ? escolherProximaAtividade(idsAtividadesDoNivel(nivelAtual.idNivel), respostas, req.query.anterior)
         : undefined;
 
+      // RF15: conta TODAS as respostas (nivelamento e treino), no fuso America/Sao_Paulo.
+      const agora = new Date();
+      const datas = respostas.map((r) => r.dataHora);
+
       return {
         nivelAtual,
         trilha: statusDaTrilha(trilha, idNivelAtual),
@@ -251,6 +271,8 @@ export async function rotasProgresso(app: FastifyInstance): Promise<void> {
         taxaAcerto: taxaDeAcerto(respostas),
         dificuldades,
         proximaAtividade,
+        ofensiva: calcularOfensiva(datas, agora),
+        ultimos7Dias: frequenciaRecente(datas, agora, DIAS_FREQUENCIA),
       };
     },
   );
