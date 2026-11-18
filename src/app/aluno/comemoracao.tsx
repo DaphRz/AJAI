@@ -10,7 +10,7 @@ import { Aviso, Botao, BotaoAudio, Tela } from "@/components";
 import { mensagemDeErro } from "@/services/api";
 import { falar, pararFala } from "@/services/narracao";
 import { escolherProximaAtividade } from "@/services/sessaoDeEstudo";
-import { cores, type Fontes } from "@/theme/tokens";
+import { familias, cores, type Fontes } from "@/theme/tokens";
 import { useEstilos } from "@/context/preferencias";
 
 export default function Comemoracao() {
@@ -67,7 +67,7 @@ export default function Comemoracao() {
 
       {aviso ? <Aviso>{aviso}</Aviso> : null}
 
-      <Botao titulo={indo ? "Carregando..." : "Continuar →"} grande desabilitado={indo} onPress={continuar} />
+      <Botao titulo={indo ? "Carregando..." : "Continuar"} seta grande desabilitado={indo} onPress={continuar} />
       <Botao titulo="Ver meu progresso" variante="secundario" onPress={() => router.replace("/aluno/progresso")} />
       <Botao titulo="Voltar ao início" variante="link" onPress={() => router.replace("/aluno")} />
     </Tela>
@@ -87,6 +87,6 @@ const criarEstilos = (fontes: Fontes) =>
       alignItems: "center",
       justifyContent: "center",
     },
-    titulo: { fontSize: 40, fontWeight: "800", color: cores.sucesso },
-    mensagem: { fontSize: fontes.subtitulo, color: cores.texto, textAlign: "center" },
+    titulo: { fontSize: 40, fontFamily: familias.extranegrito, color: cores.sucesso },
+    mensagem: { fontFamily: familias.regular, fontSize: fontes.subtitulo, color: cores.texto, textAlign: "center" },
   });

@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, Text } from "react-native";
-import { cores, toqueMinimo, type Fontes } from "@/theme/tokens";
+import { familias, cores, toqueMinimo, type Fontes } from "@/theme/tokens";
 import { useEstilos } from "@/context/preferencias";
 
 interface Props {
@@ -37,5 +37,5 @@ const criarEstilos = (fontes: Fontes) =>
       backgroundColor: cores.superficie,
     },
     ativa: { backgroundColor: cores.primaria, borderColor: cores.primaria },
-    texto: { fontSize: fontes.legenda, fontWeight: "700", color: cores.texto },
+    texto: { fontSize: fontes.legenda, fontFamily: familias.negrito, color: cores.texto },
   });

@@ -57,7 +57,7 @@ export default function EsqueciSenha() {
         onSubmitEditing={aoEnviar}
       />
       {aviso ? <Aviso>{aviso}</Aviso> : null}
-      <Botao titulo="Enviar →" onPress={aoEnviar} />
+      <Botao titulo="Enviar" seta onPress={aoEnviar} />
       <Botao titulo="Voltar para entrar" variante="link" onPress={() => router.back()} />
     </Tela>
   );

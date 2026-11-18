@@ -2,19 +2,22 @@
  * Renderiza qualquer atividade conforme o TipoAtividade (RF04–RF11).
  * Usado pelo nivelamento e pelas atividades do dia a dia.
  * Figma: "Reconhecimento" (LETRA), "Sílabas" (SILABA), "Atividade · Formar palavra" (PALAVRA),
- * "Atividade · Ler frase" (FRASE). ESCRITA e INTERPRETACAO seguem o mesmo estilo (sem frame ainda).
+ * "Atividade · Ler frase" (FRASE). ESCRITA e INTERPRETACAO seguem o mesmo estilo (sem frame).
+ * Imagens: Alternativa.urlImagem e Atividade.urlImagem; sem imagem, o ícone provisório.
  *
  * O app não sabe a resposta certa: só envia a resposta dada (onResponder) e o servidor corrige.
  * Tocar e segurar uma opção (ou sílaba) lê o texto dela em voz alta, sem escolher (passo 10).
  * O texto do "Ouvir instrução" vem de services/textosNarrados.ts (o mesmo do `npm run voz:preparar`).
  */
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { type ReactNode, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import type { AlternativaDoAluno, AtividadeDoAluno } from "@/domain/modelos";
+import { enderecoDaImagem } from "@/services/imagens";
 import { falar } from "@/services/narracao";
 import { textoDaInstrucao } from "@/services/textosNarrados";
-import { cores, fontes, raios, toqueMinimo, type Fontes } from "@/theme/tokens";
+import { familias, cores, fontes, raios, toqueMinimo, type Fontes } from "@/theme/tokens";
 import { Botao } from "./Botao";
 import { BotaoAudio } from "./BotaoAudio";
 import { Campo } from "./Campo";
@@ -92,7 +95,7 @@ function Silaba({ atividade, alternativas, onResponder, ocupado }: PropsTipo) {
   const styles = useEstilos(criarEstilos);
   return (
     <>
-      {atividade.textoApoio ? <PalavraDestaque palavra={atividade.textoApoio} /> : null}
+      {atividade.textoApoio ? <PalavraDestaque palavra={atividade.textoApoio} urlImagem={atividade.urlImagem} /> : null}
       <Enunciado>{atividade.enunciado}</Enunciado>
       <View style={styles.coluna}>
         {alternativas.map((alt) => (
@@ -119,7 +122,7 @@ function MontarPalavra({ atividade, alternativas, onResponder, ocupado }: PropsT
 
   return (
     <>
-      {atividade.textoApoio ? <PalavraDestaque palavra={atividade.textoApoio} /> : null}
+      {atividade.textoApoio ? <PalavraDestaque palavra={atividade.textoApoio} urlImagem={atividade.urlImagem} /> : null}
       <Enunciado>{atividade.enunciado}</Enunciado>
 
       <View
@@ -179,6 +182,7 @@ function ComTexto({ atividade, alternativas, onResponder, ocupado, tituloAudio }
   const styles = useEstilos(criarEstilos);
   return (
     <>
+      <FotoDaAtividade urlImagem={atividade.urlImagem} />
       {atividade.textoApoio ? (
         <View style={styles.cartaoTexto}>
           <Text style={atividade.tipo === "FRASE" ? styles.frase : styles.texto}>{atividade.textoApoio}</Text>
@@ -196,6 +200,7 @@ function Escrita({ atividade, onResponder, ocupado }: PropsTipo) {
   const [escrita, setEscrita] = useState("");
   return (
     <>
+      <FotoDaAtividade urlImagem={atividade.urlImagem} />
       <Enunciado>{atividade.enunciado}</Enunciado>
       <Campo
         rotulo="Sua resposta"
@@ -211,12 +216,62 @@ function Escrita({ atividade, onResponder, ocupado }: PropsTipo) {
   );
 }
 
-function PalavraDestaque({ palavra }: { palavra: string }) {
+/**
+ * Palavra em destaque ("CASA"); com Atividade.urlImagem, a foto de 144 fica acima dela
+ * (Figma "Formar palavra": "Foto da casa"; "Sílabas": "Imagem do objeto").
+ */
+function PalavraDestaque({ palavra, urlImagem }: { palavra: string; urlImagem?: string }) {
   const styles = useEstilos(criarEstilos);
-  // TODO (passo 11): foto/ilustração da palavra (Figma mostra a imagem acima da palavra).
+  const endereco = enderecoDaImagem(urlImagem);
   return (
     <View style={styles.cartaoPalavra}>
+      {endereco ? (
+        // Decorativa para o leitor de tela: a palavra logo abaixo já diz o que é.
+        <Image
+          source={{ uri: endereco }}
+          style={styles.fotoPalavra}
+          contentFit="cover"
+          accessibilityElementsHidden
+          importantForAccessibility="no"
+        />
+      ) : null}
       <Text style={styles.palavra}>{palavra}</Text>
+    </View>
+  );
+}
+
+/** Foto da atividade sem palavra em destaque (ESCRITA, FRASE, INTERPRETACAO), se houver urlImagem. */
+function FotoDaAtividade({ urlImagem }: { urlImagem?: string }) {
+  const styles = useEstilos(criarEstilos);
+  const endereco = enderecoDaImagem(urlImagem);
+  if (!endereco) return null;
+  return (
+    <Image
+      source={{ uri: endereco }}
+      style={[styles.fotoPalavra, styles.fotoSozinha]}
+      contentFit="cover"
+      accessibilityElementsHidden
+      importantForAccessibility="no"
+    />
+  );
+}
+
+/** Figura da alternativa: a imagem (urlImagem) ou, sem ela, o ícone provisório (ilustracao). */
+function FiguraAlternativa({ alternativa }: { alternativa: AlternativaDoAluno }) {
+  const styles = useEstilos(criarEstilos);
+  const endereco = enderecoDaImagem(alternativa.urlImagem);
+  const icone =
+    alternativa.ilustracao && alternativa.ilustracao in MaterialCommunityIcons.glyphMap
+      ? (alternativa.ilustracao as keyof typeof MaterialCommunityIcons.glyphMap)
+      : undefined;
+  if (!endereco && !icone) return null;
+  return (
+    <View style={styles.ilustracao} importantForAccessibility="no" accessibilityElementsHidden>
+      {endereco ? (
+        <Image source={{ uri: endereco }} style={styles.imagemAlternativa} contentFit="cover" />
+      ) : (
+        <MaterialCommunityIcons name={icone!} size={fontes.ilustracao} color={cores.primaria} />
+      )}
     </View>
   );
 }
@@ -246,16 +301,7 @@ function ListaOpcoes({
           onLongPress={() => void falar(alt.texto)}
           style={({ pressed }) => [styles.alternativa, (pressed || ocupado) && styles.apertado]}
         >
-          {alt.ilustracao && alt.ilustracao in MaterialCommunityIcons.glyphMap ? (
-            <View style={styles.ilustracao} importantForAccessibility="no" accessibilityElementsHidden>
-              {/* TODO (passo 11): trocar o ícone provisório pela imagem (alt.urlImagem). */}
-              <MaterialCommunityIcons
-                name={alt.ilustracao as keyof typeof MaterialCommunityIcons.glyphMap}
-                size={fontes.ilustracao}
-                color={cores.primaria}
-              />
-            </View>
-          ) : null}
+          <FiguraAlternativa alternativa={alt} />
           <Text style={styles.textoAlternativa}>{alt.texto}</Text>
         </Pressable>
       ))}
@@ -302,16 +348,16 @@ const criarEstilos = (fontes: Fontes) =>
     acoes: { flexDirection: "row", gap: 12 },
     acao: { flex: 1 },
     apertado: { opacity: 0.7 },
-    aguarde: { fontSize: fontes.corpo, color: cores.textoSuave, textAlign: "center", fontWeight: "600" },
-    enunciado: { fontSize: fontes.titulo, fontWeight: "700", color: cores.texto, textAlign: "center" },
-    letra: { fontSize: fontes.letraAtividade, fontWeight: "900", color: cores.primaria, textAlign: "center" },
+    aguarde: { fontSize: fontes.corpo, color: cores.textoSuave, textAlign: "center", fontFamily: familias.seminegrito },
+    enunciado: { fontSize: fontes.titulo, fontFamily: familias.negrito, color: cores.texto, textAlign: "center" },
+    letra: { fontSize: fontes.letraAtividade, fontFamily: familias.preto, color: cores.primaria, textAlign: "center" },
     cartaoPalavra: {
       alignItems: "center",
       paddingVertical: 16,
       borderRadius: raios.lg,
       backgroundColor: cores.superficieSuave,
     },
-    palavra: { fontSize: fontes.palavraDestaque, fontWeight: "900", color: cores.primaria, letterSpacing: 2 },
+    palavra: { fontSize: fontes.palavraDestaque, fontFamily: familias.preto, color: cores.primaria, letterSpacing: 2 },
     cartaoTexto: {
       gap: 16,
       padding: 20,
@@ -320,10 +366,11 @@ const criarEstilos = (fontes: Fontes) =>
       borderColor: cores.borda,
       backgroundColor: cores.superficie,
     },
-    frase: { fontSize: fontes.titulo, fontWeight: "700", color: cores.texto, textAlign: "center" },
-    texto: { fontSize: fontes.subtitulo, color: cores.texto, lineHeight: 32 },
+    frase: { fontSize: fontes.titulo, fontFamily: familias.negrito, color: cores.texto, textAlign: "center" },
+    texto: { fontFamily: familias.regular, fontSize: fontes.subtitulo, color: cores.texto, lineHeight: 32 },
+    // Figma "Opção de imagem": 120 de altura, padding 12, imagem de 108 × 96.
     alternativa: {
-      minHeight: toqueMinimo + 32,
+      minHeight: 120,
       flexDirection: "row",
       alignItems: "center",
       gap: 20,
@@ -334,14 +381,15 @@ const criarEstilos = (fontes: Fontes) =>
       backgroundColor: cores.superficie,
     },
     ilustracao: {
-      width: 80,
-      height: 80,
+      width: 108,
+      height: 96,
+      overflow: "hidden",
       borderRadius: raios.md,
       backgroundColor: cores.superficieSuave,
       alignItems: "center",
       justifyContent: "center",
     },
-    textoAlternativa: { fontSize: fontes.titulo, fontWeight: "700", color: cores.texto, flexShrink: 1 },
+    textoAlternativa: { fontSize: fontes.titulo, fontFamily: familias.negrito, color: cores.texto, flexShrink: 1 },
     peca: {
       minWidth: 96,
       minHeight: toqueMinimo + 32,
@@ -353,8 +401,11 @@ const criarEstilos = (fontes: Fontes) =>
       borderRadius: raios.lg,
       backgroundColor: cores.superficie,
     },
+    imagemAlternativa: { width: 108, height: 96 },
+    fotoPalavra: { width: 144, height: 144, borderRadius: raios.lg, marginBottom: 12 },
+    fotoSozinha: { alignSelf: "center", marginBottom: 0 },
     pecaLarga: { alignSelf: "stretch" },
     pecaMontada: { backgroundColor: cores.superficieSuave },
     espacoVazio: { borderStyle: "dashed", backgroundColor: "transparent" },
-    textoPeca: { fontSize: fontes.silaba, fontWeight: "800", color: cores.texto },
+    textoPeca: { fontSize: fontes.silaba, fontFamily: familias.extranegrito, color: cores.texto },
   });

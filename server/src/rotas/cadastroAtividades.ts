@@ -441,7 +441,7 @@ export async function rotasCadastroAtividades(app: FastifyInstance): Promise<voi
         conferirNaoEhAUltimaAtiva(atual);
       }
       const db = banco();
-      // Guarda as imagens das alternativas (passo 11) que continuam com o mesmo texto.
+      // Guarda as imagens das alternativas (urlImagem) que continuam com o mesmo texto.
       const imagensAntigas = new Map(
         (
           db.prepare("SELECT texto, urlImagem FROM Alternativa WHERE idAtividade = ? AND urlImagem IS NOT NULL").all(atual.idAtividade) as {

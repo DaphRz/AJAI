@@ -144,7 +144,7 @@ Rotas da API:
 
 **Cadastrar atividades pelo app (passo 9):** administrador → tela inicial › **Atividades** (todas, por etapa) e **Etapas**; professor → Conta › **Atividades** ("Minhas atividades" ou "Todas por etapa"). O formulário tem etapa, tipo, conteúdo, enunciado, texto de apoio (palavra, frase ou texto, conforme o tipo) e as alternativas com a certa marcada; o servidor confere o gabarito (múltipla escolha = exatamente 1 certa; "Formar palavra" = as peças marcadas formam a palavra; escrita = sem alternativas e com a resposta) e explica o que falta. A atividade nova entra na trilha de **todos** os alunos na hora. Travas: pergunta do nivelamento não é inativada nem muda de etapa, e a última atividade ativa de uma etapa não é inativada (409). Etapa nova sem atividades: o aluno não sobe para ela até ela ganhar atividades.
 
-**Testes do servidor:** `npm test` (ou `npm run server:test`) roda os testes com o executor nativo do Node (`node --test`, sem instalar nada): regras de progressão (`server/src/progressao.test.ts`), rotas de respostas/nivelamento/progresso (`server/src/rotas/progresso.test.ts`) e contas, aprovações e vínculos (`server/src/rotas/contas.test.ts`), área do professor (`professor.test.ts`) e cadastro de atividades e etapas (`cadastroAtividades.test.ts` e `server/src/validarAtividade.test.ts`), num banco temporário: o seu `ajai.db` não é tocado.
+**Testes:** `npm test` roda tudo. `npm run server:test` roda os do servidor com o executor nativo do Node (`node --test`): regras de progressão (`server/src/progressao.test.ts`), correção (`correcao.test.ts`), rotas de respostas/nivelamento/progresso (`server/src/rotas/progresso.test.ts`), contas, aprovações e vínculos (`contas.test.ts`), autorização e gabarito (`autorizacao.test.ts`), área do professor (`professor.test.ts`), cadastro de atividades e etapas (`cadastroAtividades.test.ts` e `server/src/validarAtividade.test.ts`) e narração (`narracao.test.ts`), num banco temporário: o seu `ajai.db` não é tocado. `npm run app:test` roda os do app: voz (`node --test`) e telas (**jest-expo**, arquivos `src/testes/*.test.tsx`). Casos manuais: [`docs/testes/casos-de-teste.md`](docs/testes/casos-de-teste.md).
 
 > **Depois de `git pull` com rotas novas no app:** rode `npx expo start` uma vez antes do `npx tsc --noEmit`. É ele que gera os tipos das rotas (`.expo/types/router.d.ts`); sem isso o `tsc` reclama das rotas novas.
 
@@ -164,7 +164,7 @@ npm run server:dev       # sobe a API (http://localhost:3333/health)
 npm run typecheck        # checagem de tipos do app e do servidor
 npm run usuario:senha -- <usuário, e-mail ou telefone>   # senha provisória (qualquer perfil)
 npm run voz:preparar     # gera os áudios das atividades (precisa da chave da Azure; ver "Narração por voz")
-npm test                 # testes do servidor e da voz do app
+npm test                 # testes do servidor e do app (voz e telas)
 ```
 
 ### Problemas comuns
@@ -387,17 +387,19 @@ docs/
 
 ### Telas do Figma × código
 
+> Em 18/11 o Figma tem **47 frames** (16 do aluno, 26 do professor, 5 gerais). Várias telas abaixo marcadas "sem tela no Figma" já têm frame (progresso, preferências, minha conta, subiu de nível, carregando, sem internet, nível sem atividades, relatórios, turmas, correção manual, conta do professor, esqueci a senha): **falta compará-las**. Só **Splash** e **Home do aluno** foram conferidas frame a frame; tokens, fonte e componentes já seguem o Figma em todas as telas.
+
 | Tela no Figma | Rota | Situação |
 |---|---|---|
-| Splash | `/` | esqueleto |
+| Splash | `/` | ✅ igual ao frame (18/11), mais o botão "Começar" |
 | Login | `/login` | ✅ pela API; **sem "Quem você é?" e sem "Ouvir ajuda"** (diferente do Figma: atualizar o frame) |
 | Cadastro de aluno | `/cadastro/aluno` | ✅ o aluno cria a própria conta (Passo 3.1): nome, **nome de usuário** sugerido, e-mail e telefone opcionais, senha; sem "Ouvir ajuda" |
 | Cadastro de professor ou responsável | `/cadastro/professor`, `/cadastro/responsavel` | ✅ campos do Figma (nome, e-mail, telefone, senha); o professor ganhou **código da instituição**; sem "Ouvir ajuda" |
-| *(sem tela no Figma)* | `/cadastro` ("Eu sou:"), `/cadastro/instituicao`, `/espera` | ✅ Passo 3.1 – desenhar no passo 11 |
+| *(sem tela no Figma)* | `/cadastro` ("Eu sou:"), `/cadastro/instituicao`, `/espera` | ✅ Passo 3.1, no padrão das telas desenhadas |
 | Nivelamento · Pergunta | `/aluno/nivelamento` | esqueleto |
 | Nivelamento · Resultado | `/aluno/nivelamento/resultado` | esqueleto |
-| Home do aluno | `/aluno` | ✅ ofensiva real e frequência da semana (passo 7) |
-| Reconhecimento / Sílabas / Formar palavra / Ler frase | `/aluno/atividade/[id]` | um componente para todos os tipos; tocar e segurar uma opção lê a opção (passo 10) |
+| Home do aluno | `/aluno` | ✅ ofensiva real e frequência da semana (passo 7); igual ao frame desde 18/11 ("Minha conta" no cabeçalho), mais "Voz e letra" e as frases da ofensiva |
+| Reconhecimento / Sílabas / Formar palavra / Ler frase | `/aluno/atividade/[id]` | um componente para todos os tipos; tocar e segurar uma opção lê a opção (passo 10); mostra `urlImagem` nas opções e acima da palavra (18/11), faltam as imagens |
 | Acerto / Tentar novamente | `/aluno/resultado` | esqueleto |
 | Dashboard do professor | `/professor` | ✅ pela API, só alunos com vínculo aceito, seletor de período (passo 8) |
 | Métricas de Ana Souza | `/professor/aluno/[id]` | ✅ gráfico de evolução, histórico de etapas, correção manual (passo 8) |
@@ -405,7 +407,7 @@ docs/
 | *(sem tela no Figma)* | `/professor/relatorios`, `/professor/conta`, `/professor/turmas`, `/instituicao/turmas` | ✅ passo 8 (relatórios por turma, editar nome, aba Turmas, turmas criadas pela instituição), no padrão do Dashboard |
 | *(sem tela no Figma)* | `/aluno/preferencias` | ✅ passo 10 ("Voz e letra": velocidade da voz e tamanho da letra), no padrão da Home |
 | *(sem tela no Figma)* | `/admin/atividades`, `/admin/atividade`, `/admin/niveis`, `/professor/atividades`, `/professor/atividade` | ✅ passo 9 (cadastro de atividades e etapas), no padrão das telas desenhadas |
-| *(sem tela no Figma)* | `/esqueci-senha`, `/aluno/conta`, `/aluno/senha`, `/aluno/acompanhamento`, `/professor/alunos`, `/professor/senha`, `/responsavel`, `/responsavel/senha`, `/instituicao`, `/instituicao/senha`, `/admin`, `/admin/senha` | provisórias (passos 3 e 3.1) – desenhar no passo 11 |
+| *(sem tela no Figma)* | `/esqueci-senha`, `/aluno/conta`, `/aluno/senha`, `/aluno/acompanhamento`, `/professor/alunos`, `/professor/senha`, `/responsavel`, `/responsavel/senha`, `/instituicao`, `/instituicao/senha`, `/admin`, `/admin/senha` | passos 3 e 3.1, no padrão das telas desenhadas |
 
 ---
 
@@ -427,14 +429,12 @@ O roteiro completo até a entrega, com prazo, critério de pronto e **um prompt 
 | 8 | Área do professor e do responsável — ✅ | 15/11 |
 | 9 | Cadastro de atividades (admin e professor) e níveis (admin) — ✅ | 15/11 |
 | 10 | Narração por voz (Azure) e preferências — ✅ | 15/11 |
-| 11 | Ajuste ao Figma e recursos visuais | 16/11 |
-| 12 | Testes automatizados | 16/11 |
-| 13 | Segurança e privacidade (LGPD) | 16/11 |
-| 14 | Correção de bugs e polimento | 16/11 |
-| 15 | Documentação final | 16/11 |
-| 16 | Apresentação e demo | 17/11 |
+| 11 | Testes automatizados | 16/11 |
+| 12 | Segurança e privacidade (LGPD) | 16/11 |
+| 13 | Correção de bugs e polimento | 16/11 |
+| 14 | Documentação final | 16/11 |
 
-A ordem de execução é a da tabela (em 14/11 os passos foram renumerados na ordem de execução e o antigo passo de testes de usabilidade saiu).
+A ordem de execução é a da tabela (em 14/11 os passos foram renumerados na ordem de execução e o antigo passo de testes de usabilidade saiu; em 18/11 saíram os passos de recursos visuais e de apresentação, e os passos 12 a 15 viraram 11 a 14).
 
 ## Pendências
 
@@ -448,11 +448,11 @@ Legenda: ✅ feito · 🟡 esqueleto/parcial (só no app, com dados em memória)
 - ✅ Cadastro e autenticação (RF01, RF02): pela API, senha com hash (scrypt), token JWT guardado no aparelho. Desde o **Passo 3.1 (14/11)** aluno, professor, responsável e instituição criam a própria conta; instituição aprovada pelo administrador, professor pela instituição; acompanhamento por vínculo que o aluno aceita. Testado pelos testes de API (`contas.test.ts`) e contra o servidor rodando; **falta a equipe repetir o fluxo completo pelas telas no Expo Go**
 - ✅ Aluno novo: o nivelamento é gravado no servidor (`POST /nivelamento/concluir`: respostas, nível inicial e HistoricoNivel); ao reabrir o app, o aluno continua na etapa dele
 - ✅ Nivelamento inicial (RF03): 10 perguntas da API (`GET /nivelamento`, duas por nível), com barra de progresso; o aluno para no primeiro erro e o servidor decide o nível (corrige de novo e só aceita as perguntas na ordem, sem pular). Regra definida no passo 6: só passa de nível acertando **as 2 perguntas do par**, e começa no primeiro nível que não domina ([`docs/conteudo-pedagogico.md`](docs/conteudo-pedagogico.md))
-- ⬜ Testes do fluxo de acesso
+- ✅ Testes do fluxo de acesso: automáticos (`contas.test.ts` e `autorizacao.test.ts`, passo 11); casos manuais CT-01 a CT-22 em [`docs/testes/casos-de-teste.md`](docs/testes/casos-de-teste.md), a executar no passo 13
 - ✅ Passo 0 (esqueleto): lint, tsc e expo-doctor passam, o banco recria e o fluxo foi validado no Expo Go. Node 22.18+ é necessário para `npm run db:*` (em 22.14 use `NODE_OPTIONS=--experimental-strip-types`)
 
 **Sprint 2 – Atividades Básicas (27/10 – 03/11)** — *atrasada*
-- ✅ Atividades de letras e sílabas (RF04, RF06): telas vindas da API (passo 4) e 7 atividades por nível do cotidiano adulto (passo 6, 14/11; [`docs/conteudo-pedagogico.md`](docs/conteudo-pedagogico.md)). Faltam só as imagens finais (passo 11)
+- ✅ Atividades de letras e sílabas (RF04, RF06): telas vindas da API (passo 4) e 7 atividades por nível do cotidiano adulto (passo 6, 14/11; [`docs/conteudo-pedagogico.md`](docs/conteudo-pedagogico.md)). Faltam só as imagens finais
 - ✅ Associação letra-som (RF05): atividades LETRA "começa com o som da letra..." (passo 6), com as opções lidas no "Ouvir instrução" pela voz da Azure (passo 10); tocar e segurar uma opção lê só ela
 - ✅ Correção automática (RF12) **no servidor** desde o passo 4 (o app não recebe o gabarito) e feedback de acerto/erro (RF13)
 - ✅ Registro das respostas **no banco** (RF14): `POST /respostas` grava a Resposta e atualiza o DesempenhoConteudo (passo 5, testado no Expo Go em 09/11)
@@ -468,9 +468,9 @@ Legenda: ✅ feito · 🟡 esqueleto/parcial (só no app, com dados em memória)
 - ✅ Identificação de dificuldades (RF17): calculada por conteúdo no servidor, por aluno (painel e métricas) e por turma (relatório de dificuldades)
 - ✅ Registro de frequência / "Ofensiva – dias seguidos" (RF15): calculada no servidor (`calcularOfensiva` e `frequenciaRecente` em `server/src/progressao.ts`, fuso America/Sao_Paulo, com testes) e mostrada na home e no progresso com texto encorajador (passo 7)
 - 🟡 Continuidade do aprendizado (RF22): o CONTINUAR abre uma **sessão de 5 atividades** seguidas (acertos); depois de um acerto vai direto para a próxima, e só no fim do bloco oferece "Voltar ao início" ou "Continuar treinando" (`services/sessaoDeEstudo.ts`, `ATIVIDADES_POR_SESSAO`). A próxima atividade vem do servidor (`GET /alunos/eu/progresso`), então continua certa entre aberturas do app
-- ⬜ Testes integrados (casos manuais do passo 12) em Android e iPhone/web
+- ⬜ Executar os casos manuais ([`docs/testes/casos-de-teste.md`](docs/testes/casos-de-teste.md), 49 casos, escritos no passo 11) em Android e iPhone/web (passo 13)
 - ⬜ Correção de bugs residuais
-- ⬜ Documentação final e preparação da apresentação (entrega **17/11**)
+- ⬜ Documentação final (passo 14; entrega **17/11**)
 
 ### Backend e dados (bloqueia quase tudo acima)
 - ✅ **Banco decidido: SQLite em arquivo** (`server/data/ajai.db`)
@@ -486,7 +486,7 @@ Legenda: ✅ feito · 🟡 esqueleto/parcial (só no app, com dados em memória)
 - ✅ Migração 005 (Passo 3.1): perfis `RESPONSAVEL` e `INSTITUICAO`, tabelas `Responsavel`, `Instituicao` e `Vinculo`, colunas novas em `Professor`; `Aluno.idCriador` saiu (virou `Vinculo`). Extras em relação ao diagrama: registrar na documentação
 
 ### Funcionalidades previstas na APF sem tela no app nem no Figma
-- ✅ Administrador e professor: incluir/editar/inativar **atividades** (APF itens 25–31; o professor só mexe nas que criou) e, só o administrador, incluir/editar **níveis**: telas no app e rotas `/gestao/*` (passo 9, 14/11; exemplos em `server/admin.http`). ⬜ **Decidir com a equipe** se a atividade do professor vale para todos os alunos (hoje) ou só para os que ele acompanha. ⬜ Imagens nas atividades cadastradas (o formulário ainda não envia `urlImagem`; passo 11). Falta a equipe abrir as telas no Expo Go
+- ✅ Administrador e professor: incluir/editar/inativar **atividades** (APF itens 25–31; o professor só mexe nas que criou) e, só o administrador, incluir/editar **níveis**: telas no app e rotas `/gestao/*` (passo 9, 14/11; exemplos em `server/admin.http`). ⬜ **Decidir com a equipe** se a atividade do professor vale para todos os alunos (hoje) ou só para os que ele acompanha. ⬜ Imagens nas atividades cadastradas (o formulário ainda não envia `urlImagem`). Falta a equipe abrir as telas no Expo Go
 - ✅ Professor: convidar aluno e desfazer vínculo ("Meus alunos", Passo 3.1); criar/editar/encerrar/apagar turma e pôr/mover/tirar aluno da turma na aba Turmas, que mostra os alunos de cada turma (APF 20–24, passo 8, só alunos com vínculo aceito; desfazer o vínculo tira o aluno das turmas do professor)
 - ✅ O painel de Acompanhamento lista os alunos com vínculo aceito (pela API). O aluno que se cadastra sozinho aparece "sem turma" até o professor pôr numa turma
 - ✅ Responsável: até 3 dicas curtas embaixo de cada pessoa acompanhada (dias de treino na semana, conteúdo para treinar junto, etapa), com "Ouvir dicas" (passo 8; sem turma nem métricas detalhadas)
@@ -498,28 +498,29 @@ Legenda: ✅ feito · 🟡 esqueleto/parcial (só no app, com dados em memória)
 ### Acessibilidade e conteúdo
 - ✅ **Narração por voz (RNF04)** — passo 10 (18/11). A voz passou do Piper (qualidade ruim) para a **Azure** (voz neural `pt-BR-FranciscaNeural`), testada pela equipe no celular e na web. O servidor gera o MP3 uma vez (cache em `AudioCache`), e os **MP3 vão para o git** (`server/storage/audio/`, ~20 MB): quem clona ouve a voz sem a chave. O app toca com o `expo-audio` e cai no `expo-speech` (voz do aparelho) se a rede falhar ou o áudio não existir e não houver chave. Corrigido: iPhone com a chave do silencioso ligada deixava a voz do aparelho muda. "Falando..." no `BotaoAudio`, fala para ao sair da tela, toque longo nas opções lê a opção.
   - ⬜ Conteúdo novo (atividade nova ou texto alterado): quem tem a chave roda `npm run voz:preparar` e faz commit dos MP3.
-  - ⬜ Revisar o `ServicoTTS` na APF (agora é a Azure; custo zero no F0) no passo 15.
+  - ⬜ Revisar o `ServicoTTS` na APF (agora é a Azure; custo zero no F0) no passo 14.
 - ✅ Banco real de atividades (letras, sílabas, palavras, frases, escrita, interpretação, cotidiano): 35 atividades, 7 por nível (passo 6, 14/11)
-- 🟡 O enum `TipoAtividade` do diagrama não tem tipos para **letra-som** (RF05) nem **cotidiano** (RF11). Decidido no passo 6: **não criar tipos**; RF05 = LETRA e RF11 = tema/`conteudo` de todos os tipos, sem impacto no diagrama nem na APF (ver [`docs/conteudo-pedagogico.md`](docs/conteudo-pedagogico.md)). Falta explicar isso no PDF (passo 15)
-- ⬜ Imagens das alternativas e da palavra em destaque (o Figma usa fotos, ex.: a casa em "Formar palavra"; o app usa ícones provisórios do `MaterialCommunityIcons` e ainda não mostra a imagem da palavra)
+- 🟡 O enum `TipoAtividade` do diagrama não tem tipos para **letra-som** (RF05) nem **cotidiano** (RF11). Decidido no passo 6: **não criar tipos**; RF05 = LETRA e RF11 = tema/`conteudo` de todos os tipos, sem impacto no diagrama nem na APF (ver [`docs/conteudo-pedagogico.md`](docs/conteudo-pedagogico.md)). Falta explicar isso no PDF (passo 14)
+- 🟡 Imagens das alternativas e da palavra em destaque: ✅ o app mostra `urlImagem` (opção 108 × 96 e foto de 144 acima da palavra, medidas do Figma; 18/11); ⬜ faltam as imagens (lista em [`docs/conteudo-pedagogico.md`](docs/conteudo-pedagogico.md)), um lugar para guardá-las e o `urlImagem` no `mock.ts`. Até lá, os ícones provisórios
 - ✅ Emojis trocados por ícones de `@expo/vector-icons` (09/11)
-- ⬜ Carregar a fonte Inter (`expo-font`)
-- ⬜ Ícone do app e splash com a identidade do AJAI (hoje são os do Expo)
+- ✅ Fonte Inter carregada (`@expo-google-fonts/inter`), aplicada por `familias` dos tokens (18/11)
+- ✅ Ícone do app, ícone adaptativo do Android, splash e favicon com o símbolo do AJAI do Figma (18/11; gerados por `assets/fonte/gerar-icones.py`). ⬜ Conferir num build (no Expo Go aparece o ícone do Expo Go)
+- 🟡 Ajuste ao Figma: ✅ tokens, componentes, Splash e Home do aluno; ⬜ comparar os outros 45 frames (o plano gratuito do Figma limitou a leitura pelo MCP) e criar a tela "Nível sem atividades"
 - ⬜ Revisar com leitor de tela (TalkBack/VoiceOver) e tamanho de fonte do sistema aumentado
 
 ### Qualidade, segurança e privacidade
-- 🟡 Testes automatizados: ✅ servidor com `node --test` (`npm test`, 155 testes: regras de progressão e ofensiva, rotas do passo 5, contas/aprovações/vínculos do Passo 3.1, área do professor/responsável do passo 8, cadastro de atividades/etapas do passo 9 e narração/preferências do passo 10); ✅ 12 testes da voz do app no Node (`npm run app:test`, também no `npm test`, com módulos do Expo de mentira em `src/services/voz/testes/`); ⬜ testes de tela no app (`jest-expo`) no passo 12
+- ✅ Testes automatizados (passo 11, 18/11): servidor com `node --test` (186 testes: correção, progressão e ofensiva, rotas do passo 5, contas/aprovações/vínculos, autorização e gabarito ausente em todas as rotas do aluno, área do professor/responsável, cadastro de atividades/etapas e narração); 12 testes da voz do app no Node; testes de tela com `jest-expo` (alternativa certa → "Muito bem!", errada → "Quase lá!"). Tudo no `npm test`. ⬜ Mais testes de tela, se der tempo (nivelamento, home)
 - 🟡 Senha com hash no servidor (✅ scrypt) e comunicação só por HTTPS (⬜ RNF11; na demo é HTTP na rede local)
-- ⬜ Invalidar tokens antigos depois de troca/redefinição de senha (hoje valem até vencer, 30 dias) — passo 13
-- ⬜ Forçar troca da senha provisória no primeiro login (passo 13)
+- ⬜ Invalidar tokens antigos depois de troca/redefinição de senha (hoje valem até vencer, 30 dias) — passo 12
+- ⬜ Forçar troca da senha provisória no primeiro login (passo 12)
 - ✅ Problema "professor que criou o aluno saiu" resolvido no Passo 3.1: o aluno tem conta própria e troca a própria senha
 - ⬜ Coletar só o necessário e escrever termo de uso/privacidade (RNF12, LGPD)
 
 ### Design (UX/UI)
-- ⬜ Telas que faltam no Figma: progresso do aluno, relatórios do professor, conta, gestão de turmas, telas do administrador, preferências de acessibilidade, recuperação de senha, estado "sem atividades/sem internet"; do Passo 3.1: escolha de perfil, 4 cadastros, espera/recusa, área da instituição, área do responsável, aprovação no admin, "Meus alunos" e convites do aluno (lista completa no passo 11)
+- ⬜ Telas que faltam no Figma (em 18/11 já existem frames de progresso, preferências, minha conta, relatórios, conta e turmas do professor, recuperação de senha, "carregando", "sem internet" e "nível sem atividades"): telas do administrador; do Passo 3.1: escolha de perfil, 4 cadastros, espera/recusa, área da instituição, área do responsável, aprovação no admin, "Meus alunos" e convites do aluno
 
 ### Documentação
-- ⬜ Atualizar a seção 15 (Prototipação) do PDF: ela diz que o protótipo tem 9 telas e que cadastro e nivelamento seriam feitos depois, mas o Figma já tem 15 telas, incluindo cadastro, nivelamento, formar palavra e ler frase
+- ⬜ Atualizar a seção 15 (Prototipação) do PDF: ela diz que o protótipo tem 9 telas e que cadastro e nivelamento seriam feitos depois, mas o Figma já tem 47 frames (18/11), incluindo cadastro, nivelamento, formar palavra, ler frase e a área do professor
 - ⬜ Registrar no documento as decisões de stack (SQLite, API com Fastify, voz com `ProvedorVoz`: Azure AI Speech no servidor + `expo-speech` de reserva; o Piper foi testado e trocado por qualidade) e as colunas/tabelas extras do esquema (`Atividade.ordemNivelamento`, `Atividade.textoApoio`, `AudioCache.provedor`, `Usuario.telefone`, `Usuario.nomeUsuario`, `Responsavel`, `Instituicao`, `Vinculo` e as colunas novas de `Professor`), e os perfis novos no diagrama de classes e na APF (RESPONSAVEL, INSTITUICAO; funções de aprovação e de vínculo)
 - ⬜ Manter o quadro Kanban (Trello) alinhado com esta lista
 

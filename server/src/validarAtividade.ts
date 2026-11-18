@@ -24,7 +24,7 @@ export const LIMITES = {
 export interface AlternativaEnviada {
   texto: string;
   correta?: boolean;
-  /** Nome de um ícone do MaterialCommunityIcons (provisório até as imagens do passo 11). */
+  /** Nome de um ícone do MaterialCommunityIcons (provisório até existirem as imagens, urlImagem). */
   ilustracao?: string;
 }
 

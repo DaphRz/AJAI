@@ -1,4 +1,4 @@
-// Aluno › Minha conta (sem tela no Figma; a desenhar no passo 11): dados, trocar a própria senha
+// Aluno › Minha conta (o Figma tem o frame "Minha conta"): dados, trocar a própria senha
 // (Passo 3.1), quem acompanha você (convites e vínculos) e sair.
 // As preferências de voz e letra ficam em /aluno/preferencias (botão "Voz e letra" na home e aqui).
 import { router } from "expo-router";

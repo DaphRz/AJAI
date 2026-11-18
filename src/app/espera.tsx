@@ -1,4 +1,4 @@
-// Conta esperando aprovação ou recusada (Passo 3.1). Sem tela no Figma (a desenhar no passo 11).
+// Conta esperando aprovação ou recusada (Passo 3.1). Sem tela no Figma.
 // - Professor: espera a instituição aprovar; se recusado, vê o motivo e pode informar outro código.
 // - Instituição: espera o administrador do AJAI aprovar; se recusada, vê o motivo.
 // "Verificar de novo" pergunta ao servidor (GET /auth/eu); aprovada, a tela leva à área certa.

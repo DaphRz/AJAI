@@ -93,7 +93,7 @@ export function FormularioCadastro({ perfil, titulo, subtitulo, campos, observac
       ))}
       {observacao ? <Corpo>{observacao}</Corpo> : null}
       {erro ? <Aviso>{erro}</Aviso> : null}
-      <Botao titulo={enviando ? "Criando conta..." : "Criar conta →"} desabilitado={enviando} onPress={aoCadastrar} />
+      <Botao titulo={enviando ? "Criando conta..." : "Criar conta"} seta desabilitado={enviando} onPress={aoCadastrar} />
       <Botao titulo="Já tem conta? Entrar" variante="link" onPress={() => router.replace("/login")} />
     </Tela>
   );

@@ -1,6 +1,8 @@
 /**
  * Tokens visuais do AJAI, extraídos do protótipo no Figma.
  * Arquivo Figma: https://www.figma.com/design/hXu6QCdfo7r7Qau5Rbia8M/AJAI
+ * O Figma não tem variáveis/estilos publicados: os valores foram medidos nos frames
+ * "Home do aluno" e "Splash" (18/11).
  *
  * Regras de acessibilidade (RNF01–RNF07):
  * - texto base nunca menor que 18;
@@ -12,13 +14,13 @@ export const cores = {
   fundo: "#FFFCF5", // creme do fundo das telas
   primaria: "#17594D", // verde escuro: botões principais, títulos
   primariaTexto: "#FFFFFF",
-  texto: "#173B32",
-  textoSuave: "#6E8076",
+  texto: "#173D35",
+  textoSuave: "#4D6259", // contraste 6,4:1 sobre o fundo creme
   superficie: "#FFFFFF",
   superficieSuave: "#EAF2E9", // cartão "Etapa"
-  borda: "#C9D6CC",
+  borda: "#C9D9CB", // cartão "Ofensiva"
   audioFundo: "#FFF0BC", // cartão amarelo "Ouvir ajuda"
-  audioBorda: "#3E4A2E",
+  audioBorda: "#17594D",
   sucesso: "#2E7D4F",
   atencaoFundo: "#FDF0C4",
   atencaoTexto: "#8A5A00",
@@ -35,24 +37,44 @@ export const espacos = {
 
 export const raios = {
   md: 12,
-  lg: 20,
+  botao: 22, // botões e cartão "Ouvir ajuda"
+  lg: 24, // cartões ("Etapa", "Ofensiva")
+} as const;
+
+/** Margens da tela no Figma: 28 dos lados e 20 em cima/embaixo; rodapé "Ouvir ajuda" com 24 × 18. */
+export const margensTela = { horizontal: 28, vertical: 20, rodapeHorizontal: 24, rodapeVertical: 18 } as const;
+
+/**
+ * Fonte Inter (Figma), carregada no _layout raiz com @expo-google-fonts/inter.
+ * No React Native cada peso é uma família: use `fontFamily: familias.negrito`, nunca `fontWeight`
+ * (no Android o fontWeight não escolhe o arquivo da fonte).
+ */
+export const familias = {
+  regular: "Inter_400Regular",
+  seminegrito: "Inter_600SemiBold",
+  negrito: "Inter_700Bold",
+  extranegrito: "Inter_800ExtraBold",
+  preto: "Inter_900Black",
 } as const;
 
 export const fontes = {
-  // A fonte do Figma é Inter; enquanto não carregamos a fonte com expo-font,
-  // usamos a fonte do sistema com os mesmos tamanhos.
-  tituloGrande: 32,
-  titulo: 26,
-  subtitulo: 22,
+  tituloGrande: 38, // "Olá, Maria!"
+  titulo: 28, // "Ouvir ajuda", enunciados
+  subtitulo: 24, // "Vamos aprender?", "Meu progresso", valores dos cartões
   corpo: 20,
   legenda: 16,
+  botaoGrande: 32, // "CONTINUAR"
+  marca: 30, // "AJAI" ao lado do símbolo
+  marcaGrande: 64, // "AJAI" na splash
   letraAtividade: 120, // a letra grande da tela "Reconhecimento"
   silaba: 48, // peças de sílaba ("Sílabas", "Formar palavra")
   palavraDestaque: 40, // a palavra em destaque ("BONÉ", "CASA")
-  ilustracao: 48, // PROVISÓRIO: ícone das alternativas até as imagens do passo 11
+  ilustracao: 48, // ícone provisório das alternativas sem imagem (urlImagem)
 } as const;
 
 export const toqueMinimo = 64;
+/** Altura do botão de destaque ("CONTINUAR") e do cartão "Ouvir ajuda" no Figma. */
+export const alturaBotaoGrande = 80;
 
 export type Fontes = { [K in keyof typeof fontes]: number };
 
@@ -75,8 +97,8 @@ export const velocidadesDaVoz = [
 
 /**
  * `fontes` aumentadas para o tamanho de letra escolhido pelo aluno. Aumenta os textos
- * (título, subtítulo, corpo, legenda); letra da atividade, sílabas e palavra em destaque
- * já são grandes e ficam como estão, para não quebrar o layout. Use pelo hook useFontes/useEstilos.
+ * (título, subtítulo, corpo, legenda); letra da atividade, sílabas, palavra em destaque,
+ * marca e botão grande já são grandes e ficam como estão, para não quebrar o layout. Use pelo hook useFontes/useEstilos.
  */
 export function fontesNoTamanho(tamanhoCorpo: number): Fontes {
   const escala = Math.max(1, tamanhoCorpo / fontes.corpo);

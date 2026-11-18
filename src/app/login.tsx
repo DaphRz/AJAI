@@ -61,7 +61,7 @@ export default function Login() {
 
       {erro ? <Aviso>{erro}</Aviso> : null}
 
-      <Botao titulo={enviando ? "Entrando..." : "Entrar →"} desabilitado={enviando} onPress={aoEntrar} />
+      <Botao titulo={enviando ? "Entrando..." : "Entrar"} seta desabilitado={enviando} onPress={aoEntrar} />
       <Botao titulo="Esqueci minha senha" variante="link" onPress={() => router.push("/esqueci-senha")} />
       <Botao
         titulo="Ainda não tem conta? Crie a sua"

@@ -15,7 +15,7 @@ import {
   type Periodo,
 } from "@/services/relatorios";
 import { listarTurmas } from "@/services/turmas";
-import { cores, fontes, raios } from "@/theme/tokens";
+import { familias, cores, fontes, raios } from "@/theme/tokens";
 
 /** Quantos conteúdos aparecem em "Conteúdos com mais dificuldade". */
 const MAXIMO_CONTEUDOS = 8;
@@ -149,16 +149,16 @@ function Conteudo({
 const styles = StyleSheet.create({
   linha: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   resumo: { flexDirection: "row", backgroundColor: cores.primaria, borderRadius: raios.lg, padding: 20 },
-  resumoNumero: { color: cores.primariaTexto, fontSize: 36, fontWeight: "800" },
-  resumoLegenda: { color: cores.primariaTexto, fontSize: fontes.legenda },
-  rotulo: { fontSize: fontes.legenda, color: cores.textoSuave, fontWeight: "600" },
+  resumoNumero: { color: cores.primariaTexto, fontSize: 36, fontFamily: familias.extranegrito },
+  resumoLegenda: { color: cores.primariaTexto, fontFamily: familias.regular, fontSize: fontes.legenda },
+  rotulo: { fontSize: fontes.legenda, color: cores.textoSuave, fontFamily: familias.seminegrito },
   itemLinha: { flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 4 },
-  item: { fontSize: fontes.corpo, color: cores.texto },
-  itemForte: { fontSize: fontes.corpo, color: cores.texto, fontWeight: "800" },
-  itemValor: { fontSize: fontes.legenda, color: cores.primaria, fontWeight: "700" },
-  legenda: { fontSize: fontes.legenda, color: cores.textoSuave },
+  item: { fontFamily: familias.regular, fontSize: fontes.corpo, color: cores.texto },
+  itemForte: { fontSize: fontes.corpo, color: cores.texto, fontFamily: familias.extranegrito },
+  itemValor: { fontSize: fontes.legenda, color: cores.primaria, fontFamily: familias.negrito },
+  legenda: { fontFamily: familias.regular, fontSize: fontes.legenda, color: cores.textoSuave },
   conteudo: { gap: 4, paddingVertical: 6 },
   trilho: { height: 10, borderRadius: 5, backgroundColor: cores.atencaoFundo, overflow: "hidden" },
   preenchido: { height: "100%", backgroundColor: cores.primaria },
-  aviso: { fontSize: 14, color: cores.textoSuave, textAlign: "center" },
+  aviso: { fontFamily: familias.regular, fontSize: 14, color: cores.textoSuave, textAlign: "center" },
 });

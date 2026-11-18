@@ -8,7 +8,7 @@ import { useSessao } from "@/context/sessao";
 import { useCarregar } from "@/hooks/useCarregar";
 import { useVersaoAoFocar } from "@/hooks/useVersaoAoFocar";
 import { listarRecomendacoes } from "@/services/relatorios";
-import { cores, fontes, raios } from "@/theme/tokens";
+import { familias, cores, fontes, raios } from "@/theme/tokens";
 
 export default function InicioResponsavel() {
   const { usuario, sair } = useSessao();
@@ -58,7 +58,7 @@ export default function InicioResponsavel() {
 
 const styles = StyleSheet.create({
   dicas: { backgroundColor: cores.superficieSuave, borderRadius: raios.md, padding: 12, gap: 6 },
-  dicasTitulo: { fontSize: fontes.legenda, fontWeight: "700", color: cores.primaria },
-  frase: { fontSize: fontes.corpo, color: cores.texto },
-  legenda: { fontSize: fontes.legenda, color: cores.textoSuave },
+  dicasTitulo: { fontSize: fontes.legenda, fontFamily: familias.negrito, color: cores.primaria },
+  frase: { fontFamily: familias.regular, fontSize: fontes.corpo, color: cores.texto },
+  legenda: { fontFamily: familias.regular, fontSize: fontes.legenda, color: cores.textoSuave },
 });

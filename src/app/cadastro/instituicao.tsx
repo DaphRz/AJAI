@@ -1,5 +1,5 @@
 // Inscrição da instituição (Passo 3.1). Fica PENDENTE até o administrador do AJAI aprovar;
-// ao aprovar, ganha o código que os professores informam no cadastro. Sem tela no Figma (passo 11).
+// ao aprovar, ganha o código que os professores informam no cadastro. Sem tela no Figma.
 import { FormularioCadastro } from "@/components";
 
 export default function CadastroInstituicao() {

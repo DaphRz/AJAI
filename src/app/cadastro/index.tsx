@@ -1,11 +1,11 @@
-// Cadastro › "Eu sou:" (Passo 3.1, RF01). Cada perfil cria a própria conta; sem tela no Figma
-// (a desenhar no passo 11). Sem "Ouvir ajuda" (regra das telas de login e cadastro).
+// Cadastro › "Eu sou:" (Passo 3.1, RF01). Cada perfil cria a própria conta; sem tela no Figma.
+// Sem "Ouvir ajuda" (regra das telas de login e cadastro).
 import { Ionicons } from "@expo/vector-icons";
 import { router, type Href } from "expo-router";
 import type { ComponentProps } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Botao, Logo, Subtitulo, Tela, Titulo } from "@/components";
-import { cores, fontes, raios, toqueMinimo } from "@/theme/tokens";
+import { familias, cores, fontes, raios, toqueMinimo } from "@/theme/tokens";
 
 interface Opcao {
   titulo: string;
@@ -70,6 +70,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  titulo: { fontSize: fontes.subtitulo, fontWeight: "800", color: cores.primaria },
-  descricao: { fontSize: fontes.legenda, color: cores.texto },
+  titulo: { fontSize: fontes.subtitulo, fontFamily: familias.extranegrito, color: cores.primaria },
+  descricao: { fontFamily: familias.regular, fontSize: fontes.legenda, color: cores.texto },
 });

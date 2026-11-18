@@ -46,18 +46,20 @@ Fontes de verdade, nesta ordem:
 | `server/src/progressao.ts` | Funções **puras** (sem I/O, sem imports) de nivelamento, progressão, dificuldades e próxima atividade, com testes (`npm test`). Regra nova vai aqui (inclusive a situação EM_DIA/ATENCAO/REFORCO e as recomendações do responsável, passo 8). |
 | `src/domain/modelos.ts` | Tipos do diagrama de classes. Mudou o diagrama? Mude aqui também. |
 | `src/data/mock.ts` | Dados de demonstração: **só o seed** (`server/db/seed.mjs`) lê. O app não importa mais. |
-| `src/theme/tokens.ts` | Cores, fontes e tamanhos do Figma. **Não use cor ou tamanho "solto"** nas telas. |
+| `src/theme/tokens.ts` | Cores, fontes (`familias` = Inter), tamanhos, cantos e margens do Figma. **Não use cor ou tamanho "solto"** nas telas. |
 | `src/services/narracao.ts` + `src/services/voz/` | Fachada de voz (`falar`/`pararFala`) e provedores (`ProvedorVoz`). **Telas nunca importam um provedor direto.** |
 | `server/src/` | API Fastify: `app.ts` (plugins e rotas), `banco.ts` (conexão `node:sqlite`, use `banco()`), `config.ts` (`server/.env`), `erros.ts`, `rotas/*.ts`. |
 | `server/db/` | Banco SQLite: `migrations/*.sql` (esquema), `seed.mjs` (dados iniciais, lê `src/data/mock.ts`), scripts `db:*`. |
 | `server/data/` | Arquivo do banco. **Ignorado pelo git**; nunca versionar. |
+| `assets/fonte/` | Vetor do símbolo do AJAI (Figma) e o script que gera ícone, ícone adaptativo, splash, favicon e `simbolo.png` (`python3 assets/fonte/gerar-icones.py assets/images`). |
 | `server/storage/audio/` | MP3 da narração (Azure). **Versionados** desde 18/11, para quem clona ouvir a voz sem a chave: o servidor acha o arquivo pelo nome (hash do texto + voz + velocidade + provedor). Gerou áudio novo com `npm run voz:preparar`? Faça commit dos MP3. |
 
 ## Regras obrigatórias de acessibilidade (o público depende disso)
 
 - Toda tela do **aluno** tem um `BotaoAudio` ("Ouvir ajuda"/"Ouvir instrução") com o texto da tela (RNF04). **Exceção:** as telas de login e cadastro **não** têm "Ouvir ajuda".
 - Botões com **texto escrito**, nunca só ícone (RNF03). Área de toque ≥ `toqueMinimo` (64).
-- **Não use emojis** na interface (nem como ícone, ilustração ou enfeite). Use ícones de biblioteca: **`@expo/vector-icons`** (padrão; instale com `npx expo install @expo/vector-icons`; Ionicons, MaterialIcons, Feather...) ou `lucide-react-native`. O `react-icons` **não serve**: é só para web (DOM) e não roda no React Native. Ícone decorativo ao lado de texto: `accessibilityElementsHidden` / `importantForAccessibility="no"`. Os emojis provisórios já saíram (09/11). As figuras das alternativas (`Alternativa.ilustracao`) guardam o **nome de um ícone do `MaterialCommunityIcons`** (ex.: `"home"`), nunca emoji, até as imagens do passo 11 (`urlImagem`).
+- **Não use emojis** na interface (nem como ícone, ilustração ou enfeite). Use ícones de biblioteca: **`@expo/vector-icons`** (padrão; instale com `npx expo install @expo/vector-icons`; Ionicons, MaterialIcons, Feather...) ou `lucide-react-native`. O `react-icons` **não serve**: é só para web (DOM) e não roda no React Native. Ícone decorativo ao lado de texto: `accessibilityElementsHidden` / `importantForAccessibility="no"`. Os emojis provisórios já saíram (09/11). Figuras das atividades: `urlImagem` (endereço completo da imagem) tem prioridade; sem ela, `Alternativa.ilustracao` guarda o **nome de um ícone do `MaterialCommunityIcons`** (ex.: `"home"`), nunca emoji.
+- **Fonte Inter**: cada peso é uma família. Em estilo de texto use `fontFamily: familias.regular | seminegrito | negrito | extranegrito | preto` (de `src/theme/tokens.ts`), **nunca `fontWeight`** (no Android ele não escolhe o arquivo da fonte e o texto sai na fonte do sistema). Estilo que só muda cor/tamanho por cima de outro não leva `fontFamily`, senão anula o peso do estilo de base.
 - Texto do aluno com no mínimo `fontes.corpo` (20). Títulos e enunciados maiores. O aluno pode aumentar a letra (passo 10): em tela do aluno e componente compartilhado, estilos com fonte usam `const criarEstilos = (fontes: Fontes) => StyleSheet.create({...})` + `const styles = useEstilos(criarEstilos)` (`src/context/preferencias.tsx`), nunca `fontes.*` direto num `StyleSheet` fixo.
 - Poucos elementos por tela, uma ação principal clara (RNF05, RNF07).
 - Mensagens curtas, positivas e sem jargão: "Muito bem!", "Vamos tentar de novo?" (RNF06, RNF15). Nunca "Erro", "Inválido", "Falha".
@@ -133,9 +135,12 @@ npm run db:reset            # recriar o banco SQLite com os dados de demonstraç
 npm run db:query            # tabelas e contagens (aceita SQL: ver seção Banco de dados)
 npm run server:dev          # sobe a API (GET http://localhost:3333/health)
 npm run typecheck           # tipos do app + servidor
-npm test                    # testes do servidor (node --test; banco temporário) e da voz do app (npm run app:test)
+npm test                    # tudo: servidor (node --test; banco temporário), voz do app (node --test) e telas (jest-expo)
+npm run app:test:telas      # só os testes de tela (jest-expo; src/testes/*.test.tsx)
 npm run voz:preparar        # gera os áudios das atividades (precisa da chave da Azure; ver README › Narração por voz)
 ```
+
+Testes de tela: arquivo `src/testes/*.test.tsx` (nunca em `src/app/`, que é só de rotas), com `renderRouter` de `expo-router/testing-library` e a API de mentira por `jest.mock("@/services/api")` (modelo: `src/testes/telaAtividade.test.tsx`). No Testing Library 14, `render` e `fireEvent` são assíncronos: sempre `await fireEvent.press(...)`. Comece o arquivo com `/// <reference types="jest" />` (o TypeScript 6 não carrega `@types/*` sozinho). Casos manuais: `docs/testes/casos-de-teste.md`.
 
 Antes de dizer que uma tarefa terminou: rode **lint, typecheck e `npm test`** (e `npm run db:reset` se mexeu em banco ou seed) e abra o fluxo afetado no app (usuários de demonstração no README, senha `demo1234`; o servidor precisa estar rodando).
 

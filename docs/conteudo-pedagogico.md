@@ -138,9 +138,9 @@ Exemplos:
 
 A regra antiga (nível da última pergunta acertada) deixava o aluno uma etapa abaixo e aceitava um nível com 1 acerto só. O app não mudou: ele continua parando no primeiro erro, e quem decide o nível é o servidor.
 
-## Imagens para a equipe de design (passo 11)
+## Imagens para a equipe de design
 
-Hoje as figuras são ícones provisórios (`Alternativa.ilustracao`). As imagens finais vão em `assets/images/atividades/` e entram por `urlImagem`. Formato sugerido: PNG quadrado 512 × 512, fundo transparente, desenho simples e realista (nada de estilo infantil), um objeto por imagem.
+Hoje as figuras são ícones provisórios (`Alternativa.ilustracao`). O app já mostra as imagens (18/11): basta preencher `urlImagem` no `src/data/mock.ts` com o endereço completo da imagem, na opção (figura da alternativa) ou na atividade (foto acima da palavra em destaque, ou acima da escrita/frase/texto), e rodar `npm run db:seed`. Sem `urlImagem`, continua o ícone. O servidor ainda não guarda nem serve os arquivos. Formato sugerido: PNG ou WebP quadrado 512 × 512, até 1 MB, desenho simples e realista (nada de estilo infantil), um objeto por imagem. Na tela, a figura da alternativa ocupa 108 × 96 e a foto da palavra 144 × 144 (medidas do Figma), cortadas para preencher.
 
 **Figuras das opções (nível 1):**
 

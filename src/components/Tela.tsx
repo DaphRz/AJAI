@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { cores, espacos } from "@/theme/tokens";
+import { cores, espacos, margensTela } from "@/theme/tokens";
 
 interface Props {
   children: ReactNode;
@@ -30,6 +30,13 @@ export function Tela({ children, rodape, rolavel = true }: Props) {
 const styles = StyleSheet.create({
   raiz: { flex: 1, backgroundColor: cores.fundo },
   rolagem: { flexGrow: 1 },
-  conteudo: { flex: 1, padding: espacos.lg, gap: espacos.md },
-  rodape: { paddingHorizontal: espacos.md, paddingBottom: espacos.md },
+  // Figma: 28 dos lados, 20 em cima e embaixo, 16 entre os blocos.
+  conteudo: {
+    flex: 1,
+    paddingHorizontal: margensTela.horizontal,
+    paddingVertical: margensTela.vertical,
+    gap: espacos.md,
+  },
+  // Figma "Ajuda por áudio": 24 dos lados e 18 em cima e embaixo.
+  rodape: { paddingHorizontal: margensTela.rodapeHorizontal, paddingVertical: margensTela.rodapeVertical },
 });

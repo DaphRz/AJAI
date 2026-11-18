@@ -22,7 +22,7 @@ import {
   type DadosAtividade,
   type NivelGestao,
 } from "@/services/cadastroAtividades";
-import { cores, fontes } from "@/theme/tokens";
+import { familias, cores, fontes } from "@/theme/tokens";
 import { Botao } from "./Botao";
 import { Campo } from "./Campo";
 import { Opcao } from "./Opcao";
@@ -189,7 +189,7 @@ function CartaoAtividade({
 interface Linha {
   texto: string;
   correta: boolean;
-  /** Ícone provisório (passo 11): não aparece no formulário, mas é mantido ao editar. */
+  /** Ícone provisório: não aparece no formulário, mas é mantido ao editar. */
   ilustracao?: string;
 }
 
@@ -437,9 +437,9 @@ function Formulario({ area, niveis, atividade }: { area: AreaCadastro; niveis: N
 }
 
 const styles = StyleSheet.create({
-  titulo: { fontSize: fontes.subtitulo, fontWeight: "800", color: cores.texto },
-  legenda: { fontSize: fontes.legenda, color: cores.textoSuave },
-  rotulo: { fontSize: fontes.corpo, fontWeight: "700", color: cores.texto },
+  titulo: { fontSize: fontes.subtitulo, fontFamily: familias.extranegrito, color: cores.texto },
+  legenda: { fontFamily: familias.regular, fontSize: fontes.legenda, color: cores.textoSuave },
+  rotulo: { fontSize: fontes.corpo, fontFamily: familias.negrito, color: cores.texto },
   opcoes: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   botoes: { gap: 8 },
   linha: { gap: 8, paddingVertical: 4 },

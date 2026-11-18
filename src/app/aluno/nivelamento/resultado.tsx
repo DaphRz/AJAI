@@ -23,7 +23,7 @@ export default function NivelamentoResultado() {
               <Titulo>{nome}</Titulo>
               {nivel ? <Corpo>{nivel.descricao}</Corpo> : null}
             </Cartao>
-            <Botao titulo="Começar →" grande onPress={() => router.replace("/aluno")} />
+            <Botao titulo="Começar" seta grande onPress={() => router.replace("/aluno")} />
           </Tela>
         );
       }}

@@ -20,7 +20,7 @@ import {
   type RelatorioAluno,
   type RespostaParaCorrigir,
 } from "@/services/relatorios";
-import { cores, fontes, raios } from "@/theme/tokens";
+import { familias, cores, fontes, raios } from "@/theme/tokens";
 
 /** Respostas mostradas antes de "Ver mais respostas". */
 const RESPOSTAS_INICIAIS = 5;
@@ -215,13 +215,13 @@ function CartaoResposta({ resposta: r, aoCorrigir }: { resposta: RespostaParaCor
 }
 
 const styles = StyleSheet.create({
-  rotulo: { fontSize: fontes.legenda, color: cores.textoSuave, fontWeight: "600" },
-  valor: { fontSize: fontes.titulo, fontWeight: "800", color: cores.primaria },
-  item: { fontSize: fontes.corpo, color: cores.texto },
-  legenda: { fontSize: fontes.legenda, color: cores.textoSuave },
-  aviso: { fontSize: 14, color: cores.textoSuave, textAlign: "center" },
+  rotulo: { fontSize: fontes.legenda, color: cores.textoSuave, fontFamily: familias.seminegrito },
+  valor: { fontSize: fontes.titulo, fontFamily: familias.extranegrito, color: cores.primaria },
+  item: { fontFamily: familias.regular, fontSize: fontes.corpo, color: cores.texto },
+  legenda: { fontFamily: familias.regular, fontSize: fontes.legenda, color: cores.textoSuave },
+  aviso: { fontFamily: familias.regular, fontSize: 14, color: cores.textoSuave, textAlign: "center" },
   selo: { alignSelf: "flex-start", borderRadius: raios.md, paddingHorizontal: 10, paddingVertical: 4 },
   seloCerta: { backgroundColor: cores.superficieSuave },
   seloErrada: { backgroundColor: cores.atencaoFundo },
-  seloTexto: { fontSize: fontes.legenda, fontWeight: "700" },
+  seloTexto: { fontSize: fontes.legenda, fontFamily: familias.negrito },
 });

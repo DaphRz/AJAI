@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import type { ComponentProps } from "react";
 import type { ColorValue } from "react-native";
-import { cores } from "@/theme/tokens";
+import { familias, cores } from "@/theme/tokens";
 
 /** Ícone da aba (a aba já tem o título escrito; o ícone é só decorativo). */
 function icone(nome: ComponentProps<typeof Ionicons>["name"]) {
@@ -25,7 +25,7 @@ export default function AbasProfessor() {
         headerShown: false,
         tabBarActiveTintColor: cores.primaria,
         tabBarInactiveTintColor: cores.textoSuave,
-        tabBarLabelStyle: { fontSize: 14, fontWeight: "600" },
+        tabBarLabelStyle: { fontSize: 14, fontFamily: familias.seminegrito },
         tabBarStyle: { minHeight: 72, backgroundColor: cores.superficie },
         sceneStyle: { backgroundColor: cores.fundo },
       }}

@@ -10,7 +10,7 @@ import { useCarregar } from "@/hooks/useCarregar";
 import { useVersaoAoFocar } from "@/hooks/useVersaoAoFocar";
 import { mensagemDeErro } from "@/services/api";
 import { editarNivel, incluirNivel, listarNiveisGestao, type DadosNivel, type NivelGestao } from "@/services/cadastroAtividades";
-import { cores, fontes } from "@/theme/tokens";
+import { familias, cores, fontes } from "@/theme/tokens";
 
 type Mensagem = { texto: string; tipo: "atencao" | "sucesso" } | null;
 
@@ -168,7 +168,7 @@ function CartaoNivel({ nivel, executar }: { nivel: NivelGestao; executar: (acao:
 }
 
 const styles = StyleSheet.create({
-  titulo: { fontSize: fontes.subtitulo, fontWeight: "800", color: cores.texto },
-  legenda: { fontSize: fontes.legenda, color: cores.textoSuave },
+  titulo: { fontSize: fontes.subtitulo, fontFamily: familias.extranegrito, color: cores.texto },
+  legenda: { fontFamily: familias.regular, fontSize: fontes.legenda, color: cores.textoSuave },
   botoes: { gap: 8 },
 });

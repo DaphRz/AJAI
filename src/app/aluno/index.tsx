@@ -1,5 +1,4 @@
 // Figma: "AJAI · Home do aluno"  |  RF15 – ofensiva e frequência; RF19, RF22 – continuidade do aprendizado
-import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
@@ -10,7 +9,7 @@ import { mensagemDeErro } from "@/services/api";
 import { textoDaOfensiva, textoDaSemana, visualizarProgresso } from "@/services/progresso";
 import { escolherProximaAtividade } from "@/services/sessaoDeEstudo";
 import { listarConvitesDoAluno } from "@/services/vinculos";
-import { cores, type Fontes } from "@/theme/tokens";
+import { familias, cores, type Fontes } from "@/theme/tokens";
 import { useEstilos } from "@/context/preferencias";
 
 /**
@@ -51,7 +50,7 @@ export default function HomeAluno() {
           try {
             const proxima = await escolherProximaAtividade();
             if (proxima === undefined) {
-              // TODO (passo 11): tela própria de "nível sem atividades".
+              // TODO: tela própria de "nível sem atividades" (o Figma tem o frame).
               setAviso("Esta etapa ainda não tem atividades. Fale com seu professor.");
             } else {
               router.push({ pathname: "/aluno/atividade/[id]", params: { id: String(proxima), concluidas: "0" } });
@@ -72,32 +71,37 @@ export default function HomeAluno() {
               />
             }
           >
-            <Logo />
-            <View>
+            {/* Figma "Marca e minha conta" */}
+            <View style={styles.cabecalho}>
+              <Logo />
+              <View style={styles.conta}>
+                <Botao titulo="Minha conta" variante="secundario" compacto onPress={() => router.push("/aluno/conta")} />
+              </View>
+            </View>
+            <View style={styles.saudacao}>
               <Titulo>Olá, {primeiroNome}!</Titulo>
               <Subtitulo>Vamos aprender?</Subtitulo>
             </View>
 
             <Cartao destaque>
-              <Text style={styles.rotulo}>Etapa</Text>
-              <Text style={styles.valor}>{nivel?.nome ?? "–"}</Text>
-              <Text style={styles.legenda}>
+              <View style={styles.etapa}>
+                <Text style={styles.rotulo}>Etapa</Text>
+                <Text style={styles.valor}>{nivel?.nome ?? "–"}</Text>
+              </View>
+              <Text style={[styles.legenda, styles.centro]}>
                 {etapasConcluidas === 0
                   ? "Você está começando. Vamos lá!"
                   : `${etapasConcluidas} etapa${etapasConcluidas > 1 ? "s" : ""} concluída${etapasConcluidas > 1 ? "s" : ""}. Muito bem!`}
               </Text>
             </Cartao>
 
-            <Botao titulo={indo ? "Carregando..." : "CONTINUAR →"} grande desabilitado={indo} onPress={continuar} />
+            <Botao titulo={indo ? "Carregando..." : "CONTINUAR"} seta grande desabilitado={indo} onPress={continuar} />
             {aviso ? <Aviso>{aviso}</Aviso> : null}
 
             {/* RF15: ofensiva calculada no servidor (dias seguidos, fuso America/Sao_Paulo). */}
             <Cartao>
-              <Text style={styles.rotulo}>Ofensiva</Text>
-              <View style={styles.linha}>
-                <Ionicons name="flame" size={32} color={cores.primaria} accessibilityElementsHidden importantForAccessibility="no" />
-                <Text style={[styles.valor, styles.ofensiva]}>{ofensiva.numero}</Text>
-              </View>
+              <Text style={styles.rotuloOfensiva}>Ofensiva</Text>
+              <Text style={styles.ofensiva}>{ofensiva.numero}</Text>
               <Text style={styles.legenda}>{ofensiva.mensagem}</Text>
               <Text style={styles.legenda}>{semana}</Text>
             </Cartao>
@@ -111,9 +115,9 @@ export default function HomeAluno() {
               </Cartao>
             ) : null}
 
-            <Botao titulo="Ver meu progresso" variante="secundario" onPress={() => router.push("/aluno/progresso")} />
+            <Botao titulo="Meu progresso" variante="secundario" onPress={() => router.push("/aluno/progresso")} />
+            {/* Fora do Figma (passo 10): atalho para as preferências de voz e letra. */}
             <Botao titulo="Voz e letra" variante="secundario" onPress={() => router.push("/aluno/preferencias")} />
-            <Botao titulo="Minha conta" variante="link" onPress={() => router.push("/aluno/conta")} />
           </Tela>
         );
       }}
@@ -121,11 +125,17 @@ export default function HomeAluno() {
   );
 }
 
+// Figma "Home do aluno": rótulo "Etapa" 20 seminegrito; valores 24; "12 dias seguidos" em verde e negrito.
 const criarEstilos = (fontes: Fontes) =>
   StyleSheet.create({
-    rotulo: { fontSize: fontes.legenda, color: cores.textoSuave, fontWeight: "600" },
-    valor: { fontSize: fontes.subtitulo, fontWeight: "800", color: cores.texto },
-    legenda: { fontSize: fontes.corpo, color: cores.texto },
-    linha: { flexDirection: "row", alignItems: "center", gap: 8 },
-    ofensiva: { color: cores.primaria, fontSize: fontes.titulo, flexShrink: 1 },
+    cabecalho: { flexDirection: "row", alignItems: "center", gap: 12 },
+    conta: { flex: 1 },
+    saudacao: { gap: 8 },
+    etapa: { gap: 4, marginBottom: 12 },
+    rotulo: { fontSize: fontes.corpo, color: cores.textoSuave, fontFamily: familias.seminegrito },
+    valor: { fontSize: fontes.subtitulo, fontFamily: familias.seminegrito, color: cores.texto },
+    legenda: { fontFamily: familias.regular, fontSize: fontes.corpo, color: cores.texto },
+    centro: { textAlign: "center" },
+    rotuloOfensiva: { fontSize: fontes.corpo, fontFamily: familias.seminegrito, color: cores.texto },
+    ofensiva: { fontSize: fontes.subtitulo, fontFamily: familias.negrito, color: cores.primaria },
   });

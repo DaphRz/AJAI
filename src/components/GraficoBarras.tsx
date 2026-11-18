@@ -4,7 +4,7 @@
 // ficam com largura fixa e o gráfico rola para o lado, para os números não ficarem espremidos.
 import { useRef } from "react";
 import { ScrollView, StyleSheet, Text, View, type ScrollViewInstance } from "react-native";
-import { cores, fontes, raios } from "@/theme/tokens";
+import { familias, cores, fontes, raios } from "@/theme/tokens";
 
 export interface Barra {
   /** Texto embaixo da barra (ex.: "14/11"). */
@@ -79,8 +79,8 @@ const styles = StyleSheet.create({
   colunas: { flexDirection: "row", gap: 4 },
   colunaFlex: { flex: 1 },
   area: { justifyContent: "flex-end", alignItems: "stretch", borderBottomWidth: 2, borderColor: cores.borda },
-  numero: { fontSize: 13, fontWeight: "800", color: cores.texto, textAlign: "center", marginBottom: 2 },
+  numero: { fontSize: 13, fontFamily: familias.extranegrito, color: cores.texto, textAlign: "center", marginBottom: 2 },
   barra: { borderTopLeftRadius: raios.md / 3, borderTopRightRadius: raios.md / 3, marginHorizontal: 2 },
-  rotulo: { fontSize: 12, color: cores.textoSuave, textAlign: "center", marginTop: 4 },
-  dica: { fontSize: fontes.legenda, color: cores.textoSuave, marginTop: 4 },
+  rotulo: { fontFamily: familias.regular, fontSize: 12, color: cores.textoSuave, textAlign: "center", marginTop: 4 },
+  dica: { fontFamily: familias.regular, fontSize: fontes.legenda, color: cores.textoSuave, marginTop: 4 },
 });

@@ -9,7 +9,7 @@ import { Aviso, Botao, Cartao, CartaoDecisao, Corpo, Logo, Subtitulo, Tela, Titu
 import { useSessao } from "@/context/sessao";
 import { useCarregar } from "@/hooks/useCarregar";
 import { decidirInstituicao, formatarCnpj, listarInstituicoes } from "@/services/instituicoes";
-import { cores, fontes } from "@/theme/tokens";
+import { familias, cores, fontes } from "@/theme/tokens";
 
 export default function InicioAdmin() {
   const { usuario, sair } = useSessao();
@@ -93,5 +93,5 @@ export default function InicioAdmin() {
 }
 
 const styles = StyleSheet.create({
-  nome: { fontSize: fontes.subtitulo, fontWeight: "700", color: cores.texto },
+  nome: { fontSize: fontes.subtitulo, fontFamily: familias.negrito, color: cores.texto },
 });

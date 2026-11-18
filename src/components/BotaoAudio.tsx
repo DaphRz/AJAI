@@ -1,10 +1,10 @@
-import { Ionicons } from "@expo/vector-icons";
+import { Feather } from "@expo/vector-icons";
 import { useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useEstilos } from "@/context/preferencias";
 import { falar, pararFala } from "@/services/narracao";
-import { cores, raios, toqueMinimo, type Fontes } from "@/theme/tokens";
+import { alturaBotaoGrande, cores, familias, raios, type Fontes } from "@/theme/tokens";
 
 interface Props {
   /** Texto que será narrado ao tocar. */
@@ -49,9 +49,9 @@ export function BotaoAudio({ texto, titulo = "Ouvir ajuda" }: Props) {
       onPress={tocar}
       style={({ pressed }) => [styles.cartao, pressed && { opacity: 0.8 }]}
     >
-      <Ionicons
-        name={falando ? "stop-circle" : "volume-high"}
-        size={36}
+      <Feather
+        name={falando ? "stop-circle" : "volume-2"}
+        size={44}
         color={cores.texto}
         accessibilityElementsHidden
         importantForAccessibility="no"
@@ -66,19 +66,19 @@ export function BotaoAudio({ texto, titulo = "Ouvir ajuda" }: Props) {
 
 const criarEstilos = (fontes: Fontes) =>
   StyleSheet.create({
+    // Figma "Botão ouvir ajuda": 104 de altura, padding 20, ícone 44 e espaço de 18.
     cartao: {
-      minHeight: toqueMinimo + 16,
+      minHeight: alturaBotaoGrande + 24,
       flexDirection: "row",
       alignItems: "center",
-      gap: 16,
-      paddingHorizontal: 20,
-      paddingVertical: 8,
+      gap: 18,
+      padding: 20,
       backgroundColor: cores.audioFundo,
       borderColor: cores.audioBorda,
       borderWidth: 2,
-      borderRadius: raios.lg,
+      borderRadius: raios.botao,
     },
-    textos: { flexShrink: 1 },
-    titulo: { fontSize: fontes.subtitulo, fontWeight: "700", color: cores.texto },
-    legenda: { fontSize: fontes.legenda, color: cores.texto },
+    textos: { flex: 1, gap: 4 },
+    titulo: { fontSize: fontes.titulo, fontFamily: familias.negrito, color: cores.texto },
+    legenda: { fontSize: fontes.corpo, fontFamily: familias.regular, color: cores.texto },
   });

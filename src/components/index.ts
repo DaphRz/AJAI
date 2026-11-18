@@ -11,4 +11,4 @@ export { Opcao } from "./Opcao";
 export { SeletorPeriodo } from "./SeletorPeriodo";
 export { Tela } from "./Tela";
 export { TelaTrocarSenha } from "./TelaTrocarSenha";
-export { Aviso, Cartao, Corpo, Logo, Subtitulo, Titulo } from "./Textos";
+export { Aviso, Cartao, Corpo, Logo, SimboloAjai, Subtitulo, Titulo } from "./Textos";

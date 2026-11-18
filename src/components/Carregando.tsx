@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import type { Carregamento } from "@/hooks/useCarregar";
-import { cores, raios, toqueMinimo, type Fontes } from "@/theme/tokens";
+import { familias, cores, raios, toqueMinimo, type Fontes } from "@/theme/tokens";
 import { BotaoAudio } from "./BotaoAudio";
 import { Tela } from "./Tela";
 import { useEstilos } from "@/context/preferencias";
@@ -52,7 +52,7 @@ export function Carregando<T>({ estado, children, comAudio = false }: Props<T>) 
 const criarEstilos = (fontes: Fontes) =>
   StyleSheet.create({
     centro: { flex: 1, alignItems: "center", justifyContent: "center", gap: 16 },
-    texto: { fontSize: fontes.subtitulo, color: cores.texto, fontWeight: "600" },
+    texto: { fontSize: fontes.subtitulo, color: cores.texto, fontFamily: familias.seminegrito },
     falha: {
       minHeight: toqueMinimo * 2,
       justifyContent: "center",
@@ -62,5 +62,5 @@ const criarEstilos = (fontes: Fontes) =>
       borderColor: cores.primaria,
       backgroundColor: cores.superficie,
     },
-    textoFalha: { fontSize: fontes.subtitulo, color: cores.texto, fontWeight: "700", textAlign: "center" },
+    textoFalha: { fontSize: fontes.subtitulo, color: cores.texto, fontFamily: familias.negrito, textAlign: "center" },
   });

@@ -10,7 +10,7 @@ import { useVersaoAoFocar } from "@/hooks/useVersaoAoFocar";
 import { mensagemDeErro } from "@/services/api";
 import type { AlunoCurto } from "@/services/relatorios";
 import { editarTurma, excluirTurma, incluirTurma, listarTurmas, mudarTurmaDoAluno, type Turma } from "@/services/turmas";
-import { cores, fontes } from "@/theme/tokens";
+import { familias, cores, fontes } from "@/theme/tokens";
 
 type Mensagem = { texto: string; tipo: "atencao" | "sucesso" } | null;
 /** Faz a ação na API; devolve true se deu certo. */
@@ -213,10 +213,10 @@ function LinhaAluno({
 }
 
 const styles = StyleSheet.create({
-  titulo: { fontSize: fontes.subtitulo, fontWeight: "800", color: cores.texto },
-  legenda: { fontSize: fontes.legenda, color: cores.textoSuave },
+  titulo: { fontSize: fontes.subtitulo, fontFamily: familias.extranegrito, color: cores.texto },
+  legenda: { fontFamily: familias.regular, fontSize: fontes.legenda, color: cores.textoSuave },
   botoes: { gap: 8 },
   aluno: { gap: 8, paddingTop: 12, borderTopWidth: 1, borderColor: cores.borda },
-  nome: { fontSize: fontes.corpo, fontWeight: "700", color: cores.texto },
+  nome: { fontSize: fontes.corpo, fontFamily: familias.negrito, color: cores.texto },
   opcoes: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
 });

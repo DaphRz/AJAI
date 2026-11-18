@@ -15,7 +15,7 @@ import {
   listarTurmasDaInstituicao,
   type TurmaDaInstituicao,
 } from "@/services/instituicoes";
-import { cores, fontes } from "@/theme/tokens";
+import { familias, cores, fontes } from "@/theme/tokens";
 
 type Mensagem = { texto: string; tipo: "atencao" | "sucesso" } | null;
 /** Faz a ação na API; devolve true se deu certo. */
@@ -178,9 +178,9 @@ function CartaoTurma({ turma, professores, executar }: { turma: TurmaDaInstituic
 }
 
 const styles = StyleSheet.create({
-  titulo: { fontSize: fontes.subtitulo, fontWeight: "800", color: cores.texto },
-  legenda: { fontSize: fontes.legenda, color: cores.textoSuave },
-  rotulo: { fontSize: fontes.corpo, fontWeight: "700", color: cores.texto },
+  titulo: { fontSize: fontes.subtitulo, fontFamily: familias.extranegrito, color: cores.texto },
+  legenda: { fontFamily: familias.regular, fontSize: fontes.legenda, color: cores.textoSuave },
+  rotulo: { fontSize: fontes.corpo, fontFamily: familias.negrito, color: cores.texto },
   botoes: { gap: 8 },
   opcoes: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
 });

@@ -13,7 +13,7 @@ import {
   type ProgressoDoAluno,
   type StatusEtapa,
 } from "@/services/progresso";
-import { cores, raios, type Fontes } from "@/theme/tokens";
+import { familias, cores, raios, type Fontes } from "@/theme/tokens";
 import { useEstilos } from "@/context/preferencias";
 
 export default function Progresso() {
@@ -162,17 +162,17 @@ function ConteudoProgresso({
 
 const criarEstilos = (fontes: Fontes) =>
   StyleSheet.create({
-    rotulo: { fontSize: fontes.legenda, color: cores.textoSuave, fontWeight: "600" },
-    texto: { fontSize: fontes.corpo, color: cores.texto, flexShrink: 1 },
-    valor: { fontSize: fontes.tituloGrande, fontWeight: "800", color: cores.primaria },
-    destaque: { fontSize: fontes.subtitulo, fontWeight: "800", color: cores.primaria, flexShrink: 1 },
+    rotulo: { fontSize: fontes.legenda, color: cores.textoSuave, fontFamily: familias.seminegrito },
+    texto: { fontFamily: familias.regular, fontSize: fontes.corpo, color: cores.texto, flexShrink: 1 },
+    valor: { fontSize: fontes.tituloGrande, fontFamily: familias.extranegrito, color: cores.primaria },
+    destaque: { fontSize: fontes.subtitulo, fontFamily: familias.extranegrito, color: cores.primaria, flexShrink: 1 },
     linha: { flexDirection: "row", alignItems: "center", gap: 8 },
     trilha: { gap: 4, marginTop: 8 },
     etapa: { flexDirection: "row", alignItems: "center", gap: 12, padding: 10, borderRadius: raios.md },
     etapaAtual: { backgroundColor: cores.superficie, borderWidth: 2, borderColor: cores.primaria },
     etapaTextos: { flexShrink: 1 },
-    etapaNome: { fontSize: fontes.corpo, fontWeight: "700", color: cores.texto },
-    etapaStatus: { fontSize: fontes.legenda, color: cores.textoSuave, fontWeight: "600" },
+    etapaNome: { fontSize: fontes.corpo, fontFamily: familias.negrito, color: cores.texto },
+    etapaStatus: { fontSize: fontes.legenda, color: cores.textoSuave, fontFamily: familias.seminegrito },
     numeros: { flexDirection: "row", gap: 12 },
     coluna: { flex: 1 },
     barra: { height: 16, borderRadius: 8, backgroundColor: cores.superficieSuave, overflow: "hidden" },

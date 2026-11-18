@@ -1,6 +1,6 @@
 // Área da instituição (Passo 3.1): mostra o código para os professores e aprova ou recusa os
 // professores que se cadastraram com ele. Só depois que o AJAI aprovou a instituição (o _layout
-// manda para /espera antes disso). "Turmas" (passo 8): cria turmas e escolhe o professor. Sem tela no Figma (a desenhar no passo 11).
+// manda para /espera antes disso). "Turmas" (passo 8): cria turmas e escolhe o professor. Sem tela no Figma.
 import { router } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, Text } from "react-native";
@@ -12,7 +12,7 @@ import {
   listarProfessoresDaInstituicao,
   visualizarMinhaInstituicao,
 } from "@/services/instituicoes";
-import { cores, fontes } from "@/theme/tokens";
+import { familias, cores, fontes } from "@/theme/tokens";
 
 async function carregar() {
   const [instituicao, professores] = await Promise.all([visualizarMinhaInstituicao(), listarProfessoresDaInstituicao()]);
@@ -97,7 +97,7 @@ export default function InicioInstituicao() {
 }
 
 const styles = StyleSheet.create({
-  rotulo: { fontSize: fontes.legenda, color: cores.textoSuave, fontWeight: "600" },
-  codigo: { fontSize: fontes.palavraDestaque, fontWeight: "800", color: cores.primaria, letterSpacing: 4 },
-  nome: { fontSize: fontes.subtitulo, fontWeight: "700", color: cores.texto },
+  rotulo: { fontSize: fontes.legenda, color: cores.textoSuave, fontFamily: familias.seminegrito },
+  codigo: { fontSize: fontes.palavraDestaque, fontFamily: familias.extranegrito, color: cores.primaria, letterSpacing: 4 },
+  nome: { fontSize: fontes.subtitulo, fontFamily: familias.negrito, color: cores.texto },
 });

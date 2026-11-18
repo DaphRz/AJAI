@@ -12,7 +12,7 @@ import { concluirNivelamento, type RespostaDoNivelamento } from "@/services/alun
 import { mensagemDeErro } from "@/services/api";
 import { atividadesDoNivelamento } from "@/services/atividades";
 import { corrigirPerguntaDoNivelamento } from "@/services/respostas";
-import { cores, raios, type Fontes } from "@/theme/tokens";
+import { familias, cores, raios, type Fontes } from "@/theme/tokens";
 import { useEstilos } from "@/context/preferencias";
 
 export default function NivelamentoPergunta() {
@@ -122,7 +122,7 @@ function Perguntas({ perguntas }: { perguntas: AtividadeDoAluno[] }) {
 
 const criarEstilos = (fontes: Fontes) =>
   StyleSheet.create({
-    etapa: { fontSize: fontes.corpo, color: cores.texto, fontWeight: "700", textAlign: "center" },
+    etapa: { fontSize: fontes.corpo, color: cores.texto, fontFamily: familias.negrito, textAlign: "center" },
     barra: { height: 12, borderRadius: raios.md, backgroundColor: cores.superficieSuave, overflow: "hidden" },
     preenchido: { height: 12, borderRadius: raios.md, backgroundColor: cores.primaria },
   });

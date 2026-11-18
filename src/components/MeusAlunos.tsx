@@ -7,7 +7,7 @@ import type { StatusVinculo } from "@/domain/modelos";
 import { useCarregar } from "@/hooks/useCarregar";
 import { mensagemDeErro } from "@/services/api";
 import { convidarAluno, desfazerVinculo, listarMeusAlunos, type VinculoDoAcompanhante } from "@/services/vinculos";
-import { cores, fontes } from "@/theme/tokens";
+import { familias, cores, fontes } from "@/theme/tokens";
 import { Botao } from "./Botao";
 import { Campo } from "./Campo";
 import { Aviso, Cartao, Corpo, Subtitulo } from "./Textos";
@@ -129,7 +129,7 @@ export function MeusAlunos({ extraDoAluno, aoMudar }: Props = {}) {
 }
 
 const styles = StyleSheet.create({
-  nome: { fontSize: fontes.subtitulo, fontWeight: "700", color: cores.texto },
+  nome: { fontSize: fontes.subtitulo, fontFamily: familias.negrito, color: cores.texto },
   linha: { flexDirection: "row", alignItems: "center", gap: 8 },
-  status: { fontSize: fontes.corpo, color: cores.textoSuave, fontWeight: "600" },
+  status: { fontSize: fontes.corpo, color: cores.textoSuave, fontFamily: familias.seminegrito },
 });

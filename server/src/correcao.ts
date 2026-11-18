@@ -1,6 +1,6 @@
 // Correção automática da resposta do aluno (RF12): Resposta.CorrigirAutomaticamente.
 // Fica no servidor porque o app nunca recebe o gabarito (respostaCorreta / Alternativa.correta).
-// Função pura: sem banco e sem Fastify, fácil de testar (passo 12).
+// Função pura: sem banco e sem Fastify, fácil de testar (passo 11).
 
 /** Deixa o texto comparável: sem acentos, sem diferença de maiúsculas e sem espaços sobrando. */
 export function normalizarResposta(texto: string): string {

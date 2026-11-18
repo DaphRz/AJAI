@@ -1,6 +1,6 @@
 // Aluno › Quem me acompanha (Passo 3.1). Convites de professor ou responsável (Aceitar / Recusar)
 // e quem já acompanha (Desfazer). Só depois do aceite a pessoa vê o progresso do aluno.
-// Sem tela no Figma (a desenhar no passo 11).
+// Sem tela no Figma.
 import { router } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, Text } from "react-native";
@@ -13,7 +13,7 @@ import {
   listarConvitesDoAluno,
   responderConvite,
 } from "@/services/vinculos";
-import { cores, type Fontes } from "@/theme/tokens";
+import { familias, cores, type Fontes } from "@/theme/tokens";
 import { useEstilos } from "@/context/preferencias";
 
 export default function Acompanhamento() {
@@ -105,5 +105,5 @@ export default function Acompanhamento() {
 
 const criarEstilos = (fontes: Fontes) =>
   StyleSheet.create({
-    nome: { fontSize: fontes.subtitulo, fontWeight: "700", color: cores.texto },
+    nome: { fontSize: fontes.subtitulo, fontFamily: familias.negrito, color: cores.texto },
   });

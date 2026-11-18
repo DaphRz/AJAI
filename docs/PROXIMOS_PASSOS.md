@@ -44,16 +44,14 @@ Legenda: ⬜ a fazer · 🟡 em andamento · ✅ feito
 | 8 | Área do professor e do responsável — feito | 15/11 | 5, 3.1 |
 | 9 | Cadastro de atividades (administrador e professor) e níveis (administrador) — feito | 15/11 | 2, 3.1 |
 | 10 | Narração por voz (Azure) e preferências — feito | 15/11 | 1 |
-| 11 | Ajuste ao Figma e recursos visuais | 16/11 | — |
-| 12 | Testes automatizados | 16/11 | 5, 3.1 |
-| 13 | Segurança e privacidade (LGPD) | 16/11 | 3.1 |
-| 14 | Correção de bugs e polimento | 16/11 | 7, 8 |
-| 15 | Documentação final (PDF, APF, README) | 16/11 | 14 |
-| 16 | Preparar a apresentação e a demo | 17/11 | 15 |
+| 11 | Testes automatizados — feito | 16/11 | 5, 3.1 |
+| 12 | Segurança e privacidade (LGPD) | 16/11 | 3.1 |
+| 13 | Correção de bugs e polimento | 16/11 | 7, 8 |
+| 14 | Documentação final (PDF, APF, README) | 16/11 | 13 |
 
-Em 14/11 a ordem dos passos mudou e **os passos foram renumerados na ordem de execução** (a numeração antiga de 6 a 17 não vale mais; as referências no README, no AGENTS.md e nos comentários do código foram atualizadas). Os passos 7 e 8 (home do aluno e área do professor) usam as telas provisórias, e o ajuste ao Figma fica no passo 11. As telas que não têm frame no Figma não serão desenhadas: seguem o padrão das já desenhadas. O antigo passo de testes integrados e de usabilidade foi **retirado**; os casos manuais ficam no passo 12 e a correção de bugs no passo 14. Os prazos foram recalculados a partir de 14/11, mantendo a entrega em **17/11**; o dia 16/11 está cheio, então dividam os passos entre as pessoas (todos desenvolvem).
+Em 14/11 a ordem dos passos mudou e **os passos foram renumerados na ordem de execução** (a numeração antiga de 6 a 17 não vale mais; as referências no README, no AGENTS.md e nos comentários do código foram atualizadas). Os passos 7 e 8 (home do aluno e área do professor) usam as telas provisórias, e o ajuste ao Figma foi feito em parte em 18/11 (tokens, fonte Inter, componentes, Splash, Home do aluno, ícone e splash). As telas que não têm frame no Figma não serão desenhadas: seguem o padrão das já desenhadas. O antigo passo de testes integrados e de usabilidade foi **retirado**; os casos manuais ficam no passo 11 e a correção de bugs no passo 13. Em 18/11 o passo de recursos visuais (antigo 11) e o de apresentação (antigo 16) **saíram do roteiro**, e os passos 12 a 15 viraram 11 a 14. Os prazos foram recalculados a partir de 14/11, mantendo a entrega em **17/11**; o dia 16/11 está cheio, então dividam os passos entre as pessoas (todos desenvolvem).
 
-Sprints da documentação: **Sprint 3** vai até 10/11 (passos 0–6), **Sprint 4** de 10/11 a 17/11 (passos 7–16). Os passos 0 a 2 estavam atrasados em relação ao cronograma original (eram da Sprint 1) e foram concluídos em 05/11.
+Sprints da documentação: **Sprint 3** vai até 10/11 (passos 0–6), **Sprint 4** de 10/11 a 17/11 (passos 7–14). Os passos 0 a 2 estavam atrasados em relação ao cronograma original (eram da Sprint 1) e foram concluídos em 05/11.
 
 ---
 
@@ -99,7 +97,7 @@ Sprints da documentação: **Sprint 3** vai até 10/11 (passos 0–6), **Sprint 
 **Observações:**
 - o painel de Acompanhamento ainda lê `mock.ts`, então o aluno novo só aparece em Conta › Contas dos alunos até o passo 8;
 - o nível do aluno novo só vai para o servidor no passo 5;
-- depois de trocar a senha, os tokens antigos continuam valendo até vencer (passo 13).
+- depois de trocar a senha, os tokens antigos continuam valendo até vencer (passo 12).
 
 ---
 
@@ -190,7 +188,7 @@ O "Ouvir instrução" também lê as opções. Enquanto o servidor corrige, a te
 - lint, typecheck (app e servidor), `npx expo export -p web` e `npm run db:reset` passam.
 
 **Observações:**
-- na tela "Formar palavra", a **foto** da palavra (a casa) ainda não aparece: vem com as imagens do passo 11, usando `Atividade.urlImagem`, que já existe no banco;
+- na tela "Formar palavra", a **foto** da palavra (a casa) ainda não aparece: desde 18/11 o app mostra `Atividade.urlImagem`, mas ainda não há imagens;
 - respostas e subida de nível ficam só na memória do app até o passo 5: ao reabrir o app, o aluno novo refaz o nivelamento;
 - `POST /atividades/:id/corrigir` é provisória e sai no passo 5;
 - PALAVRA usa as alternativas como peças (várias `correta`), o que muda a validação do passo 9.
@@ -233,12 +231,12 @@ O "Ouvir instrução" também lê as opções. Enquanto o servidor corrige, a te
 **Feito em 14/11.** O banco tem **35 atividades, 7 por nível**, todas do cotidiano adulto (ônibus, remédio, conta de luz, mercado, placa, documento, receita, mensagem), aprovadas pela equipe sem correções. Tabelas, critérios, nivelamento e lista de imagens: [`docs/conteudo-pedagogico.md`](conteudo-pedagogico.md).
 - **`mock.ts`:** as atividades são criadas pelo helper `atividade()`. Ele numera as alternativas, tira o gabarito das opções e **faz o seed parar** se uma múltipla escolha não tiver exatamente 1 correta, se as peças de PALAVRA não formarem a palavra ou se uma ESCRITA vier sem resposta. Os ids 1 a 7 continuam os mesmos, mas a 1 virou "Banco" (era "Bola") e a 3 virou "BONÉ" (era "BOLA").
 - **`conteudo` padronizado:** "Letra B", "Sílaba BO", "Palavra CASA" / "Escrita PÃO", "Frase: horário" e "Texto: achar informação" / "entender o objetivo" / "tirar conclusão".
-- **RF05 e RF11:** **sem tipo novo**. Letra-som = LETRA ("começa com o som da letra P", com as opções narradas), e cotidiano = tema de todos os tipos. Nada muda no diagrama nem na APF; falta só explicar isso no PDF (passo 15).
+- **RF05 e RF11:** **sem tipo novo**. Letra-som = LETRA ("começa com o som da letra P", com as opções narradas), e cotidiano = tema de todos os tipos. Nada muda no diagrama nem na APF; falta só explicar isso no PDF (passo 14).
 - **Nivelamento (RF03):** 10 perguntas, 2 por nível (ids 12, 1, 13, 3, 4, 21, 5, 25, 7, 34). **Regra nova** em `definirNivelInicial` (`server/src/progressao.ts`): o aluno para no primeiro erro e só passa de nível acertando as 2 perguntas do par. O nível inicial é o primeiro que ele não domina (o da pergunta errada); acertou tudo = nível 5. A regra antiga (nível da última pergunta acertada) saiu. O app não mudou.
 - **Testes:** `progressao.test.ts` ganhou os casos da regra nova (pares, erro na 1ª e na 2ª do par, parar no meio), e `rotas/progresso.test.ts` foi ajustado ao seed novo. `npm test` (65), lint, typecheck e `db:seed` passam, e o fluxo foi testado no app.
 
 **Observações:**
-- as figuras ainda são ícones provisórios (`Alternativa.ilustracao`). As imagens finais (25 arquivos obrigatórios e 5 opcionais, listados no documento) entram no passo 11;
+- as figuras ainda são ícones provisórios (`Alternativa.ilustracao`). As imagens finais (25 arquivos obrigatórios e 5 opcionais, listados no documento) entram por `urlImagem`, que o app já mostra (18/11);
 - depois de `git pull`, rode `npm run db:seed` (ou `db:reset`) para carregar as atividades novas.
 
 ---
@@ -311,7 +309,7 @@ O "Ouvir instrução" também lê as opções. Enquanto o servidor corrige, a te
 - níveis (`exigirLogin("ADMINISTRADOR")`): `POST /gestao/niveis` e `PATCH /gestao/niveis/:id` (nome, descrição, ordem, `criterioAcerto` de 0,1 a 1). Ordem repetida = 409;
 - **validação** em função pura (`server/src/validarAtividade.ts`), a mesma para os dois perfis e com as regras do helper do `mock.ts`: múltipla escolha = 2 a 4 alternativas diferentes e **exatamente 1 certa**; PALAVRA = as peças marcadas formam a palavra do `textoApoio` em alguma ordem (testa as combinações, aceita acento); ESCRITA = sem alternativas e com `respostaCorreta`; LETRA = conteúdo "Letra X" (a letra grande sai daí); SILABA, PALAVRA, FRASE e INTERPRETACAO exigem `textoApoio`. Mensagens curtas para quem cadastra;
 - **travas** para não quebrar a trilha (409): pergunta do nivelamento não é inativada nem muda de etapa; a última atividade ativa de uma etapa não é inativada nem muda de etapa. Em `POST /respostas` (`rotas/progresso.ts`), etapa **sem atividade ativa** conta como fim da trilha: o aluno não sobe para uma etapa nova vazia;
-- ao editar, as imagens das alternativas (`urlImagem`, passo 11) com o mesmo texto são mantidas, e o ícone provisório (`ilustracao`) vai e volta pelo formulário.
+- ao editar, as imagens das alternativas (`urlImagem`) com o mesmo texto são mantidas, e o ícone provisório (`ilustracao`) vai e volta pelo formulário.
 
 **Banco:** migração **006** (`Atividade.idCriador` → Usuario, com índice; NULL = conteúdo do seed). `modelos.ts`: `Atividade.idCriador` e os métodos do diagrama documentados em `Professor` e `Administrador`.
 
@@ -324,7 +322,7 @@ O "Ouvir instrução" também lê as opções. Enquanto o servidor corrige, a te
 
 **Observações:**
 - **decisão pendente da equipe:** a atividade do professor vale para **todos** os alunos (como ficou) ou só para os que ele acompanha? Se for "só os dele", o filtro entra em `idsAtividadesDoNivel`/`GET /niveis/:id/atividades`;
-- o formulário não envia imagem (`urlImagem`): as imagens das atividades cadastradas ficam para o passo 11;
+- o formulário não envia imagem (`urlImagem`): as imagens das atividades cadastradas ficam para depois;
 - mudar o `conteudo` ou a etapa de uma atividade que já tem respostas não refaz o DesempenhoConteudo antigo (as respostas novas já entram no conteúdo novo);
 - **falta a equipe abrir as telas no Expo Go** (`admin@ajai.app` e `rafael@ajai.app`, senha `demo1234`); depois de `git pull`, rode `npm run db:migrate` e abra o `npx expo start` uma vez antes do `npx tsc` (gera os tipos das rotas novas).
 
@@ -356,81 +354,30 @@ O "Ouvir instrução" também lê as opções. Enquanto o servidor corrige, a te
 - a chave da Azure fica só em `server/.env` (fora do git). Para gerar áudio de conteúdo novo: recurso **Speech** (Free F0) no portal da Azure, Chave 1 e região no `server/.env`, `npm run voz:preparar` (uns 20 min no F0) e commit dos MP3 novos (README › Narração por voz). Outra voz: troque `AZURE_VOZ` e rode o `voz:preparar` de novo;
 - os MP3 de `server/storage/audio/` são **versionados** (~20 MB em 18/11): quem clona ouve a voz sem a chave, porque o servidor acha o arquivo pelo nome e o registra no `AudioCache` (teste em `narracao.test.ts`; conferido com banco novo e sem chave: 414 de 414 encontrados). `db:reset`/`db:seed` apagam as linhas, não os arquivos;
 - texto novo sem áudio gerado (ex.: atividade cadastrada pelo professor, saudação com o nome do aluno) é gerado na hora se o servidor tiver a chave; sem a chave, toca com a voz do aparelho;
-- passo 15: revisar o `ServicoTTS` na APF (Azure, custo zero no F0) e citar a troca do Piper.
+- passo 14: revisar o `ServicoTTS` na APF (Azure, custo zero no F0) e citar a troca do Piper.
 
 ---
 
-## 🟡 Passo 11 — Recursos visuais (UX/UI)
+## ✅ Passo 11 — Testes automatizados
 
-**Prazo:** 16/11 · **Ordem:** depois do 10, antes do 12
+**Feito em 18/11.** `npm test` roda os testes do servidor e do app (tudo passa): **186** no servidor (`node --test`; eram 155), **12** da voz do app (Node, com módulos do Expo de mentira) e **2 de tela** com **jest-expo** + `@testing-library/react-native` (`npm run app:test:telas`).
+- **Já estavam cobertos** (conferido item a item): `definirNivelInicial`, `deveAvancar`, `identificarDificuldades` e ofensiva/fuso em `server/src/progressao.test.ts`; login por usuário/e-mail/telefone, cadastro dos 4 perfis e nunca administrador, PENDENTES com 403, 409 no 3º vínculo do responsável e aluno trocando a senha em `rotas/contas.test.ts`; passo 8 em `rotas/professor.test.ts`.
+- **Novos no servidor (31):** `server/src/correcao.test.ts` (`corrigirAutomaticamente`: acentos, ç, maiúsculas, espaços no começo/fim/meio, tab, palavra diferente continua errada) e `server/src/rotas/autorizacao.test.ts` (nenhuma rota de leitura do aluno leva `correta`/`respostaCorreta`: todas as etapas de `GET /niveis/:id/atividades`, `GET /atividades/:id` das ESCRITAS, `GET /nivelamento` e `GET /alunos/eu/progresso`; aluno recebe 403 em 10 rotas de professor/responsável/instituição/admin; **vínculo desfeito tira o acesso do professor em todas as rotas do passo 8** (painel, métricas, relatórios, correção, turma) e um convite novo PENDENTE não devolve; responsável com convite pendente ou vínculo desfeito não vê nem recebe dicas).
+- **Teste de tela** (`src/testes/telaAtividade.test.tsx`): monta as telas **de verdade** da atividade e do resultado com o Expo Router de teste (`renderRouter`), com a API, a sessão guardada e a narração de mentira. Tocar na alternativa certa leva a "Muito bem!" (rota `/aluno/resultado`, `correta=1`, resposta enviada para `POST /respostas`); a errada leva a "Quase lá!" com "Tentar novamente" e nenhuma palavra "erro/inválido/falha".
+- **Configuração:** `jest`, `jest-expo`, `@types/jest` e `@testing-library/react-native` em devDependencies; `"jest": { "preset": "jest-expo", "testMatch": ["<rootDir>/src/**/*.test.tsx"] }` no `package.json`. Scripts: `app:test` = `app:test:voz` (Node) + `app:test:telas` (jest).
+- **Casos manuais:** [`docs/testes/casos-de-teste.md`](testes/casos-de-teste.md), 49 casos (CT-01 a CT-49) no formato ID | pré-condição | passos | resultado esperado | resultado obtido, com os usuários de demonstração. **Ainda não foram executados**: isso é o começo do passo 13.
 
-**Pronto quando:** as telas seguem o mesmo padrão visual, os ícones e imagens foram exportados para `assets/`, a fonte Inter está carregada e o ícone/splash do app são do AJAI.
-
-**Feito em 09/11 (parcial):** todos os emojis de `src/` foram trocados por ícones de `@expo/vector-icons` (instalado): alto-falante do `BotaoAudio`, livro do `Logo` e da splash, abas do professor, trilha em `/aluno/progresso` e acerto/erro em `/aluno/resultado` (Ionicons). As figuras das alternativas do `mock.ts` viraram nomes de ícones do `MaterialCommunityIcons` na mesma coluna `Alternativa.ilustracao` (sem migração).
-
-**O que falta / o que fazer:** itens 1, 2, 3 e 5 do prompt abaixo; no item 4, só as imagens finais das alternativas e da palavra em destaque (`urlImagem`).
-
-As telas que ainda não têm frame no Figma (progresso, preferências, relatórios, conta, turmas, cadastros por perfil, espera, área da instituição e do responsável, "Meus alunos", convites etc.) **não serão desenhadas**: seguem o padrão visual das telas já desenhadas (tokens, componentes e layout das telas existentes).
-
-```text
-Leia AGENTS.md, src/theme/tokens.ts, src/components/** e as telas em src/app/.
-Arquivo do Figma: https://www.figma.com/design/hXu6QCdfo7r7Qau5Rbia8M/AJAI
-
-1. Compare cada tela implementada com o frame correspondente do Figma (a tabela
-   "Telas do Figma × código" está no README) e liste as diferenças de layout, texto,
-   cor e espaçamento. Corrija as diferenças.
-2. Atualize src/theme/tokens.ts com as cores e tamanhos exatos das variáveis/estilos
-   do Figma.
-3. Carregue a fonte Inter com expo-font (`npx expo install expo-font @expo-google-fonts/inter`)
-   e aplique nos componentes de texto.
-4. Os emojis já foram trocados por ícones de @expo/vector-icons (09/11). Troque os ícones
-   provisórios das alternativas (Alternativa.ilustracao, nomes do MaterialCommunityIcons)
-   pelas imagens exportadas em assets/ (<listar arquivos>), usando urlImagem, e mostre a
-   imagem da palavra em destaque em "Formar palavra".
-5. Configure ícone do app, ícone adaptativo do Android e splash em app.json com os
-   arquivos <listar arquivos>.
-Telas sem frame no Figma NÃO se desenham: siga o padrão das telas já desenhadas.
-Mantenha as regras de acessibilidade do AGENTS.md.
-```
+**Observações:**
+- testes de tela ficam em `src/testes/` (fora de `src/app/`, senão o Expo Router acha que é rota) e terminam em `.test.tsx` (os `.test.ts` são do `node --test`);
+- no Testing Library 14, `render` e `fireEvent` são **assíncronos**: use `await fireEvent.press(...)`, senão um teste vaza estado para o próximo;
+- o TypeScript 6 não carrega `@types/*` sozinho: o arquivo de teste começa com `/// <reference types="jest" />`;
+- o `jest.mock(...)` só aceita variáveis de fora com nome começando por `mock` (`mockChamarApi`);
+- os 12 testes da voz continuaram no `node --test` (funcionam e são rápidos); levá-los para o jest é opcional;
+- `npx expo install ... -- --save-dev` pôs os pacotes em `dependencies`; foram movidos à mão para `devDependencies`. Depois de `git pull`, rode `npm install`.
 
 ---
 
-## ⬜ Passo 12 — Testes automatizados
-
-**Prazo:** 16/11 · **Depende de:** passos 5 e 3.1
-
-**Pronto quando:** `npm test` roda no app e no servidor, cobrindo correção, nivelamento, progressão, ofensiva, dificuldades e autorização (perfis, aprovação e vínculos).
-
-```text
-Leia AGENTS.md, src/services/** e server/.
-Configure testes:
-- no app: jest-expo (`npx expo install jest-expo jest @types/jest -- --save-dev`) e
-  @testing-library/react-native; script `npm test`;
-- no servidor: já existe `node --test` (npm test, 155 testes em 18/11, incluindo as rotas do passo 8 em professor.test.ts, as do passo 9 em cadastroAtividades.test.ts e as do passo 10 em narracao.test.ts;
-  os 12 testes da voz do app em src/services/voz/voz.test.ts rodam no Node com módulos do Expo de mentira e podem ir para o jest-expo); complete os casos abaixo
-  que faltarem (ver server/src/rotas/contas.test.ts e progresso.test.ts).
-Escreva testes para:
-1. corrigirAutomaticamente (acentos, maiúsculas, espaços);
-2. definirNivelInicial (acerta tudo, erra a primeira, erra no meio);
-3. deveAvancar (menos de 5 respostas, exatamente no critério, abaixo);
-4. identificarDificuldades (ordenação, sem respostas);
-5. ofensiva (dias seguidos, quebra, fuso);
-6. API: acompanhante NÃO vê aluno sem vínculo ACEITO (inclusive nas rotas do passo 8);
-   aluno não acessa rotas de professor; aluno troca a própria senha; login por nome de
-   usuário, e-mail e telefone; cadastro público cria aluno/professor/responsável/instituição
-   mas NUNCA administrador; professor e instituição PENDENTES recebem 403; responsável recebe
-   409 no 3º vínculo; resposta não expõe a alternativa correta antes de responder;
-7. um teste de tela: tocar na alternativa certa leva à tela "Muito bem!".
-Gere também docs/testes/casos-de-teste.md com os casos manuais dos fluxos principais
-(instituição se inscreve, admin aprova, professor se cadastra com o código, instituição aprova,
-aluno cria a conta, professor/responsável convida, aluno aceita, login do aluno por usuário,
-nivelamento, atividade, progressão, área do professor e do responsável) no formato
-ID | pré-condição | passos | resultado esperado | resultado obtido.
-```
-
----
-
-## ⬜ Passo 13 — Segurança e privacidade (RNF11, RNF12, LGPD)
+## ⬜ Passo 12 — Segurança e privacidade (RNF11, RNF12, LGPD)
 
 **Prazo:** 16/11 · **Depende de:** passos 3 e 3.1
 
@@ -459,14 +406,14 @@ Liste o que ficou pendente.
 
 ---
 
-## ⬜ Passo 14 — Correção de bugs e polimento
+## ⬜ Passo 13 — Correção de bugs e polimento
 
 **Prazo:** 16/11 · **Depende de:** passos 7 e 8
 
 **Pronto quando:** não há bug crítico ou alto aberto, `lint`, `tsc` e `npm test` passam, e o app roda do zero seguindo só o README.
 
 ```text
-Leia AGENTS.md e a lista de problemas abaixo (achados ao executar os casos de docs/testes/casos-de-teste.md, do passo 12, em pelo menos 1 Android e 1 iPhone ou web):
+Leia AGENTS.md e a lista de problemas abaixo (achados ao executar os casos de docs/testes/casos-de-teste.md, do passo 11, em pelo menos 1 Android e 1 iPhone ou web):
 <colar lista priorizada>
 Corrija na ordem de gravidade, um commit por problema, citando o ID do problema.
 Não adicione funcionalidades novas. Depois:
@@ -485,9 +432,9 @@ Não adicione funcionalidades novas. Depois:
 
 ---
 
-## ⬜ Passo 15 — Documentação final
+## ⬜ Passo 14 — Documentação final
 
-**Prazo:** 16/11 · **Depende de:** passo 14
+**Prazo:** 16/11 · **Depende de:** passo 13
 
 **Pronto quando:** PDF, planilha APF, diagrama de classes e README contam a mesma história do que foi entregue.
 
@@ -505,33 +452,4 @@ Liste todas as diferenças entre o que está documentado e o que foi implementad
 - cronograma planejado × realizado por Sprint, e riscos que se concretizaram.
 Escreva o texto das seções atualizadas pronto para colar no PDF (português formal,
 ABNT) e atualize README (Pendências → "Entregue" e "Trabalhos futuros").
-```
-
----
-
-## ⬜ Passo 16 — Apresentação e demonstração
-
-**Prazo:** 17/11
-
-**Pronto quando:** há slides, um roteiro de demo ensaiado de no máximo 5 minutos, o app instalado em pelo menos 2 celulares com dados preparados, e um vídeo de backup gravado.
-
-```text
-Leia README.md, docs/** e a documentação final.
-Prepare a apresentação final do AJAI (<N> minutos no total, 5 integrantes):
-1. Estrutura dos slides: problema (dados IBGE), pesquisa com profissionais da EJA e o
-   que ela mudou no produto, solução, demonstração, métricas para o professor,
-   gestão do projeto (Scrum + Kanban, APF, custos, riscos), limitações e próximos passos. Indique quem fala cada parte.
-2. Roteiro da demo ao vivo (máx. 5 min): instituição se inscreve → admin aprova (código) →
-   professor cria a conta com o código → instituição aprova o professor → aluno cria a conta
-   → professor convida → aluno aceita → nivelamento → atividade com áudio → erro e "tentar de
-   novo" → acerto → sobe de nível; professor → dashboard → aluno com dificuldade → métricas.
-   Se o tempo apertar, use as contas do seed (código EJAVV2, professora Paula pendente).
-   Liste os dados que precisam estar preparados no banco antes.
-3. Plano B e preparação técnica: como rodar a demo SEM internet da faculdade (servidor
-   no notebook + celulares no mesmo Wi-Fi/ponto de acesso do celular; app via Expo Go
-   ou build de desenvolvimento com EAS), checklist do dia (db:reset com dados de demo,
-   áudios já gerados com `npm run voz:preparar` (com a chave da Azure; depois disso a demo não precisa de internet para a voz), código da instituição
-   de demonstração anotado (EJAVV2), EXPO_PUBLIC_API_URL com o IP
-   certo, celular carregado, vídeo gravado de backup).
-4. Prováveis perguntas da banca e respostas curtas.
 ```

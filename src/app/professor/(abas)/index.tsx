@@ -15,7 +15,7 @@ import {
   visualizarPainel,
   type ResumoAluno,
 } from "@/services/relatorios";
-import { cores, fontes, raios, toqueMinimo } from "@/theme/tokens";
+import { familias, cores, fontes, raios, toqueMinimo } from "@/theme/tokens";
 
 export default function DashboardProfessor() {
   const { usuario } = useSessao();
@@ -188,10 +188,10 @@ function CartaoAluno({ resumo, dias }: { resumo: ResumoAluno; dias: number }) {
 
 const styles = StyleSheet.create({
   resumo: { backgroundColor: cores.primaria, borderRadius: raios.lg, padding: 20, gap: 12 },
-  resumoTitulo: { color: cores.primariaTexto, fontWeight: "700", fontSize: 14 },
+  resumoTitulo: { color: cores.primariaTexto, fontFamily: familias.negrito, fontSize: 14 },
   resumoLinha: { flexDirection: "row" },
-  resumoNumero: { color: cores.primariaTexto, fontSize: 36, fontWeight: "800" },
-  resumoLegenda: { color: cores.primariaTexto, fontSize: fontes.legenda },
+  resumoNumero: { color: cores.primariaTexto, fontSize: 36, fontFamily: familias.extranegrito },
+  resumoLegenda: { color: cores.primariaTexto, fontFamily: familias.regular, fontSize: fontes.legenda },
   filtros: { flexDirection: "row", gap: 8, flexWrap: "wrap" },
   cartao: {
     backgroundColor: cores.superficie,
@@ -210,12 +210,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  avatarTexto: { fontWeight: "800", color: cores.primaria },
-  nome: { fontSize: fontes.corpo, fontWeight: "800", color: cores.texto },
-  legenda: { fontSize: 14, color: cores.textoSuave },
+  avatarTexto: { fontFamily: familias.extranegrito, color: cores.primaria },
+  nome: { fontSize: fontes.corpo, fontFamily: familias.extranegrito, color: cores.texto },
+  legenda: { fontFamily: familias.regular, fontSize: 14, color: cores.textoSuave },
   selo: {
     fontSize: 13,
-    fontWeight: "700",
+    fontFamily: familias.negrito,
     color: cores.atencaoTexto,
     backgroundColor: cores.atencaoFundo,
     paddingHorizontal: 10,
@@ -225,9 +225,9 @@ const styles = StyleSheet.create({
   },
   seloEmDia: { color: cores.sucesso, backgroundColor: cores.superficieSuave },
   botaoLink: { minHeight: toqueMinimo, justifyContent: "center", paddingHorizontal: 8 },
-  aviso: { fontSize: 14, color: cores.textoSuave, textAlign: "center" },
-  metrica: { fontSize: fontes.subtitulo, fontWeight: "800", color: cores.primaria },
+  aviso: { fontFamily: familias.regular, fontSize: 14, color: cores.textoSuave, textAlign: "center" },
+  metrica: { fontSize: fontes.subtitulo, fontFamily: familias.extranegrito, color: cores.primaria },
   dificuldade: { backgroundColor: cores.atencaoFundo, borderRadius: raios.md, padding: 12, gap: 2 },
-  dificuldadeRotulo: { fontSize: 13, fontWeight: "700", color: cores.atencaoTexto },
-  link: { fontSize: fontes.legenda, fontWeight: "800", color: cores.primaria },
+  dificuldadeRotulo: { fontSize: 13, fontFamily: familias.negrito, color: cores.atencaoTexto },
+  link: { fontSize: fontes.legenda, fontFamily: familias.extranegrito, color: cores.primaria },
 });

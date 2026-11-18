@@ -41,11 +41,16 @@ export const niveis: Nivel[] = [
 interface Opcao {
   texto: string;
   correta?: true;
-  /** Nome de um ícone do MaterialCommunityIcons até as imagens do passo 11 (nunca emoji). */
+  /** Nome de um ícone do MaterialCommunityIcons, usado enquanto não houver imagem (nunca emoji). */
   ilustracao?: string;
+  /** Endereço completo (https://...) da imagem da opção ou da atividade. Tem prioridade sobre o ícone. */
+  urlImagem?: string;
 }
 
-type DadosAtividade = Pick<Atividade, "idAtividade" | "idNivel" | "tipo" | "conteudo" | "enunciado" | "textoApoio"> & {
+type DadosAtividade = Pick<
+  Atividade,
+  "idAtividade" | "idNivel" | "tipo" | "conteudo" | "enunciado" | "textoApoio" | "urlImagem"
+> & {
   opcoes?: Opcao[];
   /** Só ESCRITA precisa informar; nos outros tipos o gabarito sai das opções. */
   respostaCorreta?: string;
@@ -65,6 +70,7 @@ function atividade({ opcoes = [], respostaCorreta, ...dados }: DadosAtividade): 
     ordem: i + 1,
     correta: o.correta === true,
     ilustracao: o.ilustracao,
+    urlImagem: o.urlImagem,
   }));
   const corretas = alternativas.filter((a) => a.correta);
   const problema = (msg: string) => new Error(`mock.ts, atividade ${dados.idAtividade}: ${msg}`);
