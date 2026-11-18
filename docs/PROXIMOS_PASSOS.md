@@ -45,7 +45,7 @@ Legenda: ⬜ a fazer · 🟡 em andamento · ✅ feito
 | 9 | Cadastro de atividades (administrador e professor) e níveis (administrador) — feito | 15/11 | 2, 3.1 |
 | 10 | Narração por voz (Azure) e preferências — feito | 15/11 | 1 |
 | 11 | Testes automatizados — feito | 16/11 | 5, 3.1 |
-| 12 | Segurança e privacidade (LGPD) | 16/11 | 3.1 |
+| 12 | Segurança e privacidade (LGPD) — feito | 16/11 | 3.1 |
 | 13 | Correção de bugs e polimento | 16/11 | 7, 8 |
 | 14 | Documentação final (PDF, APF, README) | 16/11 | 13 |
 
@@ -377,32 +377,23 @@ O "Ouvir instrução" também lê as opções. Enquanto o servidor corrige, a te
 
 ---
 
-## ⬜ Passo 12 — Segurança e privacidade (RNF11, RNF12, LGPD)
+## ✅ Passo 12 — Segurança e privacidade (RNF11, RNF12, LGPD)
 
-**Prazo:** 16/11 · **Depende de:** passos 3 e 3.1
+**Feito em 18/11.** Revisão completa em [`docs/privacidade.md`](privacidade.md): a parte 1 é o **termo de uso e privacidade** em linguagem muito simples (o mesmo texto da tela `/termo`), e a parte 2 é a revisão para a equipe (checklist, quem vê cada dado, campos necessários e pendências).
+- **Conferido e já estava certo:** senha com scrypt, JWT de 30 dias com segredo em `server/.env`, nenhum segredo no histórico do git, perfil e conta liberada em toda rota, posse do dado (aluno só o próprio; professor e responsável só com vínculo ACEITO; instituição só os dela), validação por esquema e limite de 10 tentativas/min nas rotas com senha.
+- **Migração 007:** `Usuario.versaoToken`, `senhaProvisoria`, `termosAceitosEm` e `versaoTermos` (extras em relação ao diagrama).
+- **Tokens antigos caem quando a senha muda:** o token leva a versão (`versao`), e trocar a senha ou gerar uma provisória sobe `versaoToken` (token antigo = 401). `PATCH /auth/senha` devolve `{ mensagem, token, usuario }` e o app guarda o token novo; senha nova igual à atual = 400.
+- **Senha provisória obriga a trocar:** a rota do administrador e o `npm run usuario:senha` marcam `senhaProvisoria`; o usuário vem com `precisaTrocarSenha` e o app abre **"Crie sua senha"** (`/trocar-senha`, sem "Voltar", com "Sair") antes de qualquer tela; o servidor recusa as outras rotas com 403 (`exigirLoginComSenhaProvisoria` libera só `GET /auth/eu`, `PATCH /auth/senha` e `POST /narracao`).
+- **Aceite:** os 4 cadastros exigem `aceitouTermos: true` (400 sem ele) e guardam data e versão (`VERSAO_TERMOS` em `rotas/auth.ts` = `VERSAO_TERMO` em `src/services/termo.ts`). No app, "Li e concordo" (caixa com `accessibilityRole="checkbox"`) e "Ler o termo de uso" em `FormularioCadastro`; no do aluno, também "Ouvir o termo" (resumo; a narração aceita até 800 letras). A tela `/termo` tem um "Ouvir" por parte.
+- **Convite:** "Quem me acompanha", o aviso da home e o "Convidar aluno" explicam que quem o aluno aceitar vê o progresso (e o que não vê).
+- **Dados:** `dataNascimento` não é pedido nem usado e **saiu da resposta da API** (a coluna fica; proposta de tirar do diagrama no passo 14). A narração de "Minha conta" não manda mais o e-mail/telefone nem o nome completo para a Azure.
+- **Apagar conta a pedido (LGPD):** `npm run usuario:apagar -- <usuário, e-mail ou telefone>` mostra o que vai sair e só apaga com `--confirmar` (testado nos 4 perfis numa cópia do banco, sem quebrar chave estrangeira).
+- **Testes:** `npm test` passa: **202** no servidor (16 novos em `server/src/rotas/seguranca.test.ts`: aceite nos 4 cadastros, token antigo derrubado, token novo valendo, senha provisória presa na troca para aluno e professor, token sem dados pessoais, login sem campos internos), 12 da voz e **6 de tela** (4 novos em `src/testes/telaPrivacidade.test.tsx`: cadastro sem/com aceite, link do termo, "Crie sua senha" antes da área do aluno). O jest ganhou o `moduleNameMapper` de `@/assets/*`. Lint, typecheck (app e servidor) e `npm run db:migrate` passam.
 
-**Pronto quando:** há termo de uso e privacidade em linguagem simples (com áudio), o app pede só os dados necessários e o checklist abaixo foi revisado.
-
-```text
-Leia AGENTS.md, src/domain/modelos.ts, src/app/cadastro/* e server/.
-Faça uma revisão de segurança e privacidade do AJAI e corrija o que for simples:
-- senhas só com hash; JWT com expiração; segredo em variável de ambiente; invalidar tokens
-  antigos quando a senha muda; forçar a troca da senha provisória no primeiro login;
-- nenhuma chave/segredo no repositório (procure no histórico do git também);
-- todas as rotas checam perfil, conta liberada (professor/instituição aprovados) e posse do dado
-  (aluno só vê o próprio; professor e responsável só alunos com Vinculo ACEITO; instituição só
-  os professores dela);
-- CNPJ, e-mail e telefone da instituição e do professor: quem vê (admin e a instituição) e por quê;
-- validação de entrada no servidor; limite de tentativas de login;
-- dados coletados: confirme que cada campo é necessário (ex.: dataNascimento é
-  usado para quê?). Proponha remover o que não for.
-Escreva docs/privacidade.md: termo de uso e privacidade em linguagem MUITO simples
-(frases curtas, para quem está aprendendo a ler), dizendo que dados coletamos, por
-quê, quem vê (o professor vinculado) e como pedir para apagar. Adicione um aceite
-"Li e concordo" nos 4 cadastros (aluno, professor, responsável, instituição); no do aluno,
-com botão de ouvir o termo, e o convite de acompanhamento explica que quem aceitar vê o progresso.
-Liste o que ficou pendente.
-```
+**Observações:**
+- **pendências** (detalhes em `docs/privacidade.md`): HTTPS e `CORS_ORIGEM` em produção; `/esqueci-senha` diz que mandou e-mail sem mandar (passo 13); e-mail de contato do AJAI para pedidos da LGPD; apagar pela tela do app; narrações com o primeiro nome entram em `server/storage/audio/` (versionado: conferir antes do commit); limpar `Vinculo.identificadorConvite` depois da decisão; contas antigas sem aceite;
+- **falta a equipe abrir no Expo Go** os cadastros com o aceite, a tela `/termo` e a "Crie sua senha" (`npm run usuario:senha -- ana.souza` e entre com a senha mostrada);
+- depois de `git pull`: `npm run db:migrate` e abrir o `npx expo start` uma vez antes do `npx tsc` (rotas novas `/termo` e `/trocar-senha`). Logins de antes continuam valendo até a próxima troca de senha.
 
 ---
 

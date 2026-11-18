@@ -7,12 +7,13 @@ import { contaLiberada, rotaInicial } from "@/services/auth";
  * - "carregando": o login guardado ainda está sendo restaurado (mostre nada);
  * - "liberado": pode mostrar a área;
  * - senão, a rota para onde redirecionar: /login sem login; a área certa se o perfil for outro;
- *   /espera se a conta ainda não foi aprovada (professor ou instituição).
+ *   /espera se a conta ainda não foi aprovada (professor ou instituição);
+ *   /trocar-senha se entrou com a senha provisória (passo 12).
  */
 export function useAreaProtegida(perfil: Perfil) {
   const { usuario, carregando } = useSessao();
   if (carregando) return "carregando" as const;
   if (!usuario) return "/login" as const;
-  if (usuario.perfil !== perfil || !contaLiberada(usuario)) return rotaInicial(usuario);
+  if (usuario.perfil !== perfil || !contaLiberada(usuario) || usuario.precisaTrocarSenha) return rotaInicial(usuario);
   return "liberado" as const;
 }

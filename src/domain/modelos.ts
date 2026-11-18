@@ -58,12 +58,25 @@ export interface Usuario {
   /** Só existe no servidor: a API nunca envia a senha nem o hash para o app. */
   senhaHash?: string;
   perfil: Perfil;
+  /**
+   * Do diagrama, mas NÃO é coletado nem enviado ao app (passo 12, LGPD: nenhuma regra usa a idade).
+   * A coluna continua no banco até a equipe decidir tirá-la do diagrama (ver docs/privacidade.md).
+   */
   dataNascimento?: string; // ISO (Date)
   ativo: boolean;
   criadoEm: string; // ISO (DateTime)
   atualizadoEm: string;
   /** Vem da API (não é coluna): situação da conta para o app decidir a tela. */
   situacao?: SituacaoConta;
+  /**
+   * Vem da API (passo 12; coluna Usuario.senhaProvisoria): entrou com a senha provisória e precisa
+   * criar uma senha nova antes de usar o app (o servidor recusa as outras rotas com 403).
+   */
+  precisaTrocarSenha?: boolean;
+  /*
+   * Só no servidor (migração 007, nunca vão para o app): versaoToken (derruba logins antigos ao
+   * trocar a senha), termosAceitosEm e versaoTermos ("Li e concordo" do cadastro).
+   */
 }
 
 export interface Aluno extends Usuario {

@@ -1,7 +1,8 @@
 // Recuperar senha SEM serviço de e-mail (APF 18), para TODOS os perfis (Passo 3.1):
 //   POST /admin/usuarios/:id/senha-provisoria   administrador gera uma senha provisória
 //   ou, no computador do servidor: npm run usuario:senha -- <usuário, e-mail ou telefone>
-// Depois de entrar, a pessoa troca a senha em Minha conta / Conta › Trocar minha senha.
+// Passo 12: a senha provisória derruba os logins antigos (versaoToken + 1) e marca
+// Usuario.senhaProvisoria = 1: ao entrar, o app abre "Crie sua senha" antes de qualquer tela.
 // A senha provisória (6 números) aparece UMA vez para quem gerou; só o hash fica no banco.
 import type { FastifyInstance } from "fastify";
 import { gerarHashSenha, gerarSenhaProvisoria } from "../../db/senha.mjs";
@@ -31,7 +32,9 @@ const esquema = {
 async function redefinir(idUsuario: number): Promise<string> {
   const senha = gerarSenhaProvisoria();
   banco()
-    .prepare("UPDATE Usuario SET senhaHash = ?, atualizadoEm = ? WHERE idUsuario = ?")
+    .prepare(
+      "UPDATE Usuario SET senhaHash = ?, senhaProvisoria = 1, versaoToken = versaoToken + 1, atualizadoEm = ? WHERE idUsuario = ?",
+    )
     .run(await gerarHashSenha(senha), new Date().toISOString(), idUsuario);
   return senha;
 }

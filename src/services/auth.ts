@@ -50,11 +50,18 @@ export type PerfilCadastro = "aluno" | "professor" | "responsavel" | "instituica
  * - professor: nome, email, telefone, senha e codigo (da instituição);
  * - responsavel: nome, email, telefone e senha;
  * - instituicao: nome (da instituição), cnpj, nomeResponsavel, email, telefone e senha.
+ * Todos precisam do "Li e concordo" com o termo de uso (passo 12): sem ele, o servidor recusa.
  */
-export async function cadastrar(perfil: PerfilCadastro, dados: Record<string, string>): Promise<UsuarioSessao> {
-  const corpo = Object.fromEntries(
+export async function cadastrar(
+  perfil: PerfilCadastro,
+  dados: Record<string, string>,
+  aceitouTermos: boolean,
+): Promise<UsuarioSessao> {
+  if (!aceitouTermos) throw new ErroDaApi(400, "Leia o termo de uso e toque em Li e concordo.");
+  const corpo: Record<string, unknown> = Object.fromEntries(
     Object.entries(dados).map(([chave, valor]) => [chave, chave === "senha" ? valor : opcional(valor)]),
   );
+  corpo.aceitouTermos = true;
   if (perfil === "aluno" && !corpo.nomeUsuario && !corpo.email && !corpo.telefone) {
     throw new ErroDaApi(400, "Escreva um nome de usuário, um e-mail ou um telefone para entrar depois.");
   }
@@ -121,13 +128,18 @@ export async function encerrarSessao(): Promise<void> {
   await apagarLogin();
 }
 
-/** Qualquer perfil troca a própria senha (inclusive o aluno). Devolve a confirmação. */
-export async function trocarSenha(senhaAtual: string, senhaNova: string): Promise<string> {
-  const { mensagem } = await chamarApi<{ mensagem: string }>("/auth/senha", {
+/**
+ * Qualquer perfil troca a própria senha (inclusive o aluno e quem entrou com senha provisória).
+ * O servidor derruba os logins antigos (outros aparelhos) e devolve um token novo para este
+ * aparelho, que já fica guardado aqui. Devolve a confirmação e o usuário atualizado (passe para entrar()).
+ */
+export async function trocarSenha(senhaAtual: string, senhaNova: string): Promise<{ mensagem: string; usuario: UsuarioSessao }> {
+  const resposta = await chamarApi<RespostaLogin & { mensagem: string }>("/auth/senha", {
     metodo: "PATCH",
     corpo: { senhaAtual, senhaNova },
   });
-  return mensagem;
+  const usuario = await iniciarSessao(resposta);
+  return { mensagem: resposta.mensagem, usuario };
 }
 
 /** Conta liberada = professor aprovado pela instituição, instituição aprovada pelo AJAI; os demais sempre. */
@@ -135,8 +147,12 @@ export function contaLiberada(usuario: UsuarioSessao): boolean {
   return (usuario.situacao?.status ?? "APROVADA") === "APROVADA";
 }
 
-/** Primeira tela de cada perfil depois de entrar (conta ainda não aprovada → tela de espera). */
+/**
+ * Primeira tela de cada perfil depois de entrar. Senha provisória → "Crie sua senha" (passo 12);
+ * conta ainda não aprovada → tela de espera.
+ */
 export function rotaInicial(usuario: UsuarioSessao) {
+  if (usuario.precisaTrocarSenha) return "/trocar-senha" as const;
   if (!contaLiberada(usuario)) return "/espera" as const;
   switch (usuario.perfil) {
     case "PROFESSOR":

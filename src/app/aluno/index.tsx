@@ -66,7 +66,7 @@ export default function HomeAluno() {
             rodape={
               <BotaoAudio
                 texto={`Olá, ${primeiroNome}! Toque em continuar para fazer a próxima atividade. Ofensiva: ${ofensiva.numero} ${ofensiva.mensagem} Para mudar a voz ou o tamanho da letra, toque em Voz e letra.${
-                  convites > 0 ? " Você tem um convite de acompanhamento. Toque em Ver convite." : ""
+                  convites > 0 ? " Você tem um convite de acompanhamento. Quem você aceitar vai ver o seu progresso. Toque em Ver convite." : ""
                 }`}
               />
             }
@@ -109,7 +109,8 @@ export default function HomeAluno() {
             {convites > 0 ? (
               <Cartao destaque>
                 <Text style={styles.legenda}>
-                  Você tem {convites === 1 ? "1 convite" : `${convites} convites`} de acompanhamento.
+                  Você tem {convites === 1 ? "1 convite" : `${convites} convites`} de acompanhamento. Quem você aceitar
+                  vai ver o seu progresso.
                 </Text>
                 <Botao titulo="Ver convite" variante="secundario" onPress={() => router.push("/aluno/acompanhamento")} />
               </Cartao>

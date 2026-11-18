@@ -18,7 +18,7 @@ export default function EsperaAprovacao() {
 
   if (carregando) return null;
   if (!usuario) return <Redirect href="/login" />;
-  if (contaLiberada(usuario)) return <Redirect href={rotaInicial(usuario)} />;
+  if (contaLiberada(usuario) || usuario.precisaTrocarSenha) return <Redirect href={rotaInicial(usuario)} />;
 
   const situacao = usuario.situacao ?? { status: "PENDENTE" as const };
   const professor = usuario.perfil === "PROFESSOR";

@@ -8,10 +8,17 @@
 //   POST  /auth/login      usuário, e-mail ou telefone + senha → { token, usuario }
 //   GET   /auth/eu         usuário do token (com a situação da conta: o app usa em "Verificar de novo")
 //   PATCH /auth/eu         { nome } muda o próprio nome (passo 8)
-//   PATCH /auth/senha      qualquer perfil troca a própria senha (inclusive o aluno)
+//   PATCH /auth/senha      qualquer perfil troca a própria senha (inclusive o aluno) → { mensagem, token, usuario }
+// Passo 12 (segurança e privacidade):
+// - os 4 cadastros exigem `aceitouTermos: true` ("Li e concordo"; termo em docs/privacidade.md) e
+//   guardam a data e a versão do termo (Usuario.termosAceitosEm / versaoTermos);
+// - trocar a senha sobe Usuario.versaoToken: os tokens antigos (outros aparelhos) deixam de valer, e
+//   este aparelho recebe um token novo;
+// - quem entrou com senha provisória (Usuario.senhaProvisoria = 1) só usa GET /auth/eu e
+//   PATCH /auth/senha até trocar a senha (o app abre a tela "Crie sua senha").
 import type { FastifyInstance } from "fastify";
 import { conferirSenha, gerarHashSenha, HASH_FALSO } from "../../db/senha.mjs";
-import { exigirLogin, gerarToken } from "../autenticacao.ts";
+import { exigirLogin, exigirLoginComSenhaProvisoria, gerarToken } from "../autenticacao.ts";
 import { banco } from "../banco.ts";
 import { config } from "../config.ts";
 import { ErroApi, esquemaErro } from "../erros.ts";
@@ -35,6 +42,15 @@ const NOME = { type: "string", minLength: 2, maxLength: 100, pattern: "\\S" } as
 const EMAIL = { type: "string", format: "email", maxLength: 120 } as const;
 const TELEFONE = { type: "string", minLength: 8, maxLength: 20, pattern: "^[0-9()+ .-]+$" } as const;
 const NOME_USUARIO = { type: "string", minLength: 3, maxLength: 30, pattern: PADRAO_NOME_USUARIO } as const;
+/**
+ * Versão do termo de uso e privacidade (docs/privacidade.md e src/services/termo.ts).
+ * Mudou o termo? Mude a data aqui, no documento e no app.
+ */
+export const VERSAO_TERMOS = "2026-11-18";
+
+/** "Li e concordo": precisa vir marcado (true) em todo cadastro. */
+const ACEITE = { type: "boolean", const: true } as const;
+
 /** Código da instituição: 6 caracteres (aceita minúsculas, espaço e traço; o servidor normaliza). */
 export const CODIGO = { type: "string", minLength: 6, maxLength: 12, pattern: "^[A-Za-z0-9 -]+$" } as const;
 
@@ -103,10 +119,11 @@ function criarUsuario(
   try {
     const r = db
       .prepare(
-        `INSERT INTO Usuario (nome, nomeUsuario, email, telefone, senhaHash, perfil, ativo, criadoEm, atualizadoEm)
-         VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?)`,
+        `INSERT INTO Usuario (nome, nomeUsuario, email, telefone, senhaHash, perfil, ativo, criadoEm, atualizadoEm,
+                              termosAceitosEm, versaoTermos)
+         VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?)`,
       )
-      .run(nome, contato.nomeUsuario, contato.email, contato.telefone, senhaHash, perfil, agora, agora);
+      .run(nome, contato.nomeUsuario, contato.email, contato.telefone, senhaHash, perfil, agora, agora, agora, VERSAO_TERMOS);
     const idUsuario = Number(r.lastInsertRowid);
     especializar(idUsuario, agora);
     db.exec("COMMIT");
@@ -150,8 +167,8 @@ export async function rotasAuth(app: FastifyInstance): Promise<void> {
       schema: {
         body: {
           type: "object",
-          properties: { nome: NOME, senha: SENHA, nomeUsuario: NOME_USUARIO, email: EMAIL, telefone: TELEFONE },
-          required: ["nome", "senha"],
+          properties: { nome: NOME, senha: SENHA, nomeUsuario: NOME_USUARIO, email: EMAIL, telefone: TELEFONE, aceitouTermos: ACEITE },
+          required: ["nome", "senha", "aceitouTermos"],
         },
         response: respostasCadastro,
       },
@@ -179,8 +196,8 @@ export async function rotasAuth(app: FastifyInstance): Promise<void> {
       schema: {
         body: {
           type: "object",
-          properties: { nome: NOME, email: EMAIL, telefone: TELEFONE, senha: SENHA, codigo: CODIGO },
-          required: ["nome", "email", "telefone", "senha", "codigo"],
+          properties: { nome: NOME, email: EMAIL, telefone: TELEFONE, senha: SENHA, codigo: CODIGO, aceitouTermos: ACEITE },
+          required: ["nome", "email", "telefone", "senha", "codigo", "aceitouTermos"],
         },
         response: respostasCadastro,
       },
@@ -206,8 +223,8 @@ export async function rotasAuth(app: FastifyInstance): Promise<void> {
       schema: {
         body: {
           type: "object",
-          properties: { nome: NOME, email: EMAIL, telefone: TELEFONE, senha: SENHA },
-          required: ["nome", "email", "telefone", "senha"],
+          properties: { nome: NOME, email: EMAIL, telefone: TELEFONE, senha: SENHA, aceitouTermos: ACEITE },
+          required: ["nome", "email", "telefone", "senha", "aceitouTermos"],
         },
         response: respostasCadastro,
       },
@@ -237,8 +254,9 @@ export async function rotasAuth(app: FastifyInstance): Promise<void> {
             email: EMAIL,
             telefone: TELEFONE,
             senha: SENHA,
+            aceitouTermos: ACEITE,
           },
-          required: ["nome", "cnpj", "nomeResponsavel", "email", "telefone", "senha"],
+          required: ["nome", "cnpj", "nomeResponsavel", "email", "telefone", "senha", "aceitouTermos"],
         },
         response: respostasCadastro,
       },
@@ -293,7 +311,7 @@ export async function rotasAuth(app: FastifyInstance): Promise<void> {
   app.get(
     "/auth/eu",
     {
-      preHandler: exigirLogin(),
+      preHandler: exigirLoginComSenhaProvisoria(),
       schema: {
         response: {
           200: { type: "object", properties: { usuario: esquemaUsuario }, required: ["usuario"] },
@@ -329,8 +347,9 @@ export async function rotasAuth(app: FastifyInstance): Promise<void> {
   app.patch<{ Body: { senhaAtual: string; senhaNova: string } }>(
     "/auth/senha",
     {
-      // Todos os perfis trocam a própria senha (inclusive o aluno e quem ainda espera aprovação).
-      preHandler: exigirLogin(),
+      // Todos os perfis trocam a própria senha (inclusive o aluno, quem ainda espera aprovação e
+      // quem entrou com a senha provisória).
+      preHandler: exigirLoginComSenhaProvisoria(),
       config: limiteSenha,
       schema: {
         body: {
@@ -339,7 +358,11 @@ export async function rotasAuth(app: FastifyInstance): Promise<void> {
           required: ["senhaAtual", "senhaNova"],
         },
         response: {
-          200: { type: "object", properties: { mensagem: { type: "string" } }, required: ["mensagem"] },
+          200: {
+            type: "object",
+            properties: { mensagem: { type: "string" }, token: { type: "string" }, usuario: esquemaUsuario },
+            required: ["mensagem", "token", "usuario"],
+          },
           400: esquemaErro,
           401: esquemaErro,
         },
@@ -350,11 +373,22 @@ export async function rotasAuth(app: FastifyInstance): Promise<void> {
       if (!(await conferirSenha(req.body.senhaAtual, usuario.senhaHash))) {
         throw new ErroApi(400, "A senha de hoje não confere. Tente de novo.");
       }
+      if (req.body.senhaNova === req.body.senhaAtual) {
+        throw new ErroApi(400, "A senha nova precisa ser diferente da senha de hoje.");
+      }
       const senhaHash = await gerarHashSenha(req.body.senhaNova);
+      // versaoToken + 1: os tokens antigos (de outros aparelhos) deixam de valer.
       banco()
-        .prepare("UPDATE Usuario SET senhaHash = ?, atualizadoEm = ? WHERE idUsuario = ?")
+        .prepare(
+          "UPDATE Usuario SET senhaHash = ?, senhaProvisoria = 0, versaoToken = versaoToken + 1, atualizadoEm = ? WHERE idUsuario = ?",
+        )
         .run(senhaHash, new Date().toISOString(), usuario.idUsuario);
-      return { mensagem: "Senha trocada. Use a senha nova da próxima vez." };
+      const atualizado = buscarPorId(usuario.idUsuario)!;
+      return {
+        mensagem: "Senha trocada. Use a senha nova da próxima vez.",
+        token: gerarToken(app, atualizado),
+        usuario: usuarioPublico(atualizado),
+      };
     },
   );
 }

@@ -130,7 +130,8 @@ Modelo de contas (Passo 3.1):
 - **Professor:** nome, e-mail, telefone, senha e o **código da instituição** (no seed, `EJAVV2`). Fica esperando a **instituição** aprovar (em `/instituicao`). Recusado, vê o motivo e pode mandar outro código.
 - **Responsável:** nome, e-mail, telefone e senha. Acompanha no máximo 2 pessoas, sem turma.
 - **Acompanhar um aluno:** professor (Conta › Meus alunos, ou "Meus alunos: convidar" no Acompanhamento) ou responsável convida pelo usuário, e-mail ou telefone do aluno; o aluno aceita em **Minha conta › Quem me acompanha** (a home avisa quando há convite). Só depois do aceite o acompanhante vê o nome do aluno.
-- **Senha:** todo mundo troca a própria (aluno em Minha conta; os outros em Conta / na tela inicial). Esqueceu? O administrador gera uma provisória (`POST /admin/usuarios/:id/senha-provisoria`) ou, no computador do servidor, `npm run usuario:senha -- maria.silva` (usuário, e-mail ou telefone).
+- **Senha:** todo mundo troca a própria (aluno em Minha conta; os outros em Conta / na tela inicial); trocar a senha tira a conta dos outros aparelhos. Esqueceu? O administrador gera uma provisória (`POST /admin/usuarios/:id/senha-provisoria`) ou, no computador do servidor, `npm run usuario:senha -- maria.silva` (usuário, e-mail ou telefone). Ao entrar com a provisória, o app abre **"Crie sua senha"** antes de qualquer tela (passo 12).
+- **Termo de uso:** todo cadastro pede **"Li e concordo"** (tela `/termo`; texto em [`docs/privacidade.md`](docs/privacidade.md)). Pedido para apagar a conta: `npm run usuario:apagar -- maria.silva` (mostra o que sai) e depois com `--confirmar`.
 - O login fica guardado no aparelho (`expo-secure-store`): fechar e abrir o app volta logado.
 - Fluxo completo para testar: crie uma instituição → entre como `admin@ajai.app` e aprove (anote o código) → crie um professor com o código → entre como a instituição e aprove o professor → crie um aluno → entre como o professor e convide o aluno → entre como o aluno e aceite.
 
@@ -144,7 +145,7 @@ Rotas da API:
 
 **Cadastrar atividades pelo app (passo 9):** administrador → tela inicial › **Atividades** (todas, por etapa) e **Etapas**; professor → Conta › **Atividades** ("Minhas atividades" ou "Todas por etapa"). O formulário tem etapa, tipo, conteúdo, enunciado, texto de apoio (palavra, frase ou texto, conforme o tipo) e as alternativas com a certa marcada; o servidor confere o gabarito (múltipla escolha = exatamente 1 certa; "Formar palavra" = as peças marcadas formam a palavra; escrita = sem alternativas e com a resposta) e explica o que falta. A atividade nova entra na trilha de **todos** os alunos na hora. Travas: pergunta do nivelamento não é inativada nem muda de etapa, e a última atividade ativa de uma etapa não é inativada (409). Etapa nova sem atividades: o aluno não sobe para ela até ela ganhar atividades.
 
-**Testes:** `npm test` roda tudo. `npm run server:test` roda os do servidor com o executor nativo do Node (`node --test`): regras de progressão (`server/src/progressao.test.ts`), correção (`correcao.test.ts`), rotas de respostas/nivelamento/progresso (`server/src/rotas/progresso.test.ts`), contas, aprovações e vínculos (`contas.test.ts`), autorização e gabarito (`autorizacao.test.ts`), área do professor (`professor.test.ts`), cadastro de atividades e etapas (`cadastroAtividades.test.ts` e `server/src/validarAtividade.test.ts`) e narração (`narracao.test.ts`), num banco temporário: o seu `ajai.db` não é tocado. `npm run app:test` roda os do app: voz (`node --test`) e telas (**jest-expo**, arquivos `src/testes/*.test.tsx`). Casos manuais: [`docs/testes/casos-de-teste.md`](docs/testes/casos-de-teste.md).
+**Testes:** `npm test` roda tudo. `npm run server:test` roda os do servidor com o executor nativo do Node (`node --test`): regras de progressão (`server/src/progressao.test.ts`), correção (`correcao.test.ts`), rotas de respostas/nivelamento/progresso (`server/src/rotas/progresso.test.ts`), contas, aprovações e vínculos (`contas.test.ts`), autorização e gabarito (`autorizacao.test.ts`), segurança e privacidade (`seguranca.test.ts`), área do professor (`professor.test.ts`), cadastro de atividades e etapas (`cadastroAtividades.test.ts` e `server/src/validarAtividade.test.ts`) e narração (`narracao.test.ts`), num banco temporário: o seu `ajai.db` não é tocado. `npm run app:test` roda os do app: voz (`node --test`) e telas (**jest-expo**, arquivos `src/testes/*.test.tsx`). Casos manuais: [`docs/testes/casos-de-teste.md`](docs/testes/casos-de-teste.md).
 
 > **Depois de `git pull` com rotas novas no app:** rode `npx expo start` uma vez antes do `npx tsc --noEmit`. É ele que gera os tipos das rotas (`.expo/types/router.d.ts`); sem isso o `tsc` reclama das rotas novas.
 
@@ -162,7 +163,8 @@ npm run db:reset         # recria o banco do zero com os dados de demonstração
 npm run db:query         # lista as tabelas e quantas linhas cada uma tem
 npm run server:dev       # sobe a API (http://localhost:3333/health)
 npm run typecheck        # checagem de tipos do app e do servidor
-npm run usuario:senha -- <usuário, e-mail ou telefone>   # senha provisória (qualquer perfil)
+npm run usuario:senha -- <usuário, e-mail ou telefone>   # senha provisória (qualquer perfil; obriga a criar outra ao entrar)
+npm run usuario:apagar -- <usuário, e-mail ou telefone>  # pedido LGPD: mostra o que sai; apaga com --confirmar no fim
 npm run voz:preparar     # gera os áudios das atividades (precisa da chave da Azure; ver "Narração por voz")
 npm test                 # testes do servidor e do app (voz e telas)
 ```
@@ -429,8 +431,8 @@ O roteiro completo até a entrega, com prazo, critério de pronto e **um prompt 
 | 8 | Área do professor e do responsável — ✅ | 15/11 |
 | 9 | Cadastro de atividades (admin e professor) e níveis (admin) — ✅ | 15/11 |
 | 10 | Narração por voz (Azure) e preferências — ✅ | 15/11 |
-| 11 | Testes automatizados | 16/11 |
-| 12 | Segurança e privacidade (LGPD) | 16/11 |
+| 11 | Testes automatizados — ✅ | 16/11 |
+| 12 | Segurança e privacidade (LGPD) — ✅ | 16/11 |
 | 13 | Correção de bugs e polimento | 16/11 |
 | 14 | Documentação final | 16/11 |
 
@@ -468,7 +470,7 @@ Legenda: ✅ feito · 🟡 esqueleto/parcial (só no app, com dados em memória)
 - ✅ Identificação de dificuldades (RF17): calculada por conteúdo no servidor, por aluno (painel e métricas) e por turma (relatório de dificuldades)
 - ✅ Registro de frequência / "Ofensiva – dias seguidos" (RF15): calculada no servidor (`calcularOfensiva` e `frequenciaRecente` em `server/src/progressao.ts`, fuso America/Sao_Paulo, com testes) e mostrada na home e no progresso com texto encorajador (passo 7)
 - 🟡 Continuidade do aprendizado (RF22): o CONTINUAR abre uma **sessão de 5 atividades** seguidas (acertos); depois de um acerto vai direto para a próxima, e só no fim do bloco oferece "Voltar ao início" ou "Continuar treinando" (`services/sessaoDeEstudo.ts`, `ATIVIDADES_POR_SESSAO`). A próxima atividade vem do servidor (`GET /alunos/eu/progresso`), então continua certa entre aberturas do app
-- ⬜ Executar os casos manuais ([`docs/testes/casos-de-teste.md`](docs/testes/casos-de-teste.md), 49 casos, escritos no passo 11) em Android e iPhone/web (passo 13)
+- ⬜ Executar os casos manuais ([`docs/testes/casos-de-teste.md`](docs/testes/casos-de-teste.md), 54 casos: 49 do passo 11 e 5 do passo 12) em Android e iPhone/web (passo 13)
 - ⬜ Correção de bugs residuais
 - ⬜ Documentação final (passo 14; entrega **17/11**)
 
@@ -493,7 +495,7 @@ Legenda: ✅ feito · 🟡 esqueleto/parcial (só no app, com dados em memória)
 - ✅ Instituição e administrador: inscrição, aprovação com código e aprovação de professores (Passo 3.1). ✅ A instituição cria turmas e escolhe o professor de cada uma (`/instituicao/turmas`, passo 8; vê só quantos alunos, não os nomes). ⬜ Revogar aprovação ou tirar professor da instituição (não previsto)
 - ✅ Professor: corrigir manualmente uma resposta (APF 35) na tela de métricas, com observação opcional; recalcula o DesempenhoConteudo, mas **não muda a etapa** do aluno (decisão do passo 8: a subida de etapa já aconteceu ou não)
 - ✅ Aluno: editar preferências de velocidade da voz e tamanho da letra (APF 17): "Voz e letra" (`/aluno/preferencias`, passo 10, 18/11), salvas no servidor e aplicadas na hora. A voz (`vozPreferida`) continua só pt-BR (uma voz configurada em `AZURE_VOZ`). **Sem frame no Figma**; falta a equipe abrir no Expo Go
-- 🟡 Trocar/recuperar senha (APF 18): ✅ todos os perfis trocam a própria (inclusive o aluno, desde o Passo 3.1); ✅ senha provisória para qualquer perfil pelo administrador/script; 🟡 `/esqueci-senha` pede o e-mail e diz que mandou o link de redefinição, mas **não envia nada** (MVP, sem serviço de e-mail: na prática, a senha provisória continua sendo pelo administrador). Faltam as telas no Figma
+- 🟡 Trocar/recuperar senha (APF 18): ✅ todos os perfis trocam a própria (inclusive o aluno, desde o Passo 3.1); ✅ senha provisória para qualquer perfil pelo administrador/script, com troca obrigatória ao entrar (passo 12); 🟡 `/esqueci-senha` pede o e-mail e diz que mandou o link de redefinição, mas **não envia nada** (MVP, sem serviço de e-mail: na prática, a senha provisória continua sendo pelo administrador). Isso contradiz o termo de uso: **sugestão para o passo 13**, trocar o texto por "Peça uma senha provisória ao seu professor ou à sua escola". Faltam as telas no Figma
 
 ### Acessibilidade e conteúdo
 - ✅ **Narração por voz (RNF04)** — passo 10 (18/11). A voz passou do Piper (qualidade ruim) para a **Azure** (voz neural `pt-BR-FranciscaNeural`), testada pela equipe no celular e na web. O servidor gera o MP3 uma vez (cache em `AudioCache`), e os **MP3 vão para o git** (`server/storage/audio/`, ~20 MB): quem clona ouve a voz sem a chave. O app toca com o `expo-audio` e cai no `expo-speech` (voz do aparelho) se a rede falhar ou o áudio não existir e não houver chave. Corrigido: iPhone com a chave do silencioso ligada deixava a voz do aparelho muda. "Falando..." no `BotaoAudio`, fala para ao sair da tela, toque longo nas opções lê a opção.
@@ -510,11 +512,12 @@ Legenda: ✅ feito · 🟡 esqueleto/parcial (só no app, com dados em memória)
 
 ### Qualidade, segurança e privacidade
 - ✅ Testes automatizados (passo 11, 18/11): servidor com `node --test` (186 testes: correção, progressão e ofensiva, rotas do passo 5, contas/aprovações/vínculos, autorização e gabarito ausente em todas as rotas do aluno, área do professor/responsável, cadastro de atividades/etapas e narração); 12 testes da voz do app no Node; testes de tela com `jest-expo` (alternativa certa → "Muito bem!", errada → "Quase lá!"). Tudo no `npm test`. ⬜ Mais testes de tela, se der tempo (nivelamento, home)
-- 🟡 Senha com hash no servidor (✅ scrypt) e comunicação só por HTTPS (⬜ RNF11; na demo é HTTP na rede local)
-- ⬜ Invalidar tokens antigos depois de troca/redefinição de senha (hoje valem até vencer, 30 dias) — passo 12
-- ⬜ Forçar troca da senha provisória no primeiro login (passo 12)
+- 🟡 Senha com hash no servidor (✅ scrypt) e comunicação só por HTTPS (⬜ RNF11; na demo é HTTP na rede local; em produção, HTTPS e `CORS_ORIGEM`)
+- ✅ Tokens antigos caem quando a senha muda ou quando o administrador gera uma provisória (`Usuario.versaoToken`, migração 007; passo 12, 18/11)
+- ✅ Senha provisória obriga a criar outra ao entrar ("Crie sua senha", `/trocar-senha`; o servidor recusa as outras rotas até a troca)
 - ✅ Problema "professor que criou o aluno saiu" resolvido no Passo 3.1: o aluno tem conta própria e troca a própria senha
-- ⬜ Coletar só o necessário e escrever termo de uso/privacidade (RNF12, LGPD)
+- ✅ Termo de uso e privacidade em linguagem simples ([`docs/privacidade.md`](docs/privacidade.md) e tela `/termo`, com áudio), "Li e concordo" nos 4 cadastros (data e versão guardadas), convite explicando o que o acompanhante vê, revisão de quem vê cada dado e `npm run usuario:apagar` para pedidos de exclusão (passo 12, RNF12, LGPD). `dataNascimento` saiu da resposta da API (não é coletado). Falta a equipe abrir as telas no Expo Go
+- ⬜ Pendências do passo 12 (detalhes em [`docs/privacidade.md`](docs/privacidade.md)): e-mail de contato do AJAI para pedidos da LGPD; apagar a conta pela tela do app; narrações com o primeiro nome entram em `server/storage/audio/` (versionado: conferir antes do commit); limpar `Vinculo.identificadorConvite` depois do aceite; contas antigas sem aceite registrado; tirar `dataNascimento` do diagrama (passo 14)
 
 ### Design (UX/UI)
 - ⬜ Telas que faltam no Figma (em 18/11 já existem frames de progresso, preferências, minha conta, relatórios, conta e turmas do professor, recuperação de senha, "carregando", "sem internet" e "nível sem atividades"): telas do administrador; do Passo 3.1: escolha de perfil, 4 cadastros, espera/recusa, área da instituição, área do responsável, aprovação no admin, "Meus alunos" e convites do aluno

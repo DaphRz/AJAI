@@ -24,6 +24,7 @@ export default function CadastroAluno() {
         { chave: "senha", rotulo: "Senha", tipo: "senha", placeholder: "Pelo menos 6 letras ou números" },
       ]}
       observacao="Para entrar, use o usuário, o e-mail ou o telefone. Anote sua senha num lugar seguro."
+      ouvirTermo
     />
   );
 }

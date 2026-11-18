@@ -110,4 +110,14 @@ Preencha "Resultado obtido" com **OK** ou com o que aconteceu de diferente, o ap
 | ID | Pré-condição | Passos | Resultado esperado | Resultado obtido |
 |---|---|---|---|---|
 | CT-48 | Aluno logado | Minha conta → "Trocar minha senha": senha atual, senha nova; confirmar. Sair e entrar com a nova. | Entra com a senha nova; a antiga não funciona mais. | |
-| CT-49 | Aluno esqueceu a senha (o app ainda não tem botão para isso: é pelo servidor) | No computador do servidor, rodar `npm run usuario:senha -- maria.silva`. Entrar como `maria.silva` com a senha mostrada. | Entra com a senha provisória. | |
+| CT-49 | Aluno esqueceu a senha (o app ainda não tem botão para isso: é pelo servidor) | No computador do servidor, rodar `npm run usuario:senha -- maria.silva`. Entrar como `maria.silva` com a senha mostrada. | Entra com a senha provisória e cai em **"Crie sua senha"** (sem "Voltar"). Depois de salvar a senha nova, vai para a área do aluno (passo 12). | |
+| CT-50 | Aluno logado em **dois** aparelhos (ou celular e navegador) | No aparelho 1, Minha conta → "Trocar minha senha". No aparelho 2, abrir qualquer tela. | O aparelho 1 continua logado; o aparelho 2 volta para o login ("Entre de novo"). | |
+
+## 8. Termo de uso e privacidade (passo 12)
+
+| ID | Pré-condição | Passos | Resultado esperado | Resultado obtido |
+|---|---|---|---|---|
+| CT-51 | Sem login | Cadastro de aluno: preencher tudo **sem** marcar "Li e concordo" e tocar em "Criar conta". | Aviso "Leia o termo de uso e toque em Li e concordo."; a conta não é criada. | |
+| CT-52 | Sem login | Cadastro de aluno: tocar em "Ouvir o termo"; depois em "Ler o termo de uso". | Ouve o resumo do termo; a tela do termo abre com as partes e um "Ouvir" em cada uma; "Voltar" volta ao cadastro com os campos preenchidos. | |
+| CT-53 | Sem login | Repetir o cadastro de professor, responsável e instituição marcando "Li e concordo". | As 3 contas são criadas (professor e instituição ficam esperando aprovação). | |
+| CT-54 | Professor convidou `maria.silva` | Entrar como `maria.silva`, abrir o convite em "Quem me acompanha" e tocar em "Ouvir ajuda". | A tela e o áudio explicam que quem ela aceitar vê o nome, a etapa, os dias de estudo e os acertos, e que ninguém vê e-mail, telefone ou senha. | |

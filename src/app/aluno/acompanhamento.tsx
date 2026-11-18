@@ -16,6 +16,13 @@ import {
 import { familias, cores, type Fontes } from "@/theme/tokens";
 import { useEstilos } from "@/context/preferencias";
 
+/**
+ * Passo 12 (LGPD): o convite explica o que a pessoa passa a ver se o aluno aceitar.
+ * Professor vê também as respostas (métricas do passo 8); familiar vê etapa, dias e dicas.
+ */
+const O_QUE_VE =
+  "Quem você aceitar vai ver o seu nome, a sua etapa, os dias em que você estudou e os seus acertos. O professor também vê as suas respostas. Ninguém vê o seu e-mail, o seu telefone ou a sua senha. Você pode desfazer quando quiser.";
+
 export default function Acompanhamento() {
   const styles = useEstilos(criarEstilos);
   const [versao, setVersao] = useState(0);
@@ -41,7 +48,7 @@ export default function Acompanhamento() {
 
   const textoAudio = [
     convites.length > 0
-      ? `Você tem ${convites.length} convite${convites.length > 1 ? "s" : ""}. ${convites.map(descreverAcompanhante).join(". ")} quer acompanhar seu progresso. Toque em Aceitar ou em Recusar.`
+      ? `Você tem ${convites.length} convite${convites.length > 1 ? "s" : ""}. ${convites.map(descreverAcompanhante).join(". ")} quer acompanhar seu progresso. ${O_QUE_VE} Toque em Aceitar ou em Recusar.`
       : "Você não tem convites agora.",
     aceitos.length > 0 ? `Acompanham você: ${aceitos.map(descreverAcompanhante).join(". ")}.` : "",
     aviso?.texto ?? "",
@@ -51,7 +58,7 @@ export default function Acompanhamento() {
     <Tela rodape={<BotaoAudio texto={textoAudio} />}>
       <Botao titulo="‹ Voltar" variante="link" onPress={() => router.back()} />
       <Titulo>Quem me acompanha</Titulo>
-      <Corpo>Quem você aceitar pode ver o seu progresso.</Corpo>
+      <Corpo>{O_QUE_VE}</Corpo>
 
       {estado.erro ? (
         <>
@@ -68,7 +75,7 @@ export default function Acompanhamento() {
       {convites.map((v) => (
         <Cartao key={v.idVinculo} destaque>
           <Text style={styles.nome}>{descreverAcompanhante(v)}</Text>
-          <Corpo>quer acompanhar seu progresso.</Corpo>
+          <Corpo>quer acompanhar seu progresso. Se você aceitar, vai ver as suas atividades e os seus acertos.</Corpo>
           <Botao
             titulo="Aceitar"
             rotuloAcessivel={`Aceitar ${descreverAcompanhante(v)}`}

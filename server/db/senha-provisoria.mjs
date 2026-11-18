@@ -26,9 +26,10 @@ if (!usuario) {
 }
 
 const senha = gerarSenhaProvisoria();
-db.prepare("UPDATE Usuario SET senhaHash = ?, atualizadoEm = ? WHERE idUsuario = ?")
+// Mesma regra da rota do administrador (passo 12): derruba os logins antigos e obriga a trocar ao entrar.
+db.prepare("UPDATE Usuario SET senhaHash = ?, senhaProvisoria = 1, versaoToken = versaoToken + 1, atualizadoEm = ? WHERE idUsuario = ?")
   .run(gerarHashSenhaSync(senha), new Date().toISOString(), usuario.idUsuario);
 db.close();
 
 console.log(`${usuario.nome} (${usuario.perfil}) agora entra com a senha provisória: ${senha}`);
-console.log("Peça para a pessoa trocar a senha depois de entrar (Minha conta / Conta › Trocar minha senha).");
+console.log("Ao entrar, o app pede para a pessoa criar uma senha nova.");

@@ -9,13 +9,21 @@ import { useAluno } from "@/hooks/useAluno";
 export default function ContaAluno() {
   const aluno = useAluno();
   const { sair } = useSessao();
-  const entraCom = aluno.nomeUsuario ?? aluno.email ?? aluno.telefone;
+  // Passo 12 (privacidade): o texto narrado vai para o serviço de voz (Azure) e fica no cache de
+  // áudio do servidor. Por isso a narração diz só o primeiro nome e o usuário, nunca o e-mail
+  // nem o telefone (eles continuam escritos na tela).
+  const primeiroNome = aluno.nome.split(" ")[0];
+  const entraCom = aluno.nomeUsuario
+    ? `o usuário ${aluno.nomeUsuario}`
+    : aluno.email
+      ? "o seu e-mail, que está escrito na tela"
+      : "o seu telefone, que está escrito na tela";
 
   return (
     <Tela
       rodape={
         <BotaoAudio
-          texto={`Sua conta, ${aluno.nome}. Você entra com ${entraCom}. Para mudar a senha, toque em Trocar minha senha. Para ver quem acompanha você, toque em Quem me acompanha. Para mudar a voz ou o tamanho da letra, toque em Voz e letra. Para sair do aplicativo, toque em Sair.`}
+          texto={`Sua conta, ${primeiroNome}. Você entra com ${entraCom}. Para mudar a senha, toque em Trocar minha senha. Para ver quem acompanha você, toque em Quem me acompanha. Para mudar a voz ou o tamanho da letra, toque em Voz e letra. Para sair do aplicativo, toque em Sair.`}
         />
       }
     >

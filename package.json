@@ -64,6 +64,7 @@
     "server:typecheck": "tsc -p server --noEmit",
     "server:test": "node --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types --test \"server/src/**/*.test.ts\"",
     "usuario:senha": "node --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON server/db/senha-provisoria.mjs",
+    "usuario:apagar": "node --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON server/db/apagar-usuario.mjs",
     "voz:preparar": "node --disable-warning=ExperimentalWarning --disable-warning=MODULE_TYPELESS_PACKAGE_JSON server/scripts/voz-preparar.mjs",
     "app:test": "npm run app:test:voz && npm run app:test:telas",
     "test": "npm run server:test && npm run app:test",
@@ -78,6 +79,10 @@
     "preset": "jest-expo",
     "testMatch": [
       "<rootDir>/src/**/*.test.tsx"
-    ]
+    ],
+    "moduleNameMapper": {
+      "^@/assets/(.*)$": "<rootDir>/assets/$1",
+      "^@/(.*)$": "<rootDir>/src/$1"
+    }
   }
 }

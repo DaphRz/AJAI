@@ -44,7 +44,8 @@ async function entrar(identificador: string, senha = SENHA_DEMO): Promise<string
 
 /** Cadastra e guarda o token em tokens[apelido]. Devolve a resposta inteira. */
 async function cadastrar(apelido: string, perfil: string, corpo: object) {
-  const r = await app.inject({ method: "POST", url: `/auth/cadastro/${perfil}`, payload: corpo });
+  // Passo 12: todo cadastro precisa do "Li e concordo" (testado à parte em seguranca.test.ts).
+  const r = await app.inject({ method: "POST", url: `/auth/cadastro/${perfil}`, payload: { aceitouTermos: true, ...corpo } });
   if (r.statusCode === 201) tokens[apelido] = r.json().token;
   return r;
 }

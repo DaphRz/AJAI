@@ -87,6 +87,8 @@ export function MeusAlunos({ extraDoAluno, aoMudar }: Props = {}) {
       {podeConvidar ? (
         <Cartao destaque>
           <Subtitulo>Convidar aluno</Subtitulo>
+          {/* Passo 12 (LGPD): o acompanhante só vê os dados depois que o aluno aceitar. */}
+          <Corpo>O aluno recebe o convite no aplicativo. Você só vê o progresso dele se ele aceitar.</Corpo>
           <Campo
             rotulo="Usuário, e-mail ou telefone do aluno"
             placeholder="Exemplo: maria.silva"

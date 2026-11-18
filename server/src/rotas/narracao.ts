@@ -7,7 +7,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { extname, join } from "node:path";
 import type { FastifyInstance } from "fastify";
-import { exigirLogin } from "../autenticacao.ts";
+import { exigirLoginComSenhaProvisoria } from "../autenticacao.ts";
 import { config } from "../config.ts";
 import { ErroApi, esquemaErro } from "../erros.ts";
 import { LIMITE_TEXTO, PADRAO_ARQUIVO, obterNarracao } from "../voz/narracao.ts";
@@ -17,7 +17,8 @@ export async function rotasNarracao(app: FastifyInstance): Promise<void> {
   app.post<{ Body: { texto: string; velocidade?: number; voz?: string } }>(
     "/narracao",
     {
-      preHandler: exigirLogin(),
+      // Vale também com a senha provisória: a tela "Crie sua senha" tem "Ouvir ajuda".
+      preHandler: exigirLoginComSenhaProvisoria(),
       schema: {
         body: {
           type: "object",

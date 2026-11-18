@@ -25,6 +25,12 @@ export interface LinhaUsuario {
   ativo: number;
   criadoEm: string;
   atualizadoEm: string;
+  /** Passo 12 (migração 007): sobe a cada troca de senha; derruba os tokens antigos. */
+  versaoToken: number;
+  /** 1 = entrou com senha provisória e precisa trocar antes de usar o app. */
+  senhaProvisoria: number;
+  termosAceitosEm: string | null;
+  versaoTermos: string | null;
 }
 
 /** Usuário como o app recebe (campos nulos são omitidos, como os opcionais de modelos.ts). */
@@ -162,11 +168,12 @@ export function usuarioPublico(u: LinhaUsuario): UsuarioPublico {
     email: u.email,
     telefone: u.telefone,
     perfil: u.perfil,
-    dataNascimento: u.dataNascimento,
     ativo: u.ativo === 1,
     criadoEm: u.criadoEm,
     atualizadoEm: u.atualizadoEm,
     situacao: situacaoDaConta(u),
+    // Passo 12: o app manda para "Crie sua senha" antes de qualquer outra tela.
+    precisaTrocarSenha: u.senhaProvisoria === 1 ? true : null,
   };
   if (u.perfil !== "ALUNO") return semNulos(base) as UsuarioPublico;
 
@@ -186,8 +193,8 @@ export const esquemaUsuario = {
     email: { type: "string" },
     telefone: { type: "string" },
     perfil: { type: "string" },
-    dataNascimento: { type: "string" },
     ativo: { type: "boolean" },
+    precisaTrocarSenha: { type: "boolean" },
     criadoEm: { type: "string" },
     atualizadoEm: { type: "string" },
     vozPreferida: { type: "string" },

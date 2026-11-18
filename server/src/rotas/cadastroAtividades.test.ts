@@ -58,7 +58,7 @@ before(async () => {
   const r = await app.inject({
     method: "POST",
     url: "/auth/cadastro/professor",
-    payload: { nome: "Lucas Prado", email: "lucas@teste.app", telefone: "11955554444", senha: "senha123", codigo: "EJAVV2" },
+    payload: { nome: "Lucas Prado", email: "lucas@teste.app", telefone: "11955554444", senha: "senha123", codigo: "EJAVV2", aceitouTermos: true },
   });
   assert.equal(r.statusCode, 201, r.body);
   banco().prepare("UPDATE Professor SET statusVinculo = 'APROVADO' WHERE idUsuario = ?").run(r.json().usuario.idUsuario);
