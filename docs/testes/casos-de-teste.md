@@ -1,32 +1,8 @@
-# Casos de teste manuais – AJAI
+# Casos de teste manuais
 
-Casos dos fluxos principais, para executar pelas **telas do app** (Expo Go no Android e no iPhone, ou `w` para a web). Os resultados entram na coluna "Resultado obtido"; o que falhar vira a lista de problemas do passo 13 (com o ID do caso).
+Para executar pelas telas do app, com o banco recém-criado (`npm run db:reset`) e os usuários de demonstração do [README](../../README.md). Respostas certas em [`conteudo-pedagogico.md`](../conteudo-pedagogico.md). Preencha "Resultado obtido" com **OK** ou o que aconteceu (aparelho e data).
 
-Os testes automáticos (`npm test`) cobrem as regras e a API, mas não substituem estes casos: aqui se confere o que o aluno vê, ouve e toca.
-
-## Como preparar
-
-1. `npm run db:reset` (banco limpo, com os dados de demonstração).
-2. `npm run server:dev` (API em `http://localhost:3333`) e, em outro terminal, `npx expo start`.
-3. Senha de todos os usuários de demonstração: `demo1234`.
-
-| Usuário | Perfil | Situação no seed |
-|---|---|---|
-| `admin@ajai.app` | Administrador | — |
-| `instituicao@ajai.app` | Instituição | APROVADA, código `EJAVV2` |
-| `aprender@ajai.app` | Instituição | PENDENTE |
-| `rafael@ajai.app` | Professor | APROVADO, acompanha os 4 alunos (turma "EJA – Noite") |
-| `paula@ajai.app` | Professor | PENDENTE |
-| `joana@ajai.app` | Responsável | acompanha o Bruno |
-| `maria.silva` | Aluna | nova, ainda sem nivelamento |
-| `ana.souza`, `clara.santos` | Alunas | etapa 1; sobem de etapa no primeiro acerto |
-| `bruno.lima` | Aluno | etapa 2 |
-
-As respostas certas de cada atividade estão em [`docs/conteudo-pedagogico.md`](../conteudo-pedagogico.md).
-
-**Em toda tela do aluno, confira também:** botão "Ouvir ajuda" ou "Ouvir instrução" que fala o texto da tela; botões com texto escrito (não só ícone); letra grande; nenhuma mensagem com "Erro", "Inválido" ou "Falha". As telas de login e de cadastro **não** têm "Ouvir ajuda".
-
-Preencha "Resultado obtido" com **OK** ou com o que aconteceu de diferente, o aparelho e a data (ex.: "Android 12, 19/11: o botão Aceitar não respondeu").
+Em toda tela do aluno: "Ouvir ajuda" funcionando, botões com texto, letra grande e nenhuma mensagem com "Erro", "Inválido" ou "Falha".
 
 ## 1. Instituição e administrador
 
@@ -110,10 +86,10 @@ Preencha "Resultado obtido" com **OK** ou com o que aconteceu de diferente, o ap
 | ID | Pré-condição | Passos | Resultado esperado | Resultado obtido |
 |---|---|---|---|---|
 | CT-48 | Aluno logado | Minha conta → "Trocar minha senha": senha atual, senha nova; confirmar. Sair e entrar com a nova. | Entra com a senha nova; a antiga não funciona mais. | |
-| CT-49 | Aluno esqueceu a senha (o app ainda não tem botão para isso: é pelo servidor) | No computador do servidor, rodar `npm run usuario:senha -- maria.silva`. Entrar como `maria.silva` com a senha mostrada. | Entra com a senha provisória e cai em **"Crie sua senha"** (sem "Voltar"). Depois de salvar a senha nova, vai para a área do aluno (passo 12). | |
+| CT-49 | Aluno esqueceu a senha (o app ainda não tem botão para isso: é pelo servidor) | No computador do servidor, rodar `npm run usuario:senha -- maria.silva`. Entrar como `maria.silva` com a senha mostrada. | Entra com a senha provisória e cai em **"Crie sua senha"** (sem "Voltar"). Depois de salvar a senha nova, vai para a área do aluno. | |
 | CT-50 | Aluno logado em **dois** aparelhos (ou celular e navegador) | No aparelho 1, Minha conta → "Trocar minha senha". No aparelho 2, abrir qualquer tela. | O aparelho 1 continua logado; o aparelho 2 volta para o login ("Entre de novo"). | |
 
-## 8. Termo de uso e privacidade (passo 12)
+## 8. Termo de uso e privacidade
 
 | ID | Pré-condição | Passos | Resultado esperado | Resultado obtido |
 |---|---|---|---|---|

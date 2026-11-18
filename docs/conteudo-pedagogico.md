@@ -1,33 +1,17 @@
-# Conteúdo pedagógico do AJAI (Passo 6)
+# Conteúdo pedagógico
 
-Banco de atividades e nivelamento do AJAI, aprovados pela equipe em 14/11. O conteúdo está no `src/data/mock.ts` (fonte do seed) e no banco (`npm run db:seed`); as tabelas abaixo saíram do banco, então mostram exatamente o que o app exibe.
+35 atividades (7 por nível) do cotidiano adulto, definidas em `src/data/mock.ts` (fonte do seed). Para mudar: edite o `mock.ts` e rode `npm run db:seed`.
 
-**Como mudar uma atividade:** edite o `mock.ts`, rode `npm run db:seed` e atualize a tabela aqui. O seed **para com mensagem** se uma atividade de múltipla escolha não tiver exatamente 1 opção correta, se as peças de PALAVRA não formarem a palavra ou se uma ESCRITA vier sem resposta. Pelo app, o administrador vai poder fazer isso no passo 9.
+## Critérios
 
-## Critérios usados
-
-- **Público adulto:** só situações do dia a dia (ônibus, mercado, remédio, conta de luz, documento, placa, receita, mensagem no celular). Nada de bichinhos, brinquedos ou linguagem infantil.
-- **Enunciado curto** (até 12 palavras), **3 opções** e só **1 correta** (PALAVRA: as opções são as peças, com 1 a mais para distrair; ESCRITA: sem opções).
-- **Distratores plausíveis**, escolhidos pelo erro mais comum em cada etapa:
-  - letras: letras que se confundem no som ou no desenho (B/P/V, M/N, C/G, T/D, O/U/A);
-  - sílabas: a mesma consoante com outra vogal (BA/BO/BU) ou uma consoante parecida (CA/GA, DI/TI, RE/LE);
-  - frases e textos: outros números ou lugares do próprio texto, ou o contrário do que o texto diz.
-- **7 atividades por nível** (35 no total). Os ids 1 a 7 são os mesmos de antes, porque as respostas de exemplo e os testes dependem deles.
-- **`conteudo` padronizado**, porque ele agrupa o relatório de dificuldades ("Vale a pena treinar..."):
-
-| Nível | Padrão do `conteudo` | Exemplos |
-|---|---|---|
-| 1 | `Letra X` (a tela tira a letra grande daqui) | Letra B, Letra O |
-| 2 | `Sílaba XY` (sem acento) | Sílaba BO, Sílaba ME |
-| 3 | `Palavra X` (montar) e `Escrita X` (escrever) | Palavra CASA, Escrita PÃO |
-| 4 | `Frase: <tema do dia a dia>` | Frase: horário, Frase: remédio |
-| 5 | `Texto: <habilidade de leitura>` | Texto: achar informação, Texto: entender o objetivo, Texto: tirar conclusão |
-
-No nível 5 o `conteudo` é a **habilidade** (e não o tema), porque é isso que o professor precisa saber para planejar a aula: o aluno acha a informação, mas não tira conclusão?
+- Situações do dia a dia (ônibus, mercado, remédio, conta, documento), sem linguagem infantil.
+- Enunciado curto, 3 opções e 1 correta; distratores pelo erro mais comum (B/P/V, BA/BO, CA/GA, números do próprio texto).
+- `conteudo` padronizado (agrupa as dificuldades): `Letra X`, `Sílaba XY`, `Palavra X` / `Escrita X`, `Frase: <tema>`, `Texto: <habilidade>`.
+- RF05 (letra e som) usa o tipo LETRA; RF11 (cotidiano) é o tema de todas as atividades. Nenhum tipo novo.
 
 ## As atividades
 
-Coluna "Niv." = posição da pergunta no nivelamento (vazia = fora do nivelamento).
+Coluna "Niv." = posição no nivelamento.
 
 ### Nível 1 · Aprendendo Letras
 
@@ -89,22 +73,9 @@ Coluna "Niv." = posição da pergunta no nivelamento (vazia = fora do nivelament
 | 34 | INTERPRETACAO | Texto: tirar conclusão | Que horas passa o próximo ônibus? | O ônibus 210 passa de meia em meia hora. O último ônibus passou às 8 horas. | 8 horas · **8 e meia** · 9 horas | 10 |
 | 35 | INTERPRETACAO | Texto: tirar conclusão | Em qual mercado o arroz está mais barato? | No Mercado Bom Preço, o pacote de arroz de 5 quilos custa 25 reais. No Mercado Economia, custa 22 reais. | No Bom Preço · **No Economia** · O preço é igual |  |
 
-## RF05 (letra e som) e RF11 (cotidiano): tipo novo ou só `conteudo`?
+## Nivelamento
 
-**Proposta: nenhum valor novo em `TipoAtividade`.** Os dois viram uso dos tipos que já existem.
-
-- **RF05, associar letra e som:** é uma atividade `LETRA` com `conteudo: "Letra X"`. O que muda é o enunciado ("Qual palavra começa com **o som** da letra P?") e a narração: o "Ouvir instrução" lê as opções em voz alta ("Mão, Banco ou Pão"), então o aluno associa o som da palavra à letra grande da tela. As atividades 8 e 10 são desse jeito. A tela, a correção e o relatório são os mesmos do reconhecimento de letra.
-- **RF11, situações do cotidiano:** não é um formato de atividade, é o **tema** de todas elas. Ele aparece em todos os níveis (ÔNIBUS, REMÉDIO, conta de luz, placa, receita) e, nos níveis 4 e 5, no próprio `conteudo` ("Frase: remédio", "Frase: placa").
-
-**Impacto:**
-- **Diagrama de classes:** nenhum. O enum `TipoAtividade` continua com LETRA, SILABA, PALAVRA, FRASE, ESCRITA e INTERPRETACAO, e nenhum campo novo foi criado. (O `textoApoio` e o `ordemNivelamento` já existiam como extras.)
-- **APF:** nenhuma função nova nem alterada. O ALI Atividade continua com os mesmos campos, e Incluir/Editar/Listar Atividade (passo 9) já cobrem o conteúdo novo. A documentação só precisa dizer que RF05 e RF11 são atendidos pelos tipos LETRA e FRASE/INTERPRETACAO, com o tema no `conteudo`.
-- **Se a equipe quiser separar no relatório** "reconhecer a letra" de "letra e som", basta usar `conteudo: "Som da letra P"`. Mas então a letra grande deixa de aparecer na tela (ela sai do padrão "Letra X"), e seria preciso ajustar o `AtividadeView`. Por isso a proposta é não separar.
-- **Para depois do MVP:** um campo `tema` (ônibus, saúde, dinheiro...) permitiria filtrar atividades por situação. Fica fora do escopo.
-
-## Nivelamento (RF03)
-
-**Perguntas (2 por nível, da mais fácil para a mais difícil):**
+10 perguntas, 2 por nível. O aluno para no primeiro erro e só passa de nível acertando as 2 do par; o nível inicial é o do par em que errou (acertou tudo = nível 5). Regra em `definirNivelInicial` (`server/src/progressao.ts`).
 
 | Ordem | Nível | id | Pergunta | Por que esta |
 |---|---|---|---|---|
@@ -119,74 +90,6 @@ Coluna "Niv." = posição da pergunta no nivelamento (vazia = fora do nivelament
 | 9 | 5 | 7 | O que Dona Rosa precisa levar? | achar informação num texto |
 | 10 | 5 | 34 | Que horas passa o próximo ônibus? | tirar conclusão (8h + meia hora) |
 
-**Regra do nível inicial** (definida no passo 6, em `definirNivelInicial`, `server/src/progressao.ts`):
-1. As perguntas vêm em pares, um par por nível, do nível 1 ao 5.
-2. O aluno passa de nível quando acerta **as 2** perguntas do par. Errou uma, o nivelamento para (no máximo 1 erro: menos frustração).
-3. O nível inicial é o **primeiro nível que ele ainda não domina**, ou seja, o do par em que errou. Acertou todas = nível 5.
+## Imagens
 
-Por quê:
-- **Menos chute:** com 3 opções, acertar 1 pergunta no chute é 1 em 3; acertar as 2 do par é 1 em 9.
-- **Não repetir o que ele já sabe:** quem acerta letras e sílabas começa nas palavras, e não de novo nas letras, o que é desmotivador para o adulto.
-- **Conservadora no topo:** quem erra no nível 5 começa no 5, e não é "aprovado" sem treinar.
-
-Exemplos:
-- errou a 1ª pergunta → **nível 1**;
-- acertou 12 e 1, e errou a 13 (CAFÉ) → **nível 2**;
-- acertou 12, 1 e 13, e errou a 3 (BONÉ) → **nível 2** (acertou só metade do par);
-- acertou 12, 1, 13 e 3, e errou a 4 (CASA) → **nível 3**;
-- acertou as 10 → **nível 5**.
-
-A regra antiga (nível da última pergunta acertada) deixava o aluno uma etapa abaixo e aceitava um nível com 1 acerto só. O app não mudou: ele continua parando no primeiro erro, e quem decide o nível é o servidor.
-
-## Imagens para a equipe de design
-
-Hoje as figuras são ícones provisórios (`Alternativa.ilustracao`). O app já mostra as imagens (18/11): basta preencher `urlImagem` no `src/data/mock.ts` com o endereço completo da imagem, na opção (figura da alternativa) ou na atividade (foto acima da palavra em destaque, ou acima da escrita/frase/texto), e rodar `npm run db:seed`. Sem `urlImagem`, continua o ícone. O servidor ainda não guarda nem serve os arquivos. Formato sugerido: PNG ou WebP quadrado 512 × 512, até 1 MB, desenho simples e realista (nada de estilo infantil), um objeto por imagem. Na tela, a figura da alternativa ocupa 108 × 96 e a foto da palavra 144 × 144 (medidas do Figma), cortadas para preencher.
-
-**Figuras das opções (nível 1):**
-
-| Arquivo | Descrição | Usada em |
-|---|---|---|
-| `pao.png` | pão francês | 1, 8 |
-| `banco.png` | fachada de agência bancária | 1, 8 |
-| `vaca.png` | vaca | 1 |
-| `pe.png` | pé de adulto | 2 |
-| `mao.png` | mão aberta de adulto | 2, 8 |
-| `sol.png` | sol | 2 |
-| `arroz.png` | pacote de arroz | 9 |
-| `remedio.png` | caixa de remédio com cartela de comprimidos | 9 |
-| `lampada.png` | lâmpada acesa | 9 |
-| `garrafa.png` | garrafa | 10 |
-| `sapato.png` | sapato social | 10 |
-| `cafe.png` | xícara de café | 10 |
-| `televisao.png` | televisão | 11 |
-| `dinheiro.png` | notas de real | 11 |
-| `chave.png` | chave de casa | 11 |
-| `agua.png` | copo de água | 12 |
-| `onibus.png` | ônibus urbano | 12 |
-| `uva.png` | cacho de uva | 12 |
-
-**Figura da palavra em destaque (níveis 2 e 3, acima da palavra):**
-
-| Arquivo | Palavra | Usada em |
-|---|---|---|
-| `bone.png` | BONÉ | 3 |
-| `cafe.png` | CAFÉ (reaproveita a do nível 1) | 13 |
-| `panela.png` | PANELA | 14 |
-| `medico.png` | MÉDICO (profissional de jaleco) | 15 |
-| `conta-de-luz.png` | CONTA (conta de luz em papel) | 16, 29 |
-| `dinheiro.png` | DINHEIRO (reaproveita) | 17 |
-| `remedio.png` | REMÉDIO (reaproveita) | 18, 21 |
-| `casa.png` | CASA | 4 |
-| `sapato.png` | SAPATO (reaproveita) | 19 |
-| `leite.png` | caixa de leite | 20 |
-| `onibus.png` | ÔNIBUS (reaproveita) | 22 |
-| `pao.png` | PÃO, na escrita (reaproveita) | 6 |
-| `luz.png` | interruptor ou lâmpada acesa | 23 |
-
-**Opcionais (frases e textos, para dar contexto):** `placa-proibido-estacionar.png` (27), `mensagem-celular.png` (26, 33), `receita-medica.png` (25, 31), `aviso-falta-agua.png` (32), `ponto-de-onibus.png` (5, 34).
-
-Ao todo: 25 arquivos obrigatórios (alguns servem a mais de uma atividade) e 5 opcionais.
-
-## Correções da revisão
-
-Revisão da equipe em 14/11: **conteúdo aprovado sem correções**, com a regra de nivelamento acima. O fluxo foi testado no app.
+As figuras hoje são ícones (`Alternativa.ilustracao`). Para usar imagem, preencha `urlImagem` no `mock.ts` (PNG/WebP 512 × 512, desenho realista, um objeto). Necessárias: pão, banco, vaca, pé, mão, sol, arroz, remédio, lâmpada, garrafa, sapato, café, televisão, dinheiro, chave, água, ônibus, uva, boné, panela, médico, conta de luz, casa, leite, luz.

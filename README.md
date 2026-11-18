@@ -3,556 +3,111 @@
 Aplicativo mobile de apoio à alfabetização, complementar à EJA, com área de acompanhamento para professores.
 Projeto da disciplina de Gestão de Projetos – Universidade de Vila Velha, 2026 (turma CC6M, equipe 4).
 
-> **Situação em 14/11/2026 (Sprint 4 de 4):** o app já usa a **API** (Fastify sobre o banco SQLite) para login, contas, níveis, atividades, nivelamento, **respostas, progressão e histórico** (passo 5). No **Passo 3.1** o modelo de contas mudou: aluno, professor, responsável e instituição criam a própria conta, a instituição é aprovada pelo administrador, o professor pela instituição, e o acompanhamento é por **vínculo** que o aluno aceita. Desde o **passo 8** a área do professor (painel com período, métricas com gráfico, relatórios por turma, turmas e correção manual) e as recomendações do responsável também vêm da API: nenhuma tela lê mais o `mock.ts`. Veja [Pendências](#pendências) e [Banco de dados](#banco-de-dados-sqlite).
-
 - Protótipo no Figma: <https://www.figma.com/design/hXu6QCdfo7r7Qau5Rbia8M/AJAI>
 - Diagrama de classes: [`docs/diagrama-classes.png`](docs/diagrama-classes.png)
-- Documentação do projeto (PDF) e Análise de Pontos de Função (planilha APF_AJAI.xlsx): com a equipe
+- Conteúdo pedagógico (atividades e nivelamento): [`docs/conteudo-pedagogico.md`](docs/conteudo-pedagogico.md)
+- Termo de uso e segurança: [`docs/privacidade.md`](docs/privacidade.md)
+- Casos de teste manuais: [`docs/testes/casos-de-teste.md`](docs/testes/casos-de-teste.md)
+- EAP do Projeto e Análise de Pontos de Função
+
+**Stack:** Expo SDK 58 (React Native + TypeScript), API Fastify, banco SQLite em arquivo, voz Azure AI Speech (com `expo-speech` de reserva).
 
 ---
 
-## Como executar o projeto
+## Como executar
 
-### 1. Pré-requisitos
-
-| O quê | Versão | Como conferir |
-|---|---|---|
-| [Node.js](https://nodejs.org) | **22.18 ou mais novo** (22 LTS). O banco usa o módulo `node:sqlite`, que só existe no Node 22+ | `node -v` |
-| npm | vem com o Node | `npm -v` |
-| Git | qualquer | `git --version` |
-| Celular com **Expo Go** | versão compatível com o **SDK 58** | Play Store / App Store |
-
-Opcional: emulador Android (Android Studio) ou simulador iOS (Xcode, só no macOS). Também dá para abrir no navegador.
-
-### 2. Baixar o código
+Pré-requisitos: **Node.js 22.18+** e o app **Expo Go** (SDK 58) no celular.
 
 ```bash
 git clone https://github.com/DaphRz/AJAI.git
 cd AJAI
-```
-
-> **Windows:** use o GitHub Desktop (ou `git clone` no Git Bash). Nunca envie para o GitHub as pastas geradas que estão no `.gitignore` (`node_modules/`, `.expo/`, `ios/`, `android/`).
-
-### 3. Instalar as dependências
-
-```bash
 npm install
+npm run db:reset                     # cria o banco com os dados de demonstração
+cp server/.env.example server/.env   # só na primeira vez (Windows: copy server\.env.example server\.env)
+npm run server:dev                   # sobe a API em http://localhost:3333/health
 ```
 
-### 4. Criar o banco de dados
-
-```bash
-npm run db:reset
-```
-
-Cria o arquivo `server/data/ajai.db` com as 16 tabelas e os dados de demonstração (5 níveis, 35 atividades, 4 alunos, 2 professores, 1 responsável, 2 instituições, 1 administrador). Não precisa instalar nada além do Node. **Cada pessoa gera o seu**: o arquivo não vai para o git. Detalhes e comandos: [Banco de dados](#banco-de-dados-sqlite).
-
-### 5. Subir o servidor (API)
-
-A API fica em `server/src/` (Node.js + TypeScript + **Fastify**). Em um terminal:
-
-```bash
-cp server/.env.example server/.env   # só na primeira vez (no Windows: copy server\.env.example server\.env)
-npm run server:dev                   # sobe a API e reinicia sozinha ao salvar um arquivo
-```
-
-Confira abrindo <http://localhost:3333/health> no navegador. A resposta esperada é `{"status":"ok","banco":"ok",...}`. Se aparecer `"O banco de dados não abriu"`, rode `npm run db:reset`.
-
-| Comando | Para quê |
-|---|---|
-| `npm run server:dev` | Desenvolvimento: roda os `.ts` direto no Node e reinicia ao salvar |
-| `npm run server:build` | Gera o JavaScript em `server/dist/` (fora do git) |
-| `npm run server:start` | Roda a versão gerada pelo `server:build` (use na demo) |
-| `npm run server:typecheck` | Checagem de tipos só do servidor (`npm run typecheck` checa app + servidor) |
-
-Configuração em `server/.env` (fora do git; modelo em [`server/.env.example`](server/.env.example)): `PORT` (padrão 3333), `HOST` (padrão `0.0.0.0`, para os celulares da rede acessarem), `CORS_ORIGEM`, `LIMITE_REQUISICOES_POR_MINUTO`, a partir do passo 3, `JWT_SECRET` e, a partir do passo 10, as variáveis da voz (`VOZ_PROVEDOR`, `AZURE_SPEECH_KEY`, `AZURE_SPEECH_REGION`, `AZURE_VOZ`; ver [Narração por voz](#narração-por-voz-azure--provedorvoz)). Sem a chave da Azure, o app continua funcionando com a voz do aparelho. Toda resposta de erro da API tem o formato `{ "erro": "mensagem curta em português" }`.
-
-> **Node 22.14 a 22.17:** o `server:dev` funciona (o script já passa `--experimental-strip-types`), mas os scripts `db:*` não. Use `NODE_OPTIONS=--experimental-strip-types npm run db:reset`. O ideal é o 22.18+.
-
-### 6. Rodar o app
-
-Em **outro** terminal (o servidor continua rodando no primeiro):
+Em **outro** terminal:
 
 ```bash
 npx expo start
 ```
 
-Vai aparecer um QR code no terminal. Depois:
+### Usuários de demonstração (senha `demo1234`)
 
-| Onde abrir | O que fazer |
+| Perfil | Entra com |
 |---|---|
-| Celular (recomendado) | Abra o **Expo Go** e leia o QR code (no iPhone, pela câmera). O celular e o computador precisam estar **na mesma rede Wi-Fi**. |
-| Emulador Android | Tecle `a` no terminal |
-| Simulador iOS (macOS) | Tecle `i` |
-| Navegador | Tecle `w` |
-
-Se a rede da faculdade bloquear a conexão, use `npx expo start --tunnel`.
-
-#### Como o app encontra a API (`EXPO_PUBLIC_API_URL`)
-
-O app lê o endereço da API da variável `EXPO_PUBLIC_API_URL`, num arquivo `.env.local` na **raiz** do projeto (fora do git). **Sem ela**, o app tenta o mesmo computador que roda o `npx expo start`, na porta 3333 (no Expo Go isso já costuma funcionar na mesma Wi-Fi). Para fixar o endereço:
-
-```bash
-# .env.local (raiz do projeto)
-EXPO_PUBLIC_API_URL=http://192.168.0.10:3333
-```
-
-| Onde o app roda | Endereço |
-|---|---|
-| **Celular físico (Expo Go)** | IP do computador **na Wi-Fi**, nunca `localhost` (no celular, `localhost` é o próprio celular). Celular e computador na mesma rede |
-| Emulador Android | `http://10.0.2.2:3333` |
-| Simulador iOS ou navegador no mesmo computador | `http://localhost:3333` |
-
-Como descobrir o IP do computador: **macOS** `ipconfig getifaddr en0`; **Windows** `ipconfig` (linha "Endereço IPv4" da Wi-Fi); **Linux** `hostname -I`. O próprio `npm run server:dev` também mostra no terminal a linha `Server listening at http://192.168.x.x:3333`. Teste antes abrindo `http://<IP>:3333/health` no navegador do celular. Se não abrir: confira a mesma Wi-Fi e libere a porta 3333 no firewall (no Windows, aceite o aviso "Permitir acesso" do Node). Depois de mudar o `.env.local`, reinicie com `npx expo start -c`.
-
-> `EXPO_PUBLIC_*` vai para dentro do aplicativo e é público: só endereço, **nunca** senha ou chave.
-
-### 7. Entrar no app
-
-O login é de verdade: **o servidor precisa estar rodando** (passo 5) e o banco criado (`npm run db:reset`). Sem servidor, o app mostra "Não conseguimos falar com o servidor".
-
-**Senha de todos os usuários de demonstração: `demo1234`** (gravada com hash pelo seed; nunca use em servidor de verdade). Na tela de login há **um campo só**: usuário, e-mail ou telefone. O app descobre o perfil pela conta.
-
-| Perfil | Entra com | Vai para |
-|---|---|---|
-| Aluno | `maria.silva` (aluna nova: cai no **nivelamento**; `ana.souza`, `bruno.lima`, `clara.santos` já têm nível) | nivelamento / home do aluno |
-| Professor (aprovado) | `rafael@ajai.app` ou `11900000100` | Acompanhamento, com os 4 alunos (vínculo aceito) na turma "EJA – Noite" |
-| Professor (pendente) | `paula@ajai.app` | tela de espera ("Aguardando a instituição aprovar") |
-| Responsável | `joana@ajai.app` | área do responsável (acompanha Bruno) |
-| Instituição (aprovada) | `instituicao@ajai.app` | área da instituição: código **`EJAVV2`** e a Paula esperando aprovação |
-| Instituição (pendente) | `aprender@ajai.app` | tela de espera ("Aguardando aprovação") |
-| Administrador | `admin@ajai.app` | aprovação de instituições, **Atividades** e **Etapas** (passo 9) |
-
-Modelo de contas (Passo 3.1):
-- **Criar conta:** no login, "Ainda não tem conta? Crie a sua" → **Eu sou: Aluno / Professor / Responsável / Instituição**. O administrador não é criável pelo app.
-- **Aluno:** nome, senha e pelo menos um entre nome de usuário (sugerido a partir do nome), e-mail ou telefone. Entra com qualquer um deles.
-- **Instituição:** nome, CNPJ, nome do responsável, e-mail, telefone e senha. Fica esperando o **administrador** aprovar (em `/admin`); ao aprovar, ganha o **código** que passa aos professores.
-- **Professor:** nome, e-mail, telefone, senha e o **código da instituição** (no seed, `EJAVV2`). Fica esperando a **instituição** aprovar (em `/instituicao`). Recusado, vê o motivo e pode mandar outro código.
-- **Responsável:** nome, e-mail, telefone e senha. Acompanha no máximo 2 pessoas, sem turma.
-- **Acompanhar um aluno:** professor (Conta › Meus alunos, ou "Meus alunos: convidar" no Acompanhamento) ou responsável convida pelo usuário, e-mail ou telefone do aluno; o aluno aceita em **Minha conta › Quem me acompanha** (a home avisa quando há convite). Só depois do aceite o acompanhante vê o nome do aluno.
-- **Senha:** todo mundo troca a própria (aluno em Minha conta; os outros em Conta / na tela inicial); trocar a senha tira a conta dos outros aparelhos. Esqueceu? O administrador gera uma provisória (`POST /admin/usuarios/:id/senha-provisoria`) ou, no computador do servidor, `npm run usuario:senha -- maria.silva` (usuário, e-mail ou telefone). Ao entrar com a provisória, o app abre **"Crie sua senha"** antes de qualquer tela (passo 12).
-- **Termo de uso:** todo cadastro pede **"Li e concordo"** (tela `/termo`; texto em [`docs/privacidade.md`](docs/privacidade.md)). Pedido para apagar a conta: `npm run usuario:apagar -- maria.silva` (mostra o que sai) e depois com `--confirmar`.
-- O login fica guardado no aparelho (`expo-secure-store`): fechar e abrir o app volta logado.
-- Fluxo completo para testar: crie uma instituição → entre como `admin@ajai.app` e aprove (anote o código) → crie um professor com o código → entre como a instituição e aprove o professor → crie um aluno → entre como o professor e convide o aluno → entre como o aluno e aceite.
-
-Rotas da API:
-- **Contas:** `POST /auth/cadastro/aluno`, `/auth/cadastro/professor`, `/auth/cadastro/responsavel`, `/auth/cadastro/instituicao`, `POST /auth/login`, `GET /auth/eu` (com `usuario.situacao`), `PATCH /auth/senha` (todos), `POST /admin/usuarios/:id/senha-provisoria`.
-- **Aprovações:** `GET /admin/instituicoes?status=`, `PATCH /admin/instituicoes/:id` (administrador); `GET /instituicao/eu`, `GET /instituicao/professores?status=`, `PATCH /instituicao/professores/:id` (instituição aprovada); `PATCH /professor/instituicao` (professor não aprovado troca o código).
-- **Vínculos:** `POST`/`GET /vinculos`, `DELETE /vinculos/:id` (professor aprovado ou responsável); `GET /alunos/eu/vinculos`, `PATCH`/`DELETE /alunos/eu/vinculos/:id` (aluno).
-- **Atividades** (passo 4, qualquer perfil logado): `GET /niveis`, `GET /niveis/:id/atividades`, `GET /atividades/:id`, `GET /nivelamento` (sem o gabarito) e `POST /atividades/:id/corrigir` (só perguntas do nivelamento).
-- **Respostas e progresso** (passo 5, só aluno, sobre ele mesmo): `POST /respostas`, `POST /nivelamento/concluir` e `GET /alunos/eu/progresso`.
-- **Cadastro de atividades e etapas** (passo 9; administrador e professor aprovado; **com o gabarito**): `GET /gestao/niveis`, `GET /gestao/atividades?idNivel&status&minhas`, `GET /gestao/atividades/:id`, `POST /gestao/atividades`, `PUT /gestao/atividades/:id`, `DELETE /gestao/atividades/:id` (só **inativa**) e `PATCH /gestao/atividades/:id/status` (reativar). O professor só edita e inativa as que **ele** criou (`Atividade.idCriador`; as do seed só o administrador muda; outro dono = 403). Etapas, **só o administrador**: `POST /gestao/niveis` e `PATCH /gestao/niveis/:id`. Exemplos prontos em [`server/admin.http`](server/admin.http) (extensão REST Client do VS Code).
-
-**Cadastrar atividades pelo app (passo 9):** administrador → tela inicial › **Atividades** (todas, por etapa) e **Etapas**; professor → Conta › **Atividades** ("Minhas atividades" ou "Todas por etapa"). O formulário tem etapa, tipo, conteúdo, enunciado, texto de apoio (palavra, frase ou texto, conforme o tipo) e as alternativas com a certa marcada; o servidor confere o gabarito (múltipla escolha = exatamente 1 certa; "Formar palavra" = as peças marcadas formam a palavra; escrita = sem alternativas e com a resposta) e explica o que falta. A atividade nova entra na trilha de **todos** os alunos na hora. Travas: pergunta do nivelamento não é inativada nem muda de etapa, e a última atividade ativa de uma etapa não é inativada (409). Etapa nova sem atividades: o aluno não sobe para ela até ela ganhar atividades.
-
-**Testes:** `npm test` roda tudo. `npm run server:test` roda os do servidor com o executor nativo do Node (`node --test`): regras de progressão (`server/src/progressao.test.ts`), correção (`correcao.test.ts`), rotas de respostas/nivelamento/progresso (`server/src/rotas/progresso.test.ts`), contas, aprovações e vínculos (`contas.test.ts`), autorização e gabarito (`autorizacao.test.ts`), segurança e privacidade (`seguranca.test.ts`), área do professor (`professor.test.ts`), cadastro de atividades e etapas (`cadastroAtividades.test.ts` e `server/src/validarAtividade.test.ts`) e narração (`narracao.test.ts`), num banco temporário: o seu `ajai.db` não é tocado. `npm run app:test` roda os do app: voz (`node --test`) e telas (**jest-expo**, arquivos `src/testes/*.test.tsx`). Casos manuais: [`docs/testes/casos-de-teste.md`](docs/testes/casos-de-teste.md).
-
-> **Depois de `git pull` com rotas novas no app:** rode `npx expo start` uma vez antes do `npx tsc --noEmit`. É ele que gera os tipos das rotas (`.expo/types/router.d.ts`); sem isso o `tsc` reclama das rotas novas.
-
-### Comandos úteis
-
-```bash
-npx expo start -c        # inicia limpando o cache (resolve muita coisa estranha)
-npx expo install --fix   # corrige versões incompatíveis com o SDK
-npx expo-doctor          # diagnostica problemas de configuração
-npx expo lint            # lint
-npx tsc --noEmit         # checagem de tipos
-npx expo install <pacote>  # SEMPRE use isto para adicionar bibliotecas (não npm install <pacote>)
-
-npm run db:reset         # recria o banco do zero com os dados de demonstração
-npm run db:query         # lista as tabelas e quantas linhas cada uma tem
-npm run server:dev       # sobe a API (http://localhost:3333/health)
-npm run typecheck        # checagem de tipos do app e do servidor
-npm run usuario:senha -- <usuário, e-mail ou telefone>   # senha provisória (qualquer perfil; obriga a criar outra ao entrar)
-npm run usuario:apagar -- <usuário, e-mail ou telefone>  # pedido LGPD: mostra o que sai; apaga com --confirmar no fim
-npm run voz:preparar     # gera os áudios das atividades (precisa da chave da Azure; ver "Narração por voz")
-npm test                 # testes do servidor e do app (voz e telas)
-```
-
-### Problemas comuns
-
-- **"Project is incompatible with this version of Expo Go"** → atualize o Expo Go no celular.
-- **QR code não conecta** → mesma Wi-Fi ou `--tunnel`.
-- **Rodei `npm run db:reset` com o servidor ligado** → não precisa reiniciar: o servidor percebe que o arquivo do banco mudou e abre o novo (passo 13; antes, toda gravação dava "Algo deu errado no servidor").
-- **Erro estranho depois de trocar de branch** → `npx expo start -c`; se não resolver, apague `node_modules` e rode `npm install` de novo.
-
----
-
-## Banco de dados (SQLite)
-
-**SQLite em um arquivo dentro do projeto**, sem servidor de banco, sem conta e sem senha.
-
-| O quê | Onde | Vai para o git? |
-|---|---|---|
-| Arquivo do banco | `server/data/ajai.db` | **Não** (cada pessoa gera o seu) |
-| Esquema (tabelas) | `server/db/migrations/001_esquema_inicial.sql` e as próximas | Sim |
-| Dados iniciais (seed) | `server/db/seed.mjs`, que lê [`src/data/mock.ts`](src/data/mock.ts) | Sim |
-| Áudios da narração (MP3 da Azure) | `server/storage/audio/` | **Sim** (desde 18/11: quem clona ouve a voz sem a chave da Azure) |
-
-### Carregar o banco (passo a passo)
-
-1. Tenha o **Node 22.18+** (`node -v`). Se estiver abaixo, atualize em <https://nodejs.org>.
-2. Na raiz do projeto: `npm install` (só na primeira vez).
-3. Rode **`npm run db:reset`**. Resultado esperado:
-   ```
-   Banco recriado em .../AJAI/server/data/ajai.db
-     5 níveis, 7 atividades, 4 alunos de demonstração.
-     Senha de todos os usuários de demonstração: demo1234
-     Código da instituição de demonstração (cadastro de professor): EJAVV2
-   ```
-4. Confira com **`npm run db:query`**: deve listar as 16 tabelas, a view `vw_aluno` e a tabela interna `_migracoes`.
-
-Pronto. Se algum dia o banco estragar ou você quiser voltar aos dados iniciais, repita o `npm run db:reset` (ele apaga o arquivo e recria tudo).
+| Aluno | `maria.silva` (vai ao nivelamento), `ana.souza`, `bruno.lima`, `clara.santos` |
+| Professor | `rafael@ajai.app` (aprovado), `paula@ajai.app` (pendente) |
+| Responsável | `joana@ajai.app` |
+| Instituição | `instituicao@ajai.app` (código `EJAVV2`), `aprender@ajai.app` (pendente) |
+| Administrador | `admin@ajai.app` |
 
 ### Comandos
 
-| Comando | O que faz |
-|---|---|
-| `npm run db:reset` | **Apaga** o arquivo, recria o esquema e carrega os dados de demonstração |
-| `npm run db:migrate` | Aplica as migrações novas (arquivos `.sql` ainda não aplicados), sem apagar dados |
-| `npm run db:seed` | Apaga os **dados** (mantém as tabelas) e recarrega o seed |
-| `npm run db:query` | Lista as tabelas e a contagem de linhas |
-| `npm run db:query -- "SELECT * FROM Nivel"` | Consulta (só leitura) |
-| `npm run db:query -- --json "SELECT ..."` | Mesma consulta, resultado em JSON |
-| `npm run db:query -- --escrever "UPDATE ..."` | Permite `INSERT`/`UPDATE`/`DELETE` (use com cuidado) |
+```bash
+npx expo start -c         # inicia limpando o cache
+npx expo lint             # lint
+npm run typecheck         # tipos do app e do servidor
+npm run db:reset          # recria o banco do zero
+npm run db:migrate        # aplica migrações novas
+npm run db:seed           # recarrega os dados de src/data/mock.ts
+npm run db:query          # tabelas e contagens (aceita SQL)
+npm run usuario:senha -- <login>    # senha provisória
+npm run usuario:apagar -- <login>   # apaga uma conta (LGPD)
+npm run voz:preparar      # gera os áudios (precisa da chave da Azure em server/.env)
+```
 
-Exemplos úteis:
+### Testes
 
 ```bash
-npm run db:query -- "SELECT idUsuario, nome, idNivelAtual FROM vw_aluno"
-npm run db:query -- "SELECT conteudo, totalTentativas, taxaAcerto FROM DesempenhoConteudo WHERE idAluno = 2"
-npm run db:query -- "SELECT a.enunciado, al.texto, al.correta FROM Atividade a JOIN Alternativa al USING (idAtividade) WHERE a.idAtividade = 1"
+npm test                  # todos (servidor + voz + telas)
+npm run server:test       # só o servidor (node --test, banco temporário)
+npm run app:test          # só o app (voz + telas)
+npm run app:test:voz      # só a voz do app
+npm run app:test:telas    # só as telas (jest-expo)
 ```
 
-### Como mudar o banco
+Casos manuais: [`docs/testes/casos-de-teste.md`](docs/testes/casos-de-teste.md).
 
-- **Mudar os dados de exemplo** (atividades, níveis, alunos): edite `src/data/mock.ts` e rode `npm run db:seed`.
-- **Mudar a estrutura** (nova tabela ou coluna): crie um arquivo novo `server/db/migrations/002_descricao.sql` (depois `003_...`) e rode `npm run db:migrate`. **Nunca edite uma migração que já foi aplicada**; avise o grupo para cada um rodar `npm run db:migrate` depois do `git pull`.
-- Quando mudar o esquema, atualize também `src/domain/modelos.ts` e o diagrama de classes.
-- **Nunca** coloque o arquivo `.db` no git nem senhas reais nos dados de exemplo.
-
-### Para ver o banco em uma tela
-
-Qualquer programa que abra SQLite serve: [DB Browser for SQLite](https://sqlitebrowser.org) (grátis, Windows/Mac/Linux) ou a extensão *SQLite Viewer* do VS Code. Abra `server/data/ajai.db`. Para só olhar, prefira abrir como somente leitura.
-
-### Como o esquema se liga ao diagrama de classes
-
-Os nomes de tabelas e colunas são os do diagrama. Diferenças (registrar na documentação final):
-
-- `Aluno.idNivelAtual` **não é coluna**: é o registro mais recente de `HistoricoNivel`. A view `vw_aluno` já devolve o aluno com esse campo calculado.
-- Colunas extras: `Atividade.ordemNivelamento` (ordem das perguntas do nivelamento; vazio = fora do nivelamento), `Atividade.textoApoio`, `Atividade.idCriador`, `AudioCache.provedor` (qual serviço gerou o áudio), `Usuario.telefone` e `Usuario.nomeUsuario`.
-- Tabelas extras (Passo 3.1, migração 005): `Responsavel`, `Instituicao` (CNPJ, código, status da aprovação) e `Vinculo` (acompanhante ↔ aluno, com `identificadorConvite`); `Professor` ganhou `idInstituicao`, `statusVinculo`, `motivoRecusa` e `decididoEm`. O antigo `Aluno.idCriador` saiu (virou `Vinculo` ACEITO).
-- Booleanos são `0`/`1`; datas são texto ISO 8601; enums são texto com `CHECK`.
-
-### Problemas comuns
-
-- **`No such built-in module: node:sqlite`** ou **`ERR_UNKNOWN_FILE_EXTENSION ... .ts`** → Node antigo. Atualize para o 22.18+.
-- **`FOREIGN KEY constraint failed`** → você apagou/inseriu uma linha que depende de outra (ex.: apagar um `Nivel` que tem `Atividade`). Apague os filhos antes, ou use `npm run db:reset`.
-- **`disk I/O error`** → o SQLite não funciona bem em pasta sincronizada ou de rede (iCloud/Mesa, OneDrive, Dropbox, Google Drive). Guarde o banco numa pasta local: `AJAI_DB=$HOME/ajai.db npm run db:reset` (no Windows PowerShell: `$env:AJAI_DB="$HOME\ajai.db"; npm run db:reset`) e use a mesma variável nos demais comandos `db:*`. Se o projeto estiver numa pasta sincronizada, prefira mover o projeto para fora dela.
-- **`database is locked`** → outro programa (DB Browser) está com o arquivo aberto para escrita. Feche-o.
-- **Banco diferente do dos colegas** → normal: cada um tem o seu. Rode `npm run db:migrate` depois de cada `git pull` e `npm run db:reset` se quiser os dados iniciais de novo.
-
-### Trabalhando com um agente de IA (Claude Code etc.)
-
-O agente consulta e altera o banco pelos mesmos comandos (`npm run db:query -- --json "..."`), sem programa extra. Regras para ele estão no [`AGENTS.md`](AGENTS.md#banco-de-dados-sqlite).
+Depois de `git pull` com rotas novas, rode `npx expo start` uma vez antes do `tsc`.
 
 ---
 
-## Narração por voz (Azure + `ProvedorVoz`)
-
-A voz do AJAI é a **voz neural da Microsoft Azure** (Azure AI Speech), em português do Brasil: **`pt-BR-FranciscaNeural`** (troque em `AZURE_VOZ`; ex.: `pt-BR-AntonioNeural`, `pt-BR-ThalitaMultilingualNeural`). Ela substituiu o Piper em 18/11, porque a voz do Piper ficou ruim. O servidor do AJAI pede o áudio à Azure **uma vez**, guarda o MP3 (`server/storage/audio/` + tabela `AudioCache`) e depois só serve o arquivo pronto. Se o servidor ou a Azure não responderem, o app fala com a **voz do aparelho** (`expo-speech`), sem a tela perceber.
-
-> A voz que se ouve **sem a Azure configurada** é a voz do aparelho/navegador (reserva), que é bem mais robótica. Para ouvir a voz boa, configure a chave abaixo.
+## Estrutura
 
 ```
-BotaoAudio / telas ──► services/narracao.ts ──► provedor ativo (src/services/voz/index.ts)
-                       (velocidade do aluno)     ├─ servidor     PADRÃO: POST /narracao → toca o MP3 (expo-audio)
-                                                 │                falhou? ──► expo-speech
-                                                 ├─ expo-speech  voz do aparelho (alternativa e reserva)
-                                                 └─ console      desenvolvimento
-Servidor: POST /narracao { texto, velocidade } ──► AudioCache tem? ──► sim: devolve a URL
-                                                   └─ não: SintetizadorVoz ativo (VOZ_PROVEDOR=azure) → grava o .mp3
+src/app/          Telas (Expo Router): aluno, professor, responsavel, instituicao, admin, cadastro
+src/components/   Componentes reutilizáveis
+src/services/     Regras e acesso à API; voz/ = ProvedorVoz
+src/domain/       Tipos do diagrama de classes
+src/theme/        Tokens do Figma
+src/data/mock.ts  Dados do seed
+server/src/       API Fastify (rotas/, voz/, progressao.ts)
+server/db/        Migrações, seed e scripts do banco
+server/storage/   Áudios da narração (MP3, versionados)
+docs/             Diagrama, conteúdo pedagógico, privacidade, casos de teste
 ```
 
-| Provedor (app) | O que é |
-|---|---|
-| `servidor` | **Padrão.** Pede `POST /narracao` e toca o MP3 com o `expo-audio`. Rede fora, narração desligada (503), áudio que não carrega ou texto grande demais → `expo-speech` |
-| `expo-speech` | Voz do próprio aparelho: grátis, sem internet. Alternativa e reserva |
-| `console` | Só escreve no console (desenvolvimento) |
+---
 
-Os dois provedores ligam o modo de áudio que **toca mesmo com a chave do silencioso do iPhone ligada** (`src/services/voz/modoAudio.ts`; sem isso a voz ficava muda no iPhone).
+## Etapas realizadas
 
-**Trocar de voz no app = mudar uma linha:** `PROVEDOR_PADRAO` em [`src/services/voz/index.ts`](src/services/voz/index.ts) (`"servidor"` ou `"expo-speech"`). No servidor, a mesma ideia: interface `SintetizadorVoz` ([`server/src/voz/sintetizador.ts`](server/src/voz/sintetizador.ts)), um arquivo por API ([`azure.ts`](server/src/voz/azure.ts), padrão; [`piper.ts`](server/src/voz/piper.ts), alternativa local sem conta), escolhida por `VOZ_PROVEDOR` em `server/.env`. Nenhuma tela muda.
-
-### Configurar a Azure (só no computador que GERA os áudios)
-
-Os celulares **não** precisam de nada: só falam com a API do AJAI. A chave fica **só** em `server/.env` (fora do git), nunca no app.
-
-1. Crie uma conta em <https://portal.azure.com> (pede cartão para verificar; o plano gratuito não cobra).
-2. **Criar um recurso** › procure **"Speech"** (Azure AI Speech / Serviços de Fala) › escolha uma assinatura, um grupo de recursos, a **região** (ex.: *North Central US* = `northcentralus`; na assinatura **Azure for Students** só algumas regiões são permitidas, veja em Policy › Assignments › "Allowed resource deployment regions". Brazil South é bloqueada) e o **tipo de preço Free F0**.
-3. No recurso criado, abra **Chaves e Ponto de Extremidade** e copie a **Chave 1** e a **Localização/Região**.
-4. Em `server/.env` (modelo em [`server/.env.example`](server/.env.example)):
-
-| Variável | Valor | Para quê |
+| # | Etapa | Resumo |
 |---|---|---|
-| `VOZ_PROVEDOR` | `azure` | Liga a narração do servidor (vazio = desligada: o app usa a voz do aparelho) |
-| `AZURE_SPEECH_KEY` | a Chave 1 | **Segredo.** Nunca no app nem no git |
-| `AZURE_SPEECH_REGION` | ex.: `northcentralus` | Região do recurso (precisa ser a mesma da chave) |
-| `AZURE_VOZ` | `pt-BR-FranciscaNeural` | Voz pt-BR (gravada em `AudioCache.voz`) |
-| `VOZ_TEMPO_LIMITE_MS` | `20000` | Tempo máximo esperando a voz (inclui as esperas do erro 429) |
-| `VOZ_PASTA_AUDIO` | (opcional) | Outra pasta para os áudios (padrão `server/storage/audio`) |
+| 0 | Esqueleto | Projeto Expo instalado e validado (lint, tipos, banco). |
+| 1 | Stack | SQLite, Fastify e voz pela interface `ProvedorVoz`. |
+| 2 | Servidor | API Fastify sobre o SQLite, com erros padronizados em português. |
+| 3 | Login e cadastro | Senha com scrypt, token JWT guardado no aparelho, login por usuário, e-mail ou telefone. |
+| 3.1 | Modelo de contas | Perfis aluno, professor, responsável, instituição e administrador; aprovações e vínculo aceito pelo aluno. |
+| 4 | Atividades pela API | Trilha, atividades e nivelamento vindos do banco, sem gabarito no app. |
+| 5 | Progressão | Respostas, correção, subida de nível e histórico gravados no servidor. |
+| 6 | Conteúdo | 35 atividades do cotidiano adulto (7 por nível) e nivelamento de 10 perguntas. |
+| 7 | Home do aluno | Ofensiva, frequência semanal, tela de progresso e comemoração ao subir de etapa. |
+| 8 | Professor e responsável | Painel, métricas com gráfico, relatórios, turmas, correção manual e dicas ao responsável. |
+| 9 | Cadastro de atividades | Administrador e professor incluem, editam e inativam atividades; administrador gerencia etapas. |
+| 10 | Voz e preferências | Narração com a Azure (MP3 em cache) e ajuste de velocidade da voz e tamanho da letra. |
+| 11 | Testes | Testes do servidor, da voz e de telas, mais 54 casos manuais. |
+| 12 | Segurança e privacidade | Termo de uso com aceite, troca obrigatória de senha provisória, tokens revogados e exclusão de conta. |
+| 13 | Correção | Bugs corrigidos. |
 
-5. Reinicie a API (`npm run server:dev`) e rode `npm run voz:preparar`. Se a chave ou a região estiverem erradas, o servidor mostra `[voz:azure] ... (401)` e o script para depois de 5 falhas.
-
-**Limites e custo** (confira os valores atuais no portal): o plano **F0** tem uma cota gratuita de caracteres por mês, que cobre com folga o conteúdo do AJAI (uns 25 mil caracteres nas 3 velocidades), mas só aceita **20 pedidos por minuto**. Quando a Azure responde 429, o servidor espera e tenta de novo; por isso o `voz:preparar` leva **uns 20 minutos no F0** (no S0, pago por uso, cerca de 1 minuto). O áudio sai em MP3 (24 kHz), bem menor que WAV.
-
-**Alternativa local sem conta (Piper):** `VOZ_PROVEDOR=piper` com `PIPER_URL`/`PIPER_VOZ` (comentados no `.env.example`) e o Piper rodando (`pip install "piper-tts[http]"`, `python -m piper.download_voices pt_BR-faber-medium`, `python -m piper.http_server -m pt_BR-faber-medium --port 5050`). A qualidade é bem menor; no Mac, instale numa pasta de caminho curto (o espeak-ng falha com caminhos longos).
-
-### Preparar os áudios antes da demo (`npm run voz:preparar`)
-
-Gera, **uma vez**, o áudio de todas as atividades ATIVAS (o "Ouvir instrução" com o enunciado e as opções, a frase/texto de apoio e cada alternativa) nas velocidades **0.8, 1.0 e 1.2** (lenta, normal e rápida), mais as frases fixas. Hoje são 138 textos × 3 = **414 áudios** (uns 20 min no plano gratuito da Azure). Rodar de novo só gera o que falta. Assim a demonstração **não depende da Azure nem da internet na hora**: a API do AJAI só serve os arquivos. Textos que dependem do aluno (ex.: "Olá, Ana!") são gerados na primeira vez que alguém ouve e ficam guardados.
-
-**Os áudios vão para o git** (`server/storage/audio/*.mp3`, ~20 MB em 18/11). O nome de cada arquivo é calculado a partir do texto, da voz, da velocidade e do provedor; por isso, numa máquina nova (banco sem as linhas do `AudioCache` e **sem a chave da Azure**), o servidor acha o arquivo pelo nome, registra no `AudioCache` e toca, sem chamar a Azure. `db:reset` e `db:seed` apagam a tabela `AudioCache`, mas não os arquivos: nada precisa ser gerado de novo.
-
-Quem tem a chave e muda conteúdo (atividade nova, texto alterado, outra `AZURE_VOZ`) roda `npm run voz:preparar` e **faz commit dos MP3 novos**. Áudios que ninguém usa mais (texto antigo) podem ser apagados da pasta antes do commit. Sem a chave, um texto novo toca com a voz do aparelho até alguém gerar o áudio.
-
-O texto narrado das atividades fica em [`src/services/textosNarrados.ts`](src/services/textosNarrados.ts), usado **pelo app e pelo script**: se mudar a frase lá, os áudios novos são gerados na próxima vez.
-
-### API de narração
-
-- `POST /narracao` `{ texto, velocidade? }` (qualquer perfil logado; texto até 800 caracteres; velocidade 0.5 a 1.5, arredondada para uma casa) → `{ url }`, relativa à API (`/narracao/audio/<hash>.mp3`). 503 se a narração estiver desligada ou a Azure falhar.
-- `GET /narracao/audio/:arquivo` serve o MP3 (sem login, porque o player não manda o token; o nome é um hash de 160 bits). Aceita `Range` (o iPhone pede o áudio em pedaços).
-
-### Preferências do aluno (Aluno.EditarPreferencias, APF 17)
-
-Na home e em Minha conta, **"Voz e letra"** (`/aluno/preferencias`): velocidade da voz (Lenta 0.8 / Normal 1.0 / Rápida 1.2, com "Ouvir exemplo"; ao mudar, o exemplo toca sozinho) e tamanho da letra (Normal 20 / Grande 24 / Muito grande 28). Salvo no servidor (`PATCH /alunos/eu`) e aplicado na hora pelo `PreferenciasProvider` ([`src/context/preferencias.tsx`](src/context/preferencias.tsx)): a velocidade vira o padrão de toda fala, e as telas/componentes usam `useEstilos(criarEstilos)` / `useFontes()` para a letra (sem `if` espalhado). O tamanho escolhido aumenta título, subtítulo, corpo e legenda; a letra grande da atividade, as sílabas e a palavra em destaque já são grandes e ficam iguais.
-
-O `BotaoAudio` mostra **"Falando..." / "Toque para parar"** enquanto fala e para a fala ao sair da tela. Nas atividades, **tocar e segurar** uma opção ou sílaba lê o texto dela sem escolher.
-
----
-
-## Estrutura de pastas
-
-```
-src/
-  app/                    Telas (cada arquivo é uma rota do Expo Router)
-    index.tsx             Splash
-    login.tsx             Login (um campo: usuário, e-mail ou telefone)
-    cadastro/             "Eu sou:" + cadastro de aluno, professor, responsável e instituição
-    espera.tsx            Conta esperando aprovação ou recusada (professor, instituição)
-    aluno/                Área do aluno (protegida)
-      index.tsx           Home do aluno
-      nivelamento/        Pergunta + resultado do nivelamento
-      atividade/[id].tsx  Realizar uma atividade
-      resultado.tsx       "Acerto" / "Tentar novamente"
-      progresso.tsx       Histórico e evolução
-      comemoracao.tsx     Comemoração ao subir de etapa (passo 7)
-      conta.tsx, senha.tsx, acompanhamento.tsx   Minha conta, trocar senha, quem me acompanha
-      preferencias.tsx    Voz e letra: velocidade da voz e tamanho da letra (passo 10)
-    professor/            Área do professor (protegida, com abas)
-      index.tsx           Dashboard de acompanhamento
-      aluno/[id].tsx      Métricas de um aluno
-      alunos.tsx          Meus alunos (convites e vínculos)
-      relatorios.tsx      (placeholder)
-      conta.tsx           Conta / sair
-    responsavel/          Área do responsável (até 2 pessoas)
-    instituicao/          Área da instituição (código, aprovar professores)
-    admin/                Área do administrador (aprovar instituições)
-  components/             Botão, BotaoAudio ("Ouvir ajuda"), Campo, Tela, AtividadeView, FormularioCadastro, MeusAlunos...
-  context/sessao.tsx      Usuário logado
-  context/preferencias.tsx  Tamanho da letra e velocidade da voz do aluno (useFontes, useEstilos)
-  data/mock.ts            Dados de demonstração (níveis, atividades, alunos, respostas)
-  domain/modelos.ts       Tipos espelhando o diagrama de classes
-  hooks/useCarregar.ts    Carrega dados da API numa tela ("Carregando..." / "Sem conexão. Toque para tentar de novo.")
-  services/               Regras e acesso a dados (tudo pela API desde o passo 8)
-    narracao.ts           Fachada da voz (falar / pararFala), com a velocidade do aluno
-    textosNarrados.ts     Texto narrado das atividades (o mesmo do npm run voz:preparar)
-    voz/                  ProvedorVoz: interface + provedores servidor, expo-speech e console (+ testes)
-  theme/tokens.ts         Cores, fontes e tamanhos do Figma
-server/
-  src/                    API (Fastify + TypeScript)
-    index.ts              Sobe o servidor (npm run server:dev)
-    app.ts                Monta o Fastify: CORS, limite de requisições, erros, rotas
-    banco.ts              Conexão node:sqlite (mesmo arquivo dos scripts db:*)
-    config.ts             Lê server/.env
-    erros.ts              Erro padrão { erro: "..." } em português (ErroApi)
-    rotas/                Uma pasta de rotas por módulo (saude.ts = GET /health; narracao.ts, preferencias.ts no passo 10)
-    voz/                  SintetizadorVoz (interface), azure.ts (padrão), piper.ts, narracao.ts (cache em AudioCache)
-  scripts/voz-preparar.mjs  npm run voz:preparar (gera os áudios das atividades)
-  .env.example            Modelo do server/.env (o .env fica fora do git)
-  db/                     Banco SQLite: migrations/*.sql, seed.mjs, scripts db:*
-  data/                   ajai.db (gerado, fora do git)
-  storage/audio/          Áudios da narração (MP3 da Azure; versionados no git)
-docs/
-  diagrama-classes.png
-  PROXIMOS_PASSOS.md      Roteiro até a entrega, com prompts
-```
-
-### Telas do Figma × código
-
-> Em 18/11 o Figma tem **47 frames** (16 do aluno, 26 do professor, 5 gerais). Várias telas abaixo marcadas "sem tela no Figma" já têm frame (progresso, preferências, minha conta, subiu de nível, carregando, sem internet, nível sem atividades, relatórios, turmas, correção manual, conta do professor, esqueci a senha): **falta compará-las**. Só **Splash** e **Home do aluno** foram conferidas frame a frame; tokens, fonte e componentes já seguem o Figma em todas as telas.
-
-| Tela no Figma | Rota | Situação |
-|---|---|---|
-| Splash | `/` | ✅ igual ao frame (18/11), mais o botão "Começar" |
-| Login | `/login` | ✅ pela API; **sem "Quem você é?" e sem "Ouvir ajuda"** (diferente do Figma: atualizar o frame) |
-| Cadastro de aluno | `/cadastro/aluno` | ✅ o aluno cria a própria conta (Passo 3.1): nome, **nome de usuário** sugerido, e-mail e telefone opcionais, senha; sem "Ouvir ajuda" |
-| Cadastro de professor ou responsável | `/cadastro/professor`, `/cadastro/responsavel` | ✅ campos do Figma (nome, e-mail, telefone, senha); o professor ganhou **código da instituição**; sem "Ouvir ajuda" |
-| *(sem tela no Figma)* | `/cadastro` ("Eu sou:"), `/cadastro/instituicao`, `/espera` | ✅ Passo 3.1, no padrão das telas desenhadas |
-| Nivelamento · Pergunta | `/aluno/nivelamento` | esqueleto |
-| Nivelamento · Resultado | `/aluno/nivelamento/resultado` | esqueleto |
-| Home do aluno | `/aluno` | ✅ ofensiva real e frequência da semana (passo 7); igual ao frame desde 18/11 ("Minha conta" no cabeçalho), mais "Voz e letra" e as frases da ofensiva |
-| Reconhecimento / Sílabas / Formar palavra / Ler frase | `/aluno/atividade/[id]` | um componente para todos os tipos; tocar e segurar uma opção lê a opção (passo 10); mostra `urlImagem` nas opções e acima da palavra (18/11), faltam as imagens |
-| Acerto / Tentar novamente | `/aluno/resultado` | esqueleto |
-| Dashboard do professor | `/professor` | ✅ pela API, só alunos com vínculo aceito, seletor de período (passo 8) |
-| Métricas de Ana Souza | `/professor/aluno/[id]` | ✅ gráfico de evolução, histórico de etapas, correção manual (passo 8) |
-| *(sem tela no Figma)* | `/aluno/progresso`, `/aluno/comemoracao` | ✅ passo 7, no padrão da Home e do Acerto |
-| *(sem tela no Figma)* | `/professor/relatorios`, `/professor/conta`, `/professor/turmas`, `/instituicao/turmas` | ✅ passo 8 (relatórios por turma, editar nome, aba Turmas, turmas criadas pela instituição), no padrão do Dashboard |
-| *(sem tela no Figma)* | `/aluno/preferencias` | ✅ passo 10 ("Voz e letra": velocidade da voz e tamanho da letra), no padrão da Home |
-| *(sem tela no Figma)* | `/admin/atividades`, `/admin/atividade`, `/admin/niveis`, `/professor/atividades`, `/professor/atividade` | ✅ passo 9 (cadastro de atividades e etapas), no padrão das telas desenhadas |
-| *(sem tela no Figma)* | `/esqueci-senha`, `/aluno/conta`, `/aluno/senha`, `/aluno/acompanhamento`, `/professor/alunos`, `/professor/senha`, `/responsavel`, `/responsavel/senha`, `/instituicao`, `/instituicao/senha`, `/admin`, `/admin/senha` | passos 3 e 3.1, no padrão das telas desenhadas |
-
----
-
-## Próximos passos
-
-O roteiro completo até a entrega, com prazo, critério de pronto e **um prompt pronto para cada passo**, está em [`docs/PROXIMOS_PASSOS.md`](docs/PROXIMOS_PASSOS.md). Resumo:
-
-| # | Passo | Prazo |
-|---|---|---|
-| 0 | Instalar e validar o esqueleto | 05/11 |
-| 1 | Decisões de stack (SQLite, Fastify, `ProvedorVoz`) — ✅ | 05/11 |
-| 2 | Criar o servidor (API) sobre o banco SQLite — ✅ | 07/11 |
-| 3 | Cadastro e login de verdade — ✅ | 08/11 |
-| 3.1 | Modelo de contas revisado (perfis, instituição, vínculos) — ✅ | 14/11 |
-| 4 | Atividades e níveis vindos da API — ✅ | 09/11 |
-| 5 | Respostas, progressão e histórico no servidor — ✅ | 10/11 |
-| 6 | Conteúdo pedagógico completo — ✅ | 14/11 |
-| 7 | Home do aluno: ofensiva e progresso ✅ | 15/11 |
-| 8 | Área do professor e do responsável — ✅ | 15/11 |
-| 9 | Cadastro de atividades (admin e professor) e níveis (admin) — ✅ | 15/11 |
-| 10 | Narração por voz (Azure) e preferências — ✅ | 15/11 |
-| 11 | Testes automatizados — ✅ | 16/11 |
-| 12 | Segurança e privacidade (LGPD) — ✅ | 16/11 |
-| 13 | Correção de bugs e polimento — 🟡 | 16/11 |
-| 14 | Documentação final | 16/11 |
-
-A ordem de execução é a da tabela (em 14/11 os passos foram renumerados na ordem de execução e o antigo passo de testes de usabilidade saiu; em 18/11 saíram os passos de recursos visuais e de apresentação, e os passos 12 a 15 viraram 11 a 14).
-
-## Pendências
-
-Legenda: ✅ feito · 🟡 esqueleto/parcial (só no app, com dados em memória) · ⬜ não começado
-
-### Por Sprint (cronograma da documentação, Tabela 5)
-
-**Sprint 1 – Setup, Acesso e Nivelamento (20/10 – 27/10)** — *atrasada*
-- ✅ Projeto Expo (React Native + TypeScript) criado e organizado
-- ✅ Banco de dados configurado: SQLite com as 13 tabelas do diagrama (16 com as do Passo 3.1) e seed (`npm run db:reset`), ligado ao app pela API
-- ✅ Cadastro e autenticação (RF01, RF02): pela API, senha com hash (scrypt), token JWT guardado no aparelho. Desde o **Passo 3.1 (14/11)** aluno, professor, responsável e instituição criam a própria conta; instituição aprovada pelo administrador, professor pela instituição; acompanhamento por vínculo que o aluno aceita. Testado pelos testes de API (`contas.test.ts`) e contra o servidor rodando; **falta a equipe repetir o fluxo completo pelas telas no Expo Go**
-- ✅ Aluno novo: o nivelamento é gravado no servidor (`POST /nivelamento/concluir`: respostas, nível inicial e HistoricoNivel); ao reabrir o app, o aluno continua na etapa dele
-- ✅ Nivelamento inicial (RF03): 10 perguntas da API (`GET /nivelamento`, duas por nível), com barra de progresso; o aluno para no primeiro erro e o servidor decide o nível (corrige de novo e só aceita as perguntas na ordem, sem pular). Regra definida no passo 6: só passa de nível acertando **as 2 perguntas do par**, e começa no primeiro nível que não domina ([`docs/conteudo-pedagogico.md`](docs/conteudo-pedagogico.md))
-- ✅ Testes do fluxo de acesso: automáticos (`contas.test.ts` e `autorizacao.test.ts`, passo 11); casos manuais CT-01 a CT-22 em [`docs/testes/casos-de-teste.md`](docs/testes/casos-de-teste.md), a executar no passo 13
-- ✅ Passo 0 (esqueleto): lint, tsc e expo-doctor passam, o banco recria e o fluxo foi validado no Expo Go. Node 22.18+ é necessário para `npm run db:*` (em 22.14 use `NODE_OPTIONS=--experimental-strip-types`)
-
-**Sprint 2 – Atividades Básicas (27/10 – 03/11)** — *atrasada*
-- ✅ Atividades de letras e sílabas (RF04, RF06): telas vindas da API (passo 4) e 7 atividades por nível do cotidiano adulto (passo 6, 14/11; [`docs/conteudo-pedagogico.md`](docs/conteudo-pedagogico.md)). Faltam só as imagens finais
-- ✅ Associação letra-som (RF05): atividades LETRA "começa com o som da letra..." (passo 6), com as opções lidas no "Ouvir instrução" pela voz da Azure (passo 10); tocar e segurar uma opção lê só ela
-- ✅ Correção automática (RF12) **no servidor** desde o passo 4 (o app não recebe o gabarito) e feedback de acerto/erro (RF13)
-- ✅ Registro das respostas **no banco** (RF14): `POST /respostas` grava a Resposta e atualiza o DesempenhoConteudo (passo 5, testado no Expo Go em 09/11)
-
-**Sprint 3 – Atividades Avançadas e Progressão (03/11 – 10/11)** — *em andamento*
-- ✅ Palavras, leitura de frases e escrita (RF07, RF08, RF09): telas de cada tipo (montar palavra com sílabas e "Apagar", frase em destaque com "Ouvir frase", escrita tolerante a acentos), com 7 atividades no nível 3 e 7 no nível 4 (passo 6)
-- ✅ Interpretação de textos simples (RF10) e cotidiano (RF11): tela com o texto visível e "Ouvir texto", 7 textos do cotidiano (consulta, receita, aviso de falta de água, mensagem da farmácia, ônibus, mercado; passo 6). O cotidiano é o tema de todas as atividades
-- 🟡 Progressão entre níveis (RF16): **no servidor** desde o passo 5, com HistoricoNivel (testado no Expo Go em 09/11). Regra provisória = taxa de acerto ≥ `criterioAcerto` do nível nas últimas 5 respostas daquele nível, conferida só depois de um acerto numa atividade da etapa atual ([`server/src/progressao.ts`](server/src/progressao.ts), com testes). **A equipe precisa validar essa regra.** Atenção na demo: pelos dados de exemplo, Ana e Clara sobem de etapa logo no primeiro acerto
-
-**Sprint 4 – Métricas, Área do Professor e Finalização (10/11 – 17/11)**
-- ✅ Histórico e evolução do aluno (RF18, RF19): `/aluno/progresso` refeita no passo 7 com dados de `GET /alunos/eu/progresso` (trilha com a situação de cada etapa, atividades feitas, taxa de acerto com barra, ofensiva e "Vale a pena treinar"); **sem frame no Figma**, segue o padrão das telas desenhadas. Comemoração com narração ao subir de etapa (`/aluno/comemoracao`). Falta a equipe abrir as telas no Expo Go
-- ✅ Área do professor (RF20, RF21): dashboard, métricas por aluno com gráfico de evolução e histórico de etapas, aba Turmas e filtro por turma no dashboard, aba Relatórios (frequência e dificuldades por turma), gráficos com o número em cima de cada barra, seletor de período (7 dias / 30 dias / datas), turmas e correção manual, tudo pela API e só com alunos de vínculo aceito (passo 8, 14/11). Falta a equipe abrir as telas no Expo Go
-- ✅ Identificação de dificuldades (RF17): calculada por conteúdo no servidor, por aluno (painel e métricas) e por turma (relatório de dificuldades)
-- ✅ Registro de frequência / "Ofensiva – dias seguidos" (RF15): calculada no servidor (`calcularOfensiva` e `frequenciaRecente` em `server/src/progressao.ts`, fuso America/Sao_Paulo, com testes) e mostrada na home e no progresso com texto encorajador (passo 7)
-- 🟡 Continuidade do aprendizado (RF22): o CONTINUAR abre uma **sessão de 5 atividades** seguidas (acertos); depois de um acerto vai direto para a próxima, e só no fim do bloco oferece "Voltar ao início" ou "Continuar treinando" (`services/sessaoDeEstudo.ts`, `ATIVIDADES_POR_SESSAO`). A próxima atividade vem do servidor (`GET /alunos/eu/progresso`), então continua certa entre aberturas do app
-- ⬜ Executar os casos manuais ([`docs/testes/casos-de-teste.md`](docs/testes/casos-de-teste.md), 54 casos: 49 do passo 11 e 5 do passo 12) em Android e iPhone/web (passo 13)
-- 🟡 Correção de bugs residuais (passo 13, 18/11): corrigidos o `db:reset` com o servidor ligado (gravações davam 500), o `/esqueci-senha` que dizia ter mandado e-mail, a falta do `expo-asset` (exigido pelo `expo-audio`), o texto de interpretação cortado com letra "Muito grande", textos de 16 no progresso do aluno e o título "Acompanhamento" quebrando no meio da palavra. Faltam os casos manuais em aparelho de verdade
-- ⬜ Documentação final (passo 14; entrega **17/11**)
-
-### Backend e dados (bloqueia quase tudo acima)
-- ✅ **Banco decidido: SQLite em arquivo** (`server/data/ajai.db`)
-- ✅ Tabelas do diagrama de classes criadas (Usuario, Aluno, Professor, Administrador, Turma, Matricula, Nivel, Atividade, Alternativa, AudioCache, Resposta, DesempenhoConteudo, HistoricoNivel) + as extras do Passo 3.1 (Responsavel, Instituicao, Vinculo) + dados iniciais
-- ✅ **Servidor da API criado** com Fastify em `server/src/` (`npm run server:dev`, `GET /health`, erros padronizados em `{ erro }`, CORS e limite de requisições). `@fastify/jwt` já instalado, registrado no passo 3
-- 🟡 API para as funções contadas na APF (Incluir/Editar/Excluir/Listar/Visualizar de cada módulo): ✅ contas, vínculos, turmas, respostas, relatórios, **cadastro de atividades e níveis** (passo 9) e **preferências do aluno** (`PATCH /alunos/eu`, passo 10)
-- ✅ Trocar `src/data/mock.ts` pelas chamadas à API dentro de `src/services/`: ✅ contas (passo 3); ✅ níveis, atividades e nivelamento (passo 4, telas com "Carregando..." e "Sem conexão"); ✅ respostas, progressão e histórico (passo 5); ✅ área do professor e do responsável (passo 8). Nenhuma tela lê mais o `mock.ts`
-- ✅ Migração 004: `Atividade.textoApoio` (palavra, frase ou texto mostrado à parte do enunciado; extra em relação ao diagrama)
-- ✅ Guardar o token de login no aparelho (`expo-secure-store`; `localStorage` no navegador)
-- ✅ API de autenticação (`/auth/*`), "middleware" `exigirLogin(perfil)` e cliente `src/services/api.ts`
-- ✅ Migrações 002 e 003: `Usuario.telefone`, `Usuario.email` opcional, `Usuario.nomeUsuario` (login do aluno)
-- ✅ Migração 006 (passo 9): `Atividade.idCriador` (quem cadastrou; vazio = conteúdo do seed). Extra em relação ao diagrama: registrar na documentação
-- ✅ Migração 005 (Passo 3.1): perfis `RESPONSAVEL` e `INSTITUICAO`, tabelas `Responsavel`, `Instituicao` e `Vinculo`, colunas novas em `Professor`; `Aluno.idCriador` saiu (virou `Vinculo`). Extras em relação ao diagrama: registrar na documentação
-
-### Funcionalidades previstas na APF sem tela no app nem no Figma
-- ✅ Administrador e professor: incluir/editar/inativar **atividades** (APF itens 25–31; o professor só mexe nas que criou) e, só o administrador, incluir/editar **níveis**: telas no app e rotas `/gestao/*` (passo 9, 14/11; exemplos em `server/admin.http`). ⬜ **Decidir com a equipe** se a atividade do professor vale para todos os alunos (hoje) ou só para os que ele acompanha. ⬜ Imagens nas atividades cadastradas (o formulário ainda não envia `urlImagem`). Falta a equipe abrir as telas no Expo Go
-- ✅ Professor: convidar aluno e desfazer vínculo ("Meus alunos", Passo 3.1); criar/editar/encerrar/apagar turma e pôr/mover/tirar aluno da turma na aba Turmas, que mostra os alunos de cada turma (APF 20–24, passo 8, só alunos com vínculo aceito; desfazer o vínculo tira o aluno das turmas do professor)
-- ✅ O painel de Acompanhamento lista os alunos com vínculo aceito (pela API). O aluno que se cadastra sozinho aparece "sem turma" até o professor pôr numa turma
-- ✅ Responsável: até 3 dicas curtas embaixo de cada pessoa acompanhada (dias de treino na semana, conteúdo para treinar junto, etapa), com "Ouvir dicas" (passo 8; sem turma nem métricas detalhadas)
-- ✅ Instituição e administrador: inscrição, aprovação com código e aprovação de professores (Passo 3.1). ✅ A instituição cria turmas e escolhe o professor de cada uma (`/instituicao/turmas`, passo 8; vê só quantos alunos, não os nomes). ⬜ Revogar aprovação ou tirar professor da instituição (não previsto)
-- ✅ Professor: corrigir manualmente uma resposta (APF 35) na tela de métricas, com observação opcional; recalcula o DesempenhoConteudo, mas **não muda a etapa** do aluno (decisão do passo 8: a subida de etapa já aconteceu ou não)
-- ✅ Aluno: editar preferências de velocidade da voz e tamanho da letra (APF 17): "Voz e letra" (`/aluno/preferencias`, passo 10, 18/11), salvas no servidor e aplicadas na hora. A voz (`vozPreferida`) continua só pt-BR (uma voz configurada em `AZURE_VOZ`). **Sem frame no Figma**; falta a equipe abrir no Expo Go
-- ✅ Trocar/recuperar senha (APF 18): todos os perfis trocam a própria (inclusive o aluno, desde o Passo 3.1); senha provisória para qualquer perfil pelo administrador/script, com troca obrigatória ao entrar (passo 12); `/esqueci-senha` explica esse caminho (passo 13: antes dizia que mandava um e-mail sem mandar nada). Recuperar por e-mail está em "Trabalhos futuros". Faltam as telas no Figma
-
-### Acessibilidade e conteúdo
-- ✅ **Narração por voz (RNF04)** — passo 10 (18/11). A voz passou do Piper (qualidade ruim) para a **Azure** (voz neural `pt-BR-FranciscaNeural`), testada pela equipe no celular e na web. O servidor gera o MP3 uma vez (cache em `AudioCache`), e os **MP3 vão para o git** (`server/storage/audio/`, ~20 MB): quem clona ouve a voz sem a chave. O app toca com o `expo-audio` e cai no `expo-speech` (voz do aparelho) se a rede falhar ou o áudio não existir e não houver chave. Corrigido: iPhone com a chave do silencioso ligada deixava a voz do aparelho muda. "Falando..." no `BotaoAudio`, fala para ao sair da tela, toque longo nas opções lê a opção.
-  - ⬜ Conteúdo novo (atividade nova ou texto alterado): quem tem a chave roda `npm run voz:preparar` e faz commit dos MP3.
-  - ⬜ Revisar o `ServicoTTS` na APF (agora é a Azure; custo zero no F0) no passo 14.
-- ✅ Banco real de atividades (letras, sílabas, palavras, frases, escrita, interpretação, cotidiano): 35 atividades, 7 por nível (passo 6, 14/11)
-- 🟡 O enum `TipoAtividade` do diagrama não tem tipos para **letra-som** (RF05) nem **cotidiano** (RF11). Decidido no passo 6: **não criar tipos**; RF05 = LETRA e RF11 = tema/`conteudo` de todos os tipos, sem impacto no diagrama nem na APF (ver [`docs/conteudo-pedagogico.md`](docs/conteudo-pedagogico.md)). Falta explicar isso no PDF (passo 14)
-- 🟡 Imagens das alternativas e da palavra em destaque: ✅ o app mostra `urlImagem` (opção 108 × 96 e foto de 144 acima da palavra, medidas do Figma; 18/11); ⬜ faltam as imagens (lista em [`docs/conteudo-pedagogico.md`](docs/conteudo-pedagogico.md)), um lugar para guardá-las e o `urlImagem` no `mock.ts`. Até lá, os ícones provisórios
-- ✅ Emojis trocados por ícones de `@expo/vector-icons` (09/11)
-- ✅ Fonte Inter carregada (`@expo-google-fonts/inter`), aplicada por `familias` dos tokens (18/11)
-- ✅ Ícone do app, ícone adaptativo do Android, splash e favicon com o símbolo do AJAI do Figma (18/11; gerados por `assets/fonte/gerar-icones.py`). ⬜ Conferir num build (no Expo Go aparece o ícone do Expo Go)
-- 🟡 Ajuste ao Figma: ✅ tokens, componentes, Splash e Home do aluno; ⬜ comparar os outros 45 frames (o plano gratuito do Figma limitou a leitura pelo MCP) e criar a tela "Nível sem atividades"
-- 🟡 Auditoria de acessibilidade (passo 13, 18/11, pelo código e no navegador): ✅ todo elemento tocável tem `accessibilityRole` e rótulo; ✅ ícones decorativos escondidos do leitor de tela; ✅ toda tela do aluno tem "Ouvir ajuda"/"Ouvir instrução"; ✅ alvos de toque ≥ 64 (botões, campos, opções, peças); ✅ contraste do texto ≥ 4,4:1 em todas as combinações dos tokens (o verde `sucesso` sobre `superficieSuave`, 4,4:1, só aparece em texto negrito); ✅ toda tela rola, então letra maior não corta texto; corrigidos: `lineHeight` fixo no texto de interpretação, rótulos de 16 no progresso do aluno (agora 20), tamanhos soltos de 13–14 na área do professor (agora `fontes.legenda`) e o título "Acompanhamento" quebrando no meio da palavra em telas de 360. ⬜ **Falta com aparelho de verdade:** passar o TalkBack e o VoiceOver em todas as telas, aumentar a fonte do sistema no máximo e testar num Android simples (abertura, resposta e narração). ⬜ Na barra de abas do professor, "Acompanhamento" aparece cortado ("Acompan...") em telas estreitas (o leitor de tela lê inteiro); decidir com o UX/UI um nome mais curto. Rótulos do gráfico de barras continuam em 12–13 (barras de 44 de largura)
-
-### Qualidade, segurança e privacidade
-- ✅ Testes automatizados (passo 11, 18/11): servidor com `node --test` (186 testes: correção, progressão e ofensiva, rotas do passo 5, contas/aprovações/vínculos, autorização e gabarito ausente em todas as rotas do aluno, área do professor/responsável, cadastro de atividades/etapas e narração); 12 testes da voz do app no Node; testes de tela com `jest-expo` (alternativa certa → "Muito bem!", errada → "Quase lá!"). Tudo no `npm test`. ⬜ Mais testes de tela, se der tempo (nivelamento, home)
-- 🟡 Senha com hash no servidor (✅ scrypt) e comunicação só por HTTPS (⬜ RNF11; na demo é HTTP na rede local; em produção, HTTPS e `CORS_ORIGEM`)
-- ✅ Tokens antigos caem quando a senha muda ou quando o administrador gera uma provisória (`Usuario.versaoToken`, migração 007; passo 12, 18/11)
-- ✅ Senha provisória obriga a criar outra ao entrar ("Crie sua senha", `/trocar-senha`; o servidor recusa as outras rotas até a troca)
-- ✅ Problema "professor que criou o aluno saiu" resolvido no Passo 3.1: o aluno tem conta própria e troca a própria senha
-- ✅ Termo de uso e privacidade em linguagem simples ([`docs/privacidade.md`](docs/privacidade.md) e tela `/termo`, com áudio), "Li e concordo" nos 4 cadastros (data e versão guardadas), convite explicando o que o acompanhante vê, revisão de quem vê cada dado e `npm run usuario:apagar` para pedidos de exclusão (passo 12, RNF12, LGPD). `dataNascimento` saiu da resposta da API (não é coletado). Falta a equipe abrir as telas no Expo Go
-- ⬜ Pendências do passo 12 (detalhes em [`docs/privacidade.md`](docs/privacidade.md)): e-mail de contato do AJAI para pedidos da LGPD; apagar a conta pela tela do app; narrações com o primeiro nome entram em `server/storage/audio/` (versionado: conferir antes do commit); limpar `Vinculo.identificadorConvite` depois do aceite; contas antigas sem aceite registrado; tirar `dataNascimento` do diagrama (passo 14)
-
-### Design (UX/UI)
-- ⬜ Telas que faltam no Figma (em 18/11 já existem frames de progresso, preferências, minha conta, relatórios, conta e turmas do professor, recuperação de senha, "carregando", "sem internet" e "nível sem atividades"): telas do administrador; do Passo 3.1: escolha de perfil, 4 cadastros, espera/recusa, área da instituição, área do responsável, aprovação no admin, "Meus alunos" e convites do aluno
-
-### Documentação
-- ⬜ Atualizar a seção 15 (Prototipação) do PDF: ela diz que o protótipo tem 9 telas e que cadastro e nivelamento seriam feitos depois, mas o Figma já tem 47 frames (18/11), incluindo cadastro, nivelamento, formar palavra, ler frase e a área do professor
-- ⬜ Registrar no documento as decisões de stack (SQLite, API com Fastify, voz com `ProvedorVoz`: Azure AI Speech no servidor + `expo-speech` de reserva; o Piper foi testado e trocado por qualidade) e as colunas/tabelas extras do esquema (`Atividade.ordemNivelamento`, `Atividade.textoApoio`, `AudioCache.provedor`, `Usuario.telefone`, `Usuario.nomeUsuario`, `Responsavel`, `Instituicao`, `Vinculo` e as colunas novas de `Professor`), e os perfis novos no diagrama de classes e na APF (RESPONSAVEL, INSTITUICAO; funções de aprovação e de vínculo)
-- ⬜ Manter o quadro Kanban (Trello) alinhado com esta lista
-
-### Dependências
-- ✅ `expo-asset` instalado (passo 13): o `expo-doctor` acusava que faltava (é exigido pelo `expo-audio`; sem ele o app pode fechar num build fora do Expo Go). Depois de `git pull`, rode `npm install`
-- ⬜ O `expo-doctor` aponta 10 pacotes do Expo com versão de correção (patch/minor) um pouco atrás do SDK 58 (`expo`, `expo-router`, `expo-web-browser`...). Não atualizados às vésperas da entrega; depois dela, `npx expo install --fix` e testar de novo
-
-## Trabalhos futuros
-
-O que ficou de fora do MVP de propósito (inclusive os antigos `// TODO:` do código, retirados no passo 13):
-
-- **Recuperar a senha por e-mail:** precisa de um serviço de envio de e-mail. Até lá, `/esqueci-senha` orienta a pedir uma senha provisória (administrador ou `npm run usuario:senha`).
-- **Tela "Etapa sem atividades"** para o aluno (o Figma tem o frame). Hoje a home mostra o aviso "Esta etapa ainda não tem atividades. Fale com seu professor." (`src/app/aluno/index.tsx`).
-- **Testes da voz do app no jest-expo:** hoje rodam no `node --test` com módulos de mentira (`src/services/voz/voz.test.ts`); funcionam, então a troca é opcional.
-- Apagar a conta pelo app, revogar aprovação de professor ou instituição e as outras pendências do passo 12 listadas em [`docs/privacidade.md`](docs/privacidade.md).
-
----
-
-## Equipe
-
-| Integrante | Função |
-|---|---|
-| Isabel Emília Sterim Saade | Gerente do projeto e analista de requisitos |
-| Daphne Rocha Amigo | Desenvolvimento |
-| Maria Carla dos Santos Bellote | Desenvolvimento |
-| Brenno Gomes Breda | UX/UI Design |
-| Giovanna Rocha Santana | Testes e documentação |
-
-Os papéis acima são os formais da documentação do projeto; no desenvolvimento **todos contribuem** e as tarefas não têm dono fixo (veja [`docs/PROXIMOS_PASSOS.md`](docs/PROXIMOS_PASSOS.md)).
-
-Orientadora: Susiléa Abreu dos Santos Lima. Metodologia: Scrum com Kanban (4 Sprints, quadro no Trello).

@@ -19,7 +19,7 @@
 // O gabarito (respostaCorreta, Alternativa.correta) só sai por estas rotas, que exigem
 // administrador ou professor. As rotas do aluno (rotas/atividades.ts) continuam sem ele.
 // A atividade nova entra na trilha como as demais (ATIVA) e vale para todos os alunos
-// (decisão pendente da equipe: ver docs/PROXIMOS_PASSOS.md, passo 9).
+// (decisão pendente da equipe).
 import type { FastifyInstance } from "fastify";
 import { exigirContaLiberada, exigirLogin, type DadosToken } from "../autenticacao.ts";
 import { banco } from "../banco.ts";
