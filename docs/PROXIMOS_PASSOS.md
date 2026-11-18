@@ -10,7 +10,7 @@ Roteiro do que falta até a entrega. **A ordem de execução é a da tabela "Vis
 >
 > **Todos desenvolvem.** Os papéis da documentação (gerente, UX/UI, testes...) são formais; aqui os passos não têm dono fixo. Combine no grupo quem pega cada um e mova o cartão no Kanban.
 >
-> **Stack:** banco = **SQLite em arquivo dentro do projeto** (`server/data/ajai.db`, criado com `npm run db:reset`) e voz = o app só usa a interface **`ProvedorVoz`**; a **API de voz ainda não foi definida** e o `expo-speech` fica implementado como alternativa e reserva, com troca em uma linha.
+> **Stack:** banco = **SQLite em arquivo dentro do projeto** (`server/data/ajai.db`, criado com `npm run db:reset`) e voz = o app só usa a interface **`ProvedorVoz`**; a API de voz é a **Azure AI Speech** (passo 10, gerada no servidor; antes era o Piper) e o `expo-speech` fica como alternativa e reserva, com troca em uma linha.
 
 ## Regras que valem para TODO prompt
 
@@ -43,7 +43,7 @@ Legenda: ⬜ a fazer · 🟡 em andamento · ✅ feito
 | 7 | Home do aluno: ofensiva, frequência e tela de progresso — feito | 15/11 | 5 |
 | 8 | Área do professor e do responsável — feito | 15/11 | 5, 3.1 |
 | 9 | Cadastro de atividades (administrador e professor) e níveis (administrador) — feito | 15/11 | 2, 3.1 |
-| 10 | Narração por voz e preferências de acessibilidade | 15/11 | 1 |
+| 10 | Narração por voz (Azure) e preferências — feito | 15/11 | 1 |
 | 11 | Ajuste ao Figma e recursos visuais | 16/11 | — |
 | 12 | Testes automatizados | 16/11 | 5, 3.1 |
 | 13 | Segurança e privacidade (LGPD) | 16/11 | 3.1 |
@@ -65,7 +65,7 @@ Sprints da documentação: **Sprint 3** vai até 10/11 (passos 0–6), **Sprint 
 
 ## ✅ Passo 1 — Decisões de stack
 
-**Feito em 05/11.** Banco = SQLite em arquivo; API = **Fastify** (Node.js + TypeScript); voz = interface `ProvedorVoz` com `expo-speech` como alternativa e reserva (a API de voz ainda não foi definida).
+**Feito em 05/11.** Banco = SQLite em arquivo; API = **Fastify** (Node.js + TypeScript); voz = interface `ProvedorVoz` com `expo-speech` como alternativa e reserva (a API de voz foi definida no passo 10: Azure AI Speech, depois de testar o Piper).
 
 ---
 
@@ -330,71 +330,34 @@ O "Ouvir instrução" também lê as opções. Enquanto o servidor corrige, a te
 
 ---
 
-## ⬜ Passo 10 — Narração por voz e preferências (RNF04, APF 17)
+## ✅ Passo 10 — Narração por voz e preferências (RNF04, APF 17)
 
-**Prazo:** 15/11 · **Depende de:** passos 1 e 2 · **Ordem:** depois do 9, antes do 11 e do 12
+**Feito em 18/11.** A equipe configurou a chave da Azure e ouviu a voz no celular e na web. A primeira versão usou o **Piper** (local, sem conta), mas a voz ficou ruim; no mesmo dia a equipe trocou para a **Azure AI Speech** (voz neural **`pt-BR-FranciscaNeural`**), só criando `server/src/voz/azure.ts` e mudando `VOZ_PROVEDOR` (a rota, o app e as telas não mudaram). O servidor gera o MP3 uma vez e guarda em `AudioCache`; o app toca com o `expo-audio` e usa o `expo-speech` (voz do aparelho) quando a rede ou a Azure falham. `PROVEDOR_PADRAO = "servidor"`; trocar para só a voz do aparelho é mudar para `"expo-speech"`. A interface `ProvedorVoz` e as telas que chamam `falar()`/`pararFala()` não mudaram.
 
-**Pronto quando:** todo botão "Ouvir ajuda / Ouvir instrução" fala em português do Brasil com a **API de voz escolhida pela equipe** (ainda não definida) e o `expo-speech` funcionando como alternativa e como reserva; o aluno pode mudar a velocidade da voz e o tamanho da letra, a preferência fica salva, e **trocar o provedor é mudar uma linha** (`PROVEDOR_PADRAO` em `src/services/voz/index.ts`).
+**Servidor:**
+- `server/src/voz/`: `sintetizador.ts` (interface `SintetizadorVoz`: `nome`, `vozPadrao`, `formato`, `sintetizar(texto, voz, velocidade)`), **`azure.ts`** (padrão: `POST https://<região>.tts.speech.microsoft.com/cognitiveservices/v1`, chave no cabeçalho `Ocp-Apim-Subscription-Key`, SSML com `<prosody rate="-20%">` para a velocidade, saída `audio-24khz-96kbitrate-mono-mp3`; no 429 espera o `Retry-After` e tenta de novo, porque o plano gratuito F0 só aceita 20 pedidos por minuto), `piper.ts` (alternativa local), `index.ts` (escolhe por `VOZ_PROVEDOR`; `usarSintetizador` para testes) e `narracao.ts` (cache por texto + voz + velocidade + provedor; pedidos iguais ao mesmo tempo geram um arquivo só);
+- `POST /narracao { texto, velocidade? }` (qualquer perfil logado; até 800 caracteres) → `{ url }` relativa à API; 503 se a narração estiver desligada ou a Azure falhar. `GET /narracao/audio/:arquivo` serve o MP3 sem login (nome = hash de 160 bits), com `Range` (iPhone);
+- `PATCH /alunos/eu { velocidadeVoz?, tamanhoFonte? }` (só ALUNO, sobre ele mesmo) → `{ usuario }`;
+- `server/.env` / `.env.example`: `VOZ_PROVEDOR=azure`, `AZURE_SPEECH_KEY` (segredo), `AZURE_SPEECH_REGION`, `AZURE_VOZ`, `VOZ_TEMPO_LIMITE_MS`, `VOZ_PASTA_AUDIO` (opcional); as do Piper ficaram comentadas;
+- `npm run voz:preparar` (`server/scripts/voz-preparar.mjs`): todas as atividades ATIVAS + frases fixas em 0.8, 1.0 e 1.2 (138 textos × 3 = 414 áudios; uns 20 min no F0). Cada áudio pode esperar até 2 min; para depois de 5 falhas seguidas sem nenhum sucesso (chave errada, sem internet).
 
-Arquitetura (a interface e o provedor `console` já existem; faltam os demais):
+**App:**
+- `provedorExpoSpeech.ts` e `provedorServidor.ts` (espera o servidor até 8 s, toca, cai no expo-speech se a rede falhar, der 503 ou o áudio não carregar);
+- **`modoAudio.ts`** (correção de 18/11): os dois provedores ligam `playsInSilentMode` antes de falar. No iPhone com a chave do silencioso ligada, a voz do aparelho ficava muda, porque só o áudio do servidor ligava esse modo;
+- `src/services/textosNarrados.ts`: texto do "Ouvir instrução", o mesmo usado pelo `voz:preparar`;
+- `BotaoAudio` com "Falando..." / "Toque para parar" e parada ao sair da tela; toque longo nas opções e sílabas lê o texto sem escolher;
+- `/aluno/preferencias` ("Voz e letra", na home e em Minha conta): velocidade Lenta 0.8 / Normal 1.0 / Rápida 1.2 com "Ouvir exemplo" e letra Normal 20 / Grande 24 / Muito grande 28, salvas no servidor e aplicadas pelo `PreferenciasProvider` (`useEstilos`/`useFontes` nas telas do aluno e nos componentes compartilhados).
 
-```
-BotaoAudio / telas ──► services/narracao.ts ──► ProvedorVoz ativo (services/voz/index.ts)
-                                                  ├─ servidor     (PADRÃO) toca o áudio do AudioCache;
-                                                  │                se falhar ──► expo-speech
-                                                  ├─ expo-speech  voz do aparelho (alternativa/reserva)
-                                                  └─ console      (desenvolvimento)
-Servidor: GET/POST /narracao { texto, voz, velocidade } ──► SintetizadorVoz ativo (VOZ_PROVEDOR)
-                                                  └─ <API escolhida> → grava o áudio em server/storage/audio + linha em AudioCache
-```
+**Banco:** nenhuma migração. No `mock.ts`, a velocidade dos alunos de demonstração foi de 0.9 para **1** (Normal).
 
-```text
-Leia AGENTS.md, src/services/narracao.ts, src/services/voz/ (provedor.ts, index.ts,
-provedorConsole.ts), src/components/BotaoAudio.tsx,
-server/db/migrations/001_esquema_inicial.sql (tabela AudioCache) e src/domain/modelos.ts.
+**Testes:** `npm test` roda o servidor (155; 19 em `rotas/narracao.test.ts` com uma Azure e um Piper **de mentira** por HTTP: chave, SSML, formato MP3, espera no 429, cache, velocidades, pedidos simultâneos, 400/401/503, troca de sintetizador, `Range`, preferências) e a voz do app (12 em `src/services/voz/voz.test.ts`: provedor `console`, rede falhando/503/áudio quebrado caindo no `expo-speech`, interrupções e o modo silencioso antes da voz do aparelho). Lint e typecheck passam. Com o Piper de verdade, o fluxo completo foi conferido no navegador; com a Azure de verdade, a equipe gerou os áudios e ouviu no celular e na web (18/11).
 
-API de voz escolhida pela equipe: <preencher>.
-expo-speech também deve ser implementado.
-NÃO mude a interface ProvedorVoz nem as telas que chamam falar()/pararFala().
+**Observações:**
+- a chave da Azure fica só em `server/.env` (fora do git). Para gerar áudio de conteúdo novo: recurso **Speech** (Free F0) no portal da Azure, Chave 1 e região no `server/.env`, `npm run voz:preparar` (uns 20 min no F0) e commit dos MP3 novos (README › Narração por voz). Outra voz: troque `AZURE_VOZ` e rode o `voz:preparar` de novo;
+- os MP3 de `server/storage/audio/` são **versionados** (~20 MB em 18/11): quem clona ouve a voz sem a chave, porque o servidor acha o arquivo pelo nome e o registra no `AudioCache` (teste em `narracao.test.ts`; conferido com banco novo e sem chave: 414 de 414 encontrados). `db:reset`/`db:seed` apagam as linhas, não os arquivos;
+- texto novo sem áudio gerado (ex.: atividade cadastrada pelo professor, saudação com o nome do aluno) é gerado na hora se o servidor tiver a chave; sem a chave, toca com a voz do aparelho;
+- passo 15: revisar o `ServicoTTS` na APF (Azure, custo zero no F0) e citar a troca do Piper.
 
-A) Servidor (só se a API escolhida gerar áudio no servidor):
-1. Documente no README, seção Voz, como configurar a API escolhida (conta, chave ou
-   programa a instalar) e o nome da voz pt-BR usada. Só o computador que GERA os
-   áudios precisa disso.
-2. server/src/voz/sintetizador.ts com a interface SintetizadorVoz
-   { nome; sintetizar(texto, voz, velocidade): Promise<Buffer> } e um arquivo
-   server/src/voz/<api>.ts que implementa a API escolhida e devolve o áudio. Prefira
-   um formato que não dependa do ffmpeg.
-3. Configuração em server/.env (VOZ_PROVEDOR e o que a API exigir) e em
-   server/.env.example. Nunca colocar caminhos ou chaves no código.
-4. Rota de narração: procura em AudioCache (textoOrigem + voz + velocidade + provedor);
-   se não achar, sintetiza, grava o arquivo em server/storage/audio/ e insere a linha.
-   Responde a URL do áudio. Valide o tamanho do texto (limite curto).
-5. `npm run voz:preparar`: gera, uma vez, o áudio de todos os enunciados e alternativas
-   das atividades ATIVAS do banco, nas velocidades 0.8, 1.0 e 1.2. Assim a demonstração
-   NÃO depende da API de voz na hora: basta a API do AJAI servir os arquivos.
-
-B) App:
-6. src/services/voz/provedorExpoSpeech.ts (`npx expo install expo-speech`; confira a API
-   no SDK 58 em https://docs.expo.dev/versions/v58.0.0/): voz pt-BR, respeita
-   `velocidade`, falar de novo interrompe a anterior, parar() interrompe, e a Promise de
-   falar() resolve ao terminar.
-7. src/services/voz/provedorServidor.ts (`npx expo install expo-audio`): pede a URL do
-   áudio, toca, e se der erro, rede fora ou áudio inexistente, chama o provedor
-   expo-speech como reserva.
-8. Registre os dois em `provedores` e defina PROVEDOR_PADRAO conforme a API escolhida
-   ("servidor" ou "expo-speech"). Trocar o padrão deve ser só mudar essa constante.
-9. Mostre no BotaoAudio o estado "Falando..." enquanto toca (com texto, não só ícone);
-   sair da tela para a fala. Nas telas de atividade, leia a alternativa ao tocar e segurar
-   (onLongPress), sem selecionar.
-10. Crie /aluno/preferencias (Aluno.EditarPreferencias): velocidade da voz (lenta /
-    normal / rápida), tamanho da letra (normal / grande / muito grande) e "Ouvir
-    exemplo", com botões grandes. Salve no servidor (PATCH /alunos/eu) e aplique
-    tamanhoFonte via contexto, sem espalhar ifs. Acesso pela home do aluno.
-11. Teste: troque o provedor com usarProvedor("console") e confirme que falar() chega
-    nele; teste o provedorServidor com a rede falhando e confirme que cai no expo-speech.
-Atualize README (Pendências) com o que foi feito.
-```
 ---
 
 ## 🟡 Passo 11 — Recursos visuais (UX/UI)
@@ -443,7 +406,8 @@ Leia AGENTS.md, src/services/** e server/.
 Configure testes:
 - no app: jest-expo (`npx expo install jest-expo jest @types/jest -- --save-dev`) e
   @testing-library/react-native; script `npm test`;
-- no servidor: já existe `node --test` (npm test, 136 testes em 14/11, incluindo as rotas do passo 8 em professor.test.ts e as do passo 9 em cadastroAtividades.test.ts); complete os casos abaixo
+- no servidor: já existe `node --test` (npm test, 155 testes em 18/11, incluindo as rotas do passo 8 em professor.test.ts, as do passo 9 em cadastroAtividades.test.ts e as do passo 10 em narracao.test.ts;
+  os 12 testes da voz do app em src/services/voz/voz.test.ts rodam no Node com módulos do Expo de mentira e podem ir para o jest-expo); complete os casos abaixo
   que faltarem (ver server/src/rotas/contas.test.ts e progresso.test.ts).
 Escreva testes para:
 1. corrigirAutomaticamente (acentos, maiúsculas, espaços);
@@ -566,7 +530,7 @@ Prepare a apresentação final do AJAI (<N> minutos no total, 5 integrantes):
 3. Plano B e preparação técnica: como rodar a demo SEM internet da faculdade (servidor
    no notebook + celulares no mesmo Wi-Fi/ponto de acesso do celular; app via Expo Go
    ou build de desenvolvimento com EAS), checklist do dia (db:reset com dados de demo,
-   áudios já gerados com `npm run voz:preparar`, se a voz vier do servidor, código da instituição
+   áudios já gerados com `npm run voz:preparar` (com a chave da Azure; depois disso a demo não precisa de internet para a voz), código da instituição
    de demonstração anotado (EJAVV2), EXPO_PUBLIC_API_URL com o IP
    certo, celular carregado, vídeo gravado de backup).
 4. Prováveis perguntas da banca e respostas curtas.

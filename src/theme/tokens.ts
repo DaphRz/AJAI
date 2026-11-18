@@ -53,3 +53,40 @@ export const fontes = {
 } as const;
 
 export const toqueMinimo = 64;
+
+export type Fontes = { [K in keyof typeof fontes]: number };
+
+/**
+ * Tamanhos de letra do aluno (passo 10, Aluno.tamanhoFonte = tamanho do texto do corpo).
+ * Os valores ficam no banco; a tela de preferências mostra os nomes.
+ */
+export const tamanhosDeLetra = [
+  { valor: 20, nome: "Normal" },
+  { valor: 24, nome: "Grande" },
+  { valor: 28, nome: "Muito grande" },
+] as const;
+
+/** Velocidades da voz do aluno (Aluno.velocidadeVoz); o servidor prepara os áudios nessas três. */
+export const velocidadesDaVoz = [
+  { valor: 0.8, nome: "Lenta" },
+  { valor: 1, nome: "Normal" },
+  { valor: 1.2, nome: "Rápida" },
+] as const;
+
+/**
+ * `fontes` aumentadas para o tamanho de letra escolhido pelo aluno. Aumenta os textos
+ * (título, subtítulo, corpo, legenda); letra da atividade, sílabas e palavra em destaque
+ * já são grandes e ficam como estão, para não quebrar o layout. Use pelo hook useFontes/useEstilos.
+ */
+export function fontesNoTamanho(tamanhoCorpo: number): Fontes {
+  const escala = Math.max(1, tamanhoCorpo / fontes.corpo);
+  const aumentar = (n: number) => Math.round(n * escala);
+  return {
+    ...fontes,
+    tituloGrande: aumentar(fontes.tituloGrande),
+    titulo: aumentar(fontes.titulo),
+    subtitulo: aumentar(fontes.subtitulo),
+    corpo: aumentar(fontes.corpo),
+    legenda: aumentar(fontes.legenda),
+  };
+}

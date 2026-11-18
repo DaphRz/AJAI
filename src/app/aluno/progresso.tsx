@@ -13,7 +13,8 @@ import {
   type ProgressoDoAluno,
   type StatusEtapa,
 } from "@/services/progresso";
-import { cores, fontes, raios } from "@/theme/tokens";
+import { cores, raios, type Fontes } from "@/theme/tokens";
+import { useEstilos } from "@/context/preferencias";
 
 export default function Progresso() {
   // Tudo vem calculado do servidor (GET /alunos/eu/progresso).
@@ -46,6 +47,7 @@ function ConteudoProgresso({
   ofensiva,
   ultimos7Dias,
 }: ProgressoDoAluno) {
+  const styles = useEstilos(criarEstilos);
   const taxa = Math.round(taxaAcerto * 100);
   const concluidas = trilha.filter((n) => n.status === "CONCLUIDA").length;
   const atual = trilha.find((n) => n.status === "ATUAL");
@@ -158,20 +160,21 @@ function ConteudoProgresso({
   );
 }
 
-const styles = StyleSheet.create({
-  rotulo: { fontSize: fontes.legenda, color: cores.textoSuave, fontWeight: "600" },
-  texto: { fontSize: fontes.corpo, color: cores.texto, flexShrink: 1 },
-  valor: { fontSize: fontes.tituloGrande, fontWeight: "800", color: cores.primaria },
-  destaque: { fontSize: fontes.subtitulo, fontWeight: "800", color: cores.primaria, flexShrink: 1 },
-  linha: { flexDirection: "row", alignItems: "center", gap: 8 },
-  trilha: { gap: 4, marginTop: 8 },
-  etapa: { flexDirection: "row", alignItems: "center", gap: 12, padding: 10, borderRadius: raios.md },
-  etapaAtual: { backgroundColor: cores.superficie, borderWidth: 2, borderColor: cores.primaria },
-  etapaTextos: { flexShrink: 1 },
-  etapaNome: { fontSize: fontes.corpo, fontWeight: "700", color: cores.texto },
-  etapaStatus: { fontSize: fontes.legenda, color: cores.textoSuave, fontWeight: "600" },
-  numeros: { flexDirection: "row", gap: 12 },
-  coluna: { flex: 1 },
-  barra: { height: 16, borderRadius: 8, backgroundColor: cores.superficieSuave, overflow: "hidden" },
-  barraCheia: { height: "100%", backgroundColor: cores.sucesso },
-});
+const criarEstilos = (fontes: Fontes) =>
+  StyleSheet.create({
+    rotulo: { fontSize: fontes.legenda, color: cores.textoSuave, fontWeight: "600" },
+    texto: { fontSize: fontes.corpo, color: cores.texto, flexShrink: 1 },
+    valor: { fontSize: fontes.tituloGrande, fontWeight: "800", color: cores.primaria },
+    destaque: { fontSize: fontes.subtitulo, fontWeight: "800", color: cores.primaria, flexShrink: 1 },
+    linha: { flexDirection: "row", alignItems: "center", gap: 8 },
+    trilha: { gap: 4, marginTop: 8 },
+    etapa: { flexDirection: "row", alignItems: "center", gap: 12, padding: 10, borderRadius: raios.md },
+    etapaAtual: { backgroundColor: cores.superficie, borderWidth: 2, borderColor: cores.primaria },
+    etapaTextos: { flexShrink: 1 },
+    etapaNome: { fontSize: fontes.corpo, fontWeight: "700", color: cores.texto },
+    etapaStatus: { fontSize: fontes.legenda, color: cores.textoSuave, fontWeight: "600" },
+    numeros: { flexDirection: "row", gap: 12 },
+    coluna: { flex: 1 },
+    barra: { height: 16, borderRadius: 8, backgroundColor: cores.superficieSuave, overflow: "hidden" },
+    barraCheia: { height: "100%", backgroundColor: cores.sucesso },
+  });

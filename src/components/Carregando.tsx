@@ -1,9 +1,10 @@
 import type { ReactNode } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import type { Carregamento } from "@/hooks/useCarregar";
-import { cores, fontes, raios, toqueMinimo } from "@/theme/tokens";
+import { cores, raios, toqueMinimo, type Fontes } from "@/theme/tokens";
 import { BotaoAudio } from "./BotaoAudio";
 import { Tela } from "./Tela";
+import { useEstilos } from "@/context/preferencias";
 
 interface Props<T> {
   estado: Carregamento<T>;
@@ -18,6 +19,7 @@ interface Props<T> {
  * uma mensagem amigável que se toca para tentar de novo.
  */
 export function Carregando<T>({ estado, children, comAudio = false }: Props<T>) {
+  const styles = useEstilos(criarEstilos);
   if (estado.dados !== undefined) return <>{children(estado.dados)}</>;
 
   if (estado.erro) {
@@ -47,17 +49,18 @@ export function Carregando<T>({ estado, children, comAudio = false }: Props<T>) 
   );
 }
 
-const styles = StyleSheet.create({
-  centro: { flex: 1, alignItems: "center", justifyContent: "center", gap: 16 },
-  texto: { fontSize: fontes.subtitulo, color: cores.texto, fontWeight: "600" },
-  falha: {
-    minHeight: toqueMinimo * 2,
-    justifyContent: "center",
-    padding: 20,
-    borderRadius: raios.lg,
-    borderWidth: 2,
-    borderColor: cores.primaria,
-    backgroundColor: cores.superficie,
-  },
-  textoFalha: { fontSize: fontes.subtitulo, color: cores.texto, fontWeight: "700", textAlign: "center" },
-});
+const criarEstilos = (fontes: Fontes) =>
+  StyleSheet.create({
+    centro: { flex: 1, alignItems: "center", justifyContent: "center", gap: 16 },
+    texto: { fontSize: fontes.subtitulo, color: cores.texto, fontWeight: "600" },
+    falha: {
+      minHeight: toqueMinimo * 2,
+      justifyContent: "center",
+      padding: 20,
+      borderRadius: raios.lg,
+      borderWidth: 2,
+      borderColor: cores.primaria,
+      backgroundColor: cores.superficie,
+    },
+    textoFalha: { fontSize: fontes.subtitulo, color: cores.texto, fontWeight: "700", textAlign: "center" },
+  });

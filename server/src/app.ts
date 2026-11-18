@@ -10,6 +10,8 @@ import { rotasAtividades } from "./rotas/atividades.ts";
 import { rotasAuth } from "./rotas/auth.ts";
 import { rotasCadastroAtividades } from "./rotas/cadastroAtividades.ts";
 import { rotasInstituicoes } from "./rotas/instituicoes.ts";
+import { rotasNarracao } from "./rotas/narracao.ts";
+import { rotasPreferencias } from "./rotas/preferencias.ts";
 import { rotasProfessor } from "./rotas/professor.ts";
 import { rotasProgresso } from "./rotas/progresso.ts";
 import { rotasResponsavel } from "./rotas/responsavel.ts";
@@ -63,6 +65,8 @@ export async function construirApp(opcoes: { log?: boolean } = {}): Promise<Fast
   await app.register(rotasResponsavel);
   await app.register(rotasTurmasInstituicao);
   await app.register(rotasCadastroAtividades);
+  await app.register(rotasNarracao);
+  await app.register(rotasPreferencias);
 
   return app;
 }

@@ -2,6 +2,7 @@ import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
+import { PreferenciasProvider } from "@/context/preferencias";
 import { SessaoProvider, useSessao } from "@/context/sessao";
 import { cores } from "@/theme/tokens";
 
@@ -28,8 +29,10 @@ function Navegacao() {
 export default function RootLayout() {
   return (
     <SessaoProvider>
-      <StatusBar style="dark" />
-      <Navegacao />
+      <PreferenciasProvider>
+        <StatusBar style="dark" />
+        <Navegacao />
+      </PreferenciasProvider>
     </SessaoProvider>
   );
 }

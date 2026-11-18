@@ -10,7 +10,8 @@ import { mensagemDeErro } from "@/services/api";
 import { textoDaOfensiva, textoDaSemana, visualizarProgresso } from "@/services/progresso";
 import { escolherProximaAtividade } from "@/services/sessaoDeEstudo";
 import { listarConvitesDoAluno } from "@/services/vinculos";
-import { cores, fontes } from "@/theme/tokens";
+import { cores, type Fontes } from "@/theme/tokens";
+import { useEstilos } from "@/context/preferencias";
 
 /**
  * Trilha e etapa atual do aluno, como o servidor guardou (GET /alunos/eu/progresso), e quantos
@@ -28,6 +29,7 @@ async function carregarHome() {
 }
 
 export default function HomeAluno() {
+  const styles = useEstilos(criarEstilos);
   const aluno = useAluno();
   // Recarrega quando o nível da sessão muda (ex.: acabou de subir de etapa).
   const estado = useCarregar(carregarHome, aluno.idNivelAtual ?? 0);
@@ -64,7 +66,7 @@ export default function HomeAluno() {
           <Tela
             rodape={
               <BotaoAudio
-                texto={`Olá, ${primeiroNome}! Toque em continuar para fazer a próxima atividade. Ofensiva: ${ofensiva.numero} ${ofensiva.mensagem}${
+                texto={`Olá, ${primeiroNome}! Toque em continuar para fazer a próxima atividade. Ofensiva: ${ofensiva.numero} ${ofensiva.mensagem} Para mudar a voz ou o tamanho da letra, toque em Voz e letra.${
                   convites > 0 ? " Você tem um convite de acompanhamento. Toque em Ver convite." : ""
                 }`}
               />
@@ -110,6 +112,7 @@ export default function HomeAluno() {
             ) : null}
 
             <Botao titulo="Ver meu progresso" variante="secundario" onPress={() => router.push("/aluno/progresso")} />
+            <Botao titulo="Voz e letra" variante="secundario" onPress={() => router.push("/aluno/preferencias")} />
             <Botao titulo="Minha conta" variante="link" onPress={() => router.push("/aluno/conta")} />
           </Tela>
         );
@@ -118,10 +121,11 @@ export default function HomeAluno() {
   );
 }
 
-const styles = StyleSheet.create({
-  rotulo: { fontSize: fontes.legenda, color: cores.textoSuave, fontWeight: "600" },
-  valor: { fontSize: fontes.subtitulo, fontWeight: "800", color: cores.texto },
-  legenda: { fontSize: fontes.corpo, color: cores.texto },
-  linha: { flexDirection: "row", alignItems: "center", gap: 8 },
-  ofensiva: { color: cores.primaria, fontSize: fontes.titulo, flexShrink: 1 },
-});
+const criarEstilos = (fontes: Fontes) =>
+  StyleSheet.create({
+    rotulo: { fontSize: fontes.legenda, color: cores.textoSuave, fontWeight: "600" },
+    valor: { fontSize: fontes.subtitulo, fontWeight: "800", color: cores.texto },
+    legenda: { fontSize: fontes.corpo, color: cores.texto },
+    linha: { flexDirection: "row", alignItems: "center", gap: 8 },
+    ofensiva: { color: cores.primaria, fontSize: fontes.titulo, flexShrink: 1 },
+  });

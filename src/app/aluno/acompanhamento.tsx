@@ -13,9 +13,11 @@ import {
   listarConvitesDoAluno,
   responderConvite,
 } from "@/services/vinculos";
-import { cores, fontes } from "@/theme/tokens";
+import { cores, type Fontes } from "@/theme/tokens";
+import { useEstilos } from "@/context/preferencias";
 
 export default function Acompanhamento() {
+  const styles = useEstilos(criarEstilos);
   const [versao, setVersao] = useState(0);
   const estado = useCarregar(listarConvitesDoAluno, versao);
   const [aviso, setAviso] = useState<{ texto: string; tipo: "atencao" | "sucesso" } | null>(null);
@@ -101,6 +103,7 @@ export default function Acompanhamento() {
   );
 }
 
-const styles = StyleSheet.create({
-  nome: { fontSize: fontes.subtitulo, fontWeight: "700", color: cores.texto },
-});
+const criarEstilos = (fontes: Fontes) =>
+  StyleSheet.create({
+    nome: { fontSize: fontes.subtitulo, fontWeight: "700", color: cores.texto },
+  });

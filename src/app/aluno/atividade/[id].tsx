@@ -12,9 +12,11 @@ import { mensagemDeErro } from "@/services/api";
 import { visualizarAtividade } from "@/services/atividades";
 import { responderAtividade } from "@/services/respostas";
 import { ATIVIDADES_POR_SESSAO, posicaoNaSessao } from "@/services/sessaoDeEstudo";
-import { cores, fontes } from "@/theme/tokens";
+import { cores, type Fontes } from "@/theme/tokens";
+import { useEstilos } from "@/context/preferencias";
 
 export default function TelaAtividade() {
+  const styles = useEstilos(criarEstilos);
   // concluidas: atividades acertadas nesta sessão de estudo (ver services/sessaoDeEstudo.ts).
   const { id, concluidas: concluidasParam } = useLocalSearchParams<{ id: string; concluidas?: string }>();
   const concluidas = Number(concluidasParam ?? 0) || 0;
@@ -85,6 +87,7 @@ export default function TelaAtividade() {
   );
 }
 
-const styles = StyleSheet.create({
-  posicao: { fontSize: fontes.corpo, color: cores.texto, fontWeight: "700", textAlign: "center" },
-});
+const criarEstilos = (fontes: Fontes) =>
+  StyleSheet.create({
+    posicao: { fontSize: fontes.corpo, color: cores.texto, fontWeight: "700", textAlign: "center" },
+  });

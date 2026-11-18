@@ -65,7 +65,7 @@ Confira abrindo <http://localhost:3333/health> no navegador. A resposta esperada
 | `npm run server:start` | Roda a versão gerada pelo `server:build` (use na demo) |
 | `npm run server:typecheck` | Checagem de tipos só do servidor (`npm run typecheck` checa app + servidor) |
 
-Configuração em `server/.env` (fora do git; modelo em [`server/.env.example`](server/.env.example)): `PORT` (padrão 3333), `HOST` (padrão `0.0.0.0`, para os celulares da rede acessarem), `CORS_ORIGEM`, `LIMITE_REQUISICOES_POR_MINUTO` e, a partir do passo 3, `JWT_SECRET`. Toda resposta de erro da API tem o formato `{ "erro": "mensagem curta em português" }`.
+Configuração em `server/.env` (fora do git; modelo em [`server/.env.example`](server/.env.example)): `PORT` (padrão 3333), `HOST` (padrão `0.0.0.0`, para os celulares da rede acessarem), `CORS_ORIGEM`, `LIMITE_REQUISICOES_POR_MINUTO`, a partir do passo 3, `JWT_SECRET` e, a partir do passo 10, as variáveis da voz (`VOZ_PROVEDOR`, `AZURE_SPEECH_KEY`, `AZURE_SPEECH_REGION`, `AZURE_VOZ`; ver [Narração por voz](#narração-por-voz-azure--provedorvoz)). Sem a chave da Azure, o app continua funcionando com a voz do aparelho. Toda resposta de erro da API tem o formato `{ "erro": "mensagem curta em português" }`.
 
 > **Node 22.14 a 22.17:** o `server:dev` funciona (o script já passa `--experimental-strip-types`), mas os scripts `db:*` não. Use `NODE_OPTIONS=--experimental-strip-types npm run db:reset`. O ideal é o 22.18+.
 
@@ -163,6 +163,8 @@ npm run db:query         # lista as tabelas e quantas linhas cada uma tem
 npm run server:dev       # sobe a API (http://localhost:3333/health)
 npm run typecheck        # checagem de tipos do app e do servidor
 npm run usuario:senha -- <usuário, e-mail ou telefone>   # senha provisória (qualquer perfil)
+npm run voz:preparar     # gera os áudios das atividades (precisa da chave da Azure; ver "Narração por voz")
+npm test                 # testes do servidor e da voz do app
 ```
 
 ### Problemas comuns
@@ -182,7 +184,7 @@ npm run usuario:senha -- <usuário, e-mail ou telefone>   # senha provisória (q
 | Arquivo do banco | `server/data/ajai.db` | **Não** (cada pessoa gera o seu) |
 | Esquema (tabelas) | `server/db/migrations/001_esquema_inicial.sql` e as próximas | Sim |
 | Dados iniciais (seed) | `server/db/seed.mjs`, que lê [`src/data/mock.ts`](src/data/mock.ts) | Sim |
-| Áudios gerados (futuro) | `server/storage/audio/` | Não |
+| Áudios da narração (MP3 da Azure) | `server/storage/audio/` | **Sim** (desde 18/11: quem clona ouve a voz sem a chave da Azure) |
 
 ### Carregar o banco (passo a passo)
 
@@ -253,19 +255,76 @@ O agente consulta e altera o banco pelos mesmos comandos (`npm run db:query -- -
 
 ---
 
-## Narração por voz: `ProvedorVoz`
+## Narração por voz (Azure + `ProvedorVoz`)
 
-O app **não depende de nenhuma API de voz específica**. Telas e componentes chamam só `falar()` / `pararFala()` (`src/services/narracao.ts`), que repassam ao **provedor ativo** (`src/services/voz/`). Cada forma de falar é um provedor que segue a interface `ProvedorVoz`:
+A voz do AJAI é a **voz neural da Microsoft Azure** (Azure AI Speech), em português do Brasil: **`pt-BR-FranciscaNeural`** (troque em `AZURE_VOZ`; ex.: `pt-BR-AntonioNeural`, `pt-BR-ThalitaMultilingualNeural`). Ela substituiu o Piper em 18/11, porque a voz do Piper ficou ruim. O servidor do AJAI pede o áudio à Azure **uma vez**, guarda o MP3 (`server/storage/audio/` + tabela `AudioCache`) e depois só serve o arquivo pronto. Se o servidor ou a Azure não responderem, o app fala com a **voz do aparelho** (`expo-speech`), sem a tela perceber.
 
-| Provedor | Situação | O que é |
+> A voz que se ouve **sem a Azure configurada** é a voz do aparelho/navegador (reserva), que é bem mais robótica. Para ouvir a voz boa, configure a chave abaixo.
+
+```
+BotaoAudio / telas ──► services/narracao.ts ──► provedor ativo (src/services/voz/index.ts)
+                       (velocidade do aluno)     ├─ servidor     PADRÃO: POST /narracao → toca o MP3 (expo-audio)
+                                                 │                falhou? ──► expo-speech
+                                                 ├─ expo-speech  voz do aparelho (alternativa e reserva)
+                                                 └─ console      desenvolvimento
+Servidor: POST /narracao { texto, velocidade } ──► AudioCache tem? ──► sim: devolve a URL
+                                                   └─ não: SintetizadorVoz ativo (VOZ_PROVEDOR=azure) → grava o .mp3
+```
+
+| Provedor (app) | O que é |
+|---|---|
+| `servidor` | **Padrão.** Pede `POST /narracao` e toca o MP3 com o `expo-audio`. Rede fora, narração desligada (503), áudio que não carrega ou texto grande demais → `expo-speech` |
+| `expo-speech` | Voz do próprio aparelho: grátis, sem internet. Alternativa e reserva |
+| `console` | Só escreve no console (desenvolvimento) |
+
+Os dois provedores ligam o modo de áudio que **toca mesmo com a chave do silencioso do iPhone ligada** (`src/services/voz/modoAudio.ts`; sem isso a voz ficava muda no iPhone).
+
+**Trocar de voz no app = mudar uma linha:** `PROVEDOR_PADRAO` em [`src/services/voz/index.ts`](src/services/voz/index.ts) (`"servidor"` ou `"expo-speech"`). No servidor, a mesma ideia: interface `SintetizadorVoz` ([`server/src/voz/sintetizador.ts`](server/src/voz/sintetizador.ts)), um arquivo por API ([`azure.ts`](server/src/voz/azure.ts), padrão; [`piper.ts`](server/src/voz/piper.ts), alternativa local sem conta), escolhida por `VOZ_PROVEDOR` em `server/.env`. Nenhuma tela muda.
+
+### Configurar a Azure (só no computador que GERA os áudios)
+
+Os celulares **não** precisam de nada: só falam com a API do AJAI. A chave fica **só** em `server/.env` (fora do git), nunca no app.
+
+1. Crie uma conta em <https://portal.azure.com> (pede cartão para verificar; o plano gratuito não cobra).
+2. **Criar um recurso** › procure **"Speech"** (Azure AI Speech / Serviços de Fala) › escolha uma assinatura, um grupo de recursos, a **região** (ex.: *North Central US* = `northcentralus`; na assinatura **Azure for Students** só algumas regiões são permitidas, veja em Policy › Assignments › "Allowed resource deployment regions". Brazil South é bloqueada) e o **tipo de preço Free F0**.
+3. No recurso criado, abra **Chaves e Ponto de Extremidade** e copie a **Chave 1** e a **Localização/Região**.
+4. Em `server/.env` (modelo em [`server/.env.example`](server/.env.example)):
+
+| Variável | Valor | Para quê |
 |---|---|---|
-| `console` | ✅ existe (padrão até o passo 10) | Só registra no console; para desenvolver sem áudio |
-| `servidor` | ⬜ passo 10 — depende da API de voz escolhida | Tocaria o áudio gerado no servidor pela API de voz escolhida (**ainda não definida**) e guardado em `AudioCache`; se o servidor falhar, cai para o `expo-speech` |
-| `expo-speech` | ⬜ passo 10 — implementado como alternativa | Voz do próprio aparelho: grátis, sem conta, offline |
+| `VOZ_PROVEDOR` | `azure` | Liga a narração do servidor (vazio = desligada: o app usa a voz do aparelho) |
+| `AZURE_SPEECH_KEY` | a Chave 1 | **Segredo.** Nunca no app nem no git |
+| `AZURE_SPEECH_REGION` | ex.: `northcentralus` | Região do recurso (precisa ser a mesma da chave) |
+| `AZURE_VOZ` | `pt-BR-FranciscaNeural` | Voz pt-BR (gravada em `AudioCache.voz`) |
+| `VOZ_TEMPO_LIMITE_MS` | `20000` | Tempo máximo esperando a voz (inclui as esperas do erro 429) |
+| `VOZ_PASTA_AUDIO` | (opcional) | Outra pasta para os áudios (padrão `server/storage/audio`) |
 
-**Para trocar de voz:** crie o arquivo do provedor em `src/services/voz/`, registre-o em `src/services/voz/index.ts` e mude `PROVEDOR_PADRAO`. Nenhuma tela muda.
+5. Reinicie a API (`npm run server:dev`) e rode `npm run voz:preparar`. Se a chave ou a região estiverem erradas, o servidor mostra `[voz:azure] ... (401)` e o script para depois de 5 falhas.
 
-Se a API de voz escolhida gerar áudio no servidor, a geração segue a mesma ideia (interface `SintetizadorVoz`, um arquivo por serviço). A **API de voz ainda não foi definida**; depois de gerados, os áudios ficam guardados e a API do AJAI apenas serve os arquivos. Chaves de API ficam só em `server/.env`, **nunca no app**.
+**Limites e custo** (confira os valores atuais no portal): o plano **F0** tem uma cota gratuita de caracteres por mês, que cobre com folga o conteúdo do AJAI (uns 25 mil caracteres nas 3 velocidades), mas só aceita **20 pedidos por minuto**. Quando a Azure responde 429, o servidor espera e tenta de novo; por isso o `voz:preparar` leva **uns 20 minutos no F0** (no S0, pago por uso, cerca de 1 minuto). O áudio sai em MP3 (24 kHz), bem menor que WAV.
+
+**Alternativa local sem conta (Piper):** `VOZ_PROVEDOR=piper` com `PIPER_URL`/`PIPER_VOZ` (comentados no `.env.example`) e o Piper rodando (`pip install "piper-tts[http]"`, `python -m piper.download_voices pt_BR-faber-medium`, `python -m piper.http_server -m pt_BR-faber-medium --port 5050`). A qualidade é bem menor; no Mac, instale numa pasta de caminho curto (o espeak-ng falha com caminhos longos).
+
+### Preparar os áudios antes da demo (`npm run voz:preparar`)
+
+Gera, **uma vez**, o áudio de todas as atividades ATIVAS (o "Ouvir instrução" com o enunciado e as opções, a frase/texto de apoio e cada alternativa) nas velocidades **0.8, 1.0 e 1.2** (lenta, normal e rápida), mais as frases fixas. Hoje são 138 textos × 3 = **414 áudios** (uns 20 min no plano gratuito da Azure). Rodar de novo só gera o que falta. Assim a demonstração **não depende da Azure nem da internet na hora**: a API do AJAI só serve os arquivos. Textos que dependem do aluno (ex.: "Olá, Ana!") são gerados na primeira vez que alguém ouve e ficam guardados.
+
+**Os áudios vão para o git** (`server/storage/audio/*.mp3`, ~20 MB em 18/11). O nome de cada arquivo é calculado a partir do texto, da voz, da velocidade e do provedor; por isso, numa máquina nova (banco sem as linhas do `AudioCache` e **sem a chave da Azure**), o servidor acha o arquivo pelo nome, registra no `AudioCache` e toca, sem chamar a Azure. `db:reset` e `db:seed` apagam a tabela `AudioCache`, mas não os arquivos: nada precisa ser gerado de novo.
+
+Quem tem a chave e muda conteúdo (atividade nova, texto alterado, outra `AZURE_VOZ`) roda `npm run voz:preparar` e **faz commit dos MP3 novos**. Áudios que ninguém usa mais (texto antigo) podem ser apagados da pasta antes do commit. Sem a chave, um texto novo toca com a voz do aparelho até alguém gerar o áudio.
+
+O texto narrado das atividades fica em [`src/services/textosNarrados.ts`](src/services/textosNarrados.ts), usado **pelo app e pelo script**: se mudar a frase lá, os áudios novos são gerados na próxima vez.
+
+### API de narração
+
+- `POST /narracao` `{ texto, velocidade? }` (qualquer perfil logado; texto até 800 caracteres; velocidade 0.5 a 1.5, arredondada para uma casa) → `{ url }`, relativa à API (`/narracao/audio/<hash>.mp3`). 503 se a narração estiver desligada ou a Azure falhar.
+- `GET /narracao/audio/:arquivo` serve o MP3 (sem login, porque o player não manda o token; o nome é um hash de 160 bits). Aceita `Range` (o iPhone pede o áudio em pedaços).
+
+### Preferências do aluno (Aluno.EditarPreferencias, APF 17)
+
+Na home e em Minha conta, **"Voz e letra"** (`/aluno/preferencias`): velocidade da voz (Lenta 0.8 / Normal 1.0 / Rápida 1.2, com "Ouvir exemplo"; ao mudar, o exemplo toca sozinho) e tamanho da letra (Normal 20 / Grande 24 / Muito grande 28). Salvo no servidor (`PATCH /alunos/eu`) e aplicado na hora pelo `PreferenciasProvider` ([`src/context/preferencias.tsx`](src/context/preferencias.tsx)): a velocidade vira o padrão de toda fala, e as telas/componentes usam `useEstilos(criarEstilos)` / `useFontes()` para a letra (sem `if` espalhado). O tamanho escolhido aumenta título, subtítulo, corpo e legenda; a letra grande da atividade, as sílabas e a palavra em destaque já são grandes e ficam iguais.
+
+O `BotaoAudio` mostra **"Falando..." / "Toque para parar"** enquanto fala e para a fala ao sair da tela. Nas atividades, **tocar e segurar** uma opção ou sílaba lê o texto dela sem escolher.
 
 ---
 
@@ -286,6 +345,7 @@ src/
       progresso.tsx       Histórico e evolução
       comemoracao.tsx     Comemoração ao subir de etapa (passo 7)
       conta.tsx, senha.tsx, acompanhamento.tsx   Minha conta, trocar senha, quem me acompanha
+      preferencias.tsx    Voz e letra: velocidade da voz e tamanho da letra (passo 10)
     professor/            Área do professor (protegida, com abas)
       index.tsx           Dashboard de acompanhamento
       aluno/[id].tsx      Métricas de um aluno
@@ -297,12 +357,14 @@ src/
     admin/                Área do administrador (aprovar instituições)
   components/             Botão, BotaoAudio ("Ouvir ajuda"), Campo, Tela, AtividadeView, FormularioCadastro, MeusAlunos...
   context/sessao.tsx      Usuário logado
+  context/preferencias.tsx  Tamanho da letra e velocidade da voz do aluno (useFontes, useEstilos)
   data/mock.ts            Dados de demonstração (níveis, atividades, alunos, respostas)
   domain/modelos.ts       Tipos espelhando o diagrama de classes
   hooks/useCarregar.ts    Carrega dados da API numa tela ("Carregando..." / "Sem conexão. Toque para tentar de novo.")
   services/               Regras e acesso a dados (tudo pela API desde o passo 8)
-    narracao.ts           Fachada da voz (falar / pararFala)
-    voz/                  ProvedorVoz: interface + provedores trocáveis
+    narracao.ts           Fachada da voz (falar / pararFala), com a velocidade do aluno
+    textosNarrados.ts     Texto narrado das atividades (o mesmo do npm run voz:preparar)
+    voz/                  ProvedorVoz: interface + provedores servidor, expo-speech e console (+ testes)
   theme/tokens.ts         Cores, fontes e tamanhos do Figma
 server/
   src/                    API (Fastify + TypeScript)
@@ -311,11 +373,13 @@ server/
     banco.ts              Conexão node:sqlite (mesmo arquivo dos scripts db:*)
     config.ts             Lê server/.env
     erros.ts              Erro padrão { erro: "..." } em português (ErroApi)
-    rotas/                Uma pasta de rotas por módulo (saude.ts = GET /health)
+    rotas/                Uma pasta de rotas por módulo (saude.ts = GET /health; narracao.ts, preferencias.ts no passo 10)
+    voz/                  SintetizadorVoz (interface), azure.ts (padrão), piper.ts, narracao.ts (cache em AudioCache)
+  scripts/voz-preparar.mjs  npm run voz:preparar (gera os áudios das atividades)
   .env.example            Modelo do server/.env (o .env fica fora do git)
   db/                     Banco SQLite: migrations/*.sql, seed.mjs, scripts db:*
   data/                   ajai.db (gerado, fora do git)
-  storage/audio/          Áudios de narração gerados (fora do git)
+  storage/audio/          Áudios da narração (MP3 da Azure; versionados no git)
 docs/
   diagrama-classes.png
   PROXIMOS_PASSOS.md      Roteiro até a entrega, com prompts
@@ -333,12 +397,13 @@ docs/
 | Nivelamento · Pergunta | `/aluno/nivelamento` | esqueleto |
 | Nivelamento · Resultado | `/aluno/nivelamento/resultado` | esqueleto |
 | Home do aluno | `/aluno` | ✅ ofensiva real e frequência da semana (passo 7) |
-| Reconhecimento / Sílabas / Formar palavra / Ler frase | `/aluno/atividade/[id]` | um componente para todos os tipos |
+| Reconhecimento / Sílabas / Formar palavra / Ler frase | `/aluno/atividade/[id]` | um componente para todos os tipos; tocar e segurar uma opção lê a opção (passo 10) |
 | Acerto / Tentar novamente | `/aluno/resultado` | esqueleto |
 | Dashboard do professor | `/professor` | ✅ pela API, só alunos com vínculo aceito, seletor de período (passo 8) |
 | Métricas de Ana Souza | `/professor/aluno/[id]` | ✅ gráfico de evolução, histórico de etapas, correção manual (passo 8) |
 | *(sem tela no Figma)* | `/aluno/progresso`, `/aluno/comemoracao` | ✅ passo 7, no padrão da Home e do Acerto |
 | *(sem tela no Figma)* | `/professor/relatorios`, `/professor/conta`, `/professor/turmas`, `/instituicao/turmas` | ✅ passo 8 (relatórios por turma, editar nome, aba Turmas, turmas criadas pela instituição), no padrão do Dashboard |
+| *(sem tela no Figma)* | `/aluno/preferencias` | ✅ passo 10 ("Voz e letra": velocidade da voz e tamanho da letra), no padrão da Home |
 | *(sem tela no Figma)* | `/admin/atividades`, `/admin/atividade`, `/admin/niveis`, `/professor/atividades`, `/professor/atividade` | ✅ passo 9 (cadastro de atividades e etapas), no padrão das telas desenhadas |
 | *(sem tela no Figma)* | `/esqueci-senha`, `/aluno/conta`, `/aluno/senha`, `/aluno/acompanhamento`, `/professor/alunos`, `/professor/senha`, `/responsavel`, `/responsavel/senha`, `/instituicao`, `/instituicao/senha`, `/admin`, `/admin/senha` | provisórias (passos 3 e 3.1) – desenhar no passo 11 |
 
@@ -361,7 +426,7 @@ O roteiro completo até a entrega, com prazo, critério de pronto e **um prompt 
 | 7 | Home do aluno: ofensiva e progresso ✅ | 15/11 |
 | 8 | Área do professor e do responsável — ✅ | 15/11 |
 | 9 | Cadastro de atividades (admin e professor) e níveis (admin) — ✅ | 15/11 |
-| 10 | Narração por voz e preferências | 15/11 |
+| 10 | Narração por voz (Azure) e preferências — ✅ | 15/11 |
 | 11 | Ajuste ao Figma e recursos visuais | 16/11 |
 | 12 | Testes automatizados | 16/11 |
 | 13 | Segurança e privacidade (LGPD) | 16/11 |
@@ -388,7 +453,7 @@ Legenda: ✅ feito · 🟡 esqueleto/parcial (só no app, com dados em memória)
 
 **Sprint 2 – Atividades Básicas (27/10 – 03/11)** — *atrasada*
 - ✅ Atividades de letras e sílabas (RF04, RF06): telas vindas da API (passo 4) e 7 atividades por nível do cotidiano adulto (passo 6, 14/11; [`docs/conteudo-pedagogico.md`](docs/conteudo-pedagogico.md)). Faltam só as imagens finais (passo 11)
-- 🟡 Associação letra-som (RF05): atividades LETRA "começa com o som da letra..." (passo 6), com as opções lidas no "Ouvir instrução"; falta a voz de verdade (passo 10)
+- ✅ Associação letra-som (RF05): atividades LETRA "começa com o som da letra..." (passo 6), com as opções lidas no "Ouvir instrução" pela voz da Azure (passo 10); tocar e segurar uma opção lê só ela
 - ✅ Correção automática (RF12) **no servidor** desde o passo 4 (o app não recebe o gabarito) e feedback de acerto/erro (RF13)
 - ✅ Registro das respostas **no banco** (RF14): `POST /respostas` grava a Resposta e atualiza o DesempenhoConteudo (passo 5, testado no Expo Go em 09/11)
 
@@ -411,7 +476,7 @@ Legenda: ✅ feito · 🟡 esqueleto/parcial (só no app, com dados em memória)
 - ✅ **Banco decidido: SQLite em arquivo** (`server/data/ajai.db`)
 - ✅ Tabelas do diagrama de classes criadas (Usuario, Aluno, Professor, Administrador, Turma, Matricula, Nivel, Atividade, Alternativa, AudioCache, Resposta, DesempenhoConteudo, HistoricoNivel) + as extras do Passo 3.1 (Responsavel, Instituicao, Vinculo) + dados iniciais
 - ✅ **Servidor da API criado** com Fastify em `server/src/` (`npm run server:dev`, `GET /health`, erros padronizados em `{ erro }`, CORS e limite de requisições). `@fastify/jwt` já instalado, registrado no passo 3
-- 🟡 API para as funções contadas na APF (Incluir/Editar/Excluir/Listar/Visualizar de cada módulo): ✅ contas, vínculos, turmas, respostas, relatórios e **cadastro de atividades e níveis** (passo 9); ⬜ preferências do aluno (passo 10)
+- 🟡 API para as funções contadas na APF (Incluir/Editar/Excluir/Listar/Visualizar de cada módulo): ✅ contas, vínculos, turmas, respostas, relatórios, **cadastro de atividades e níveis** (passo 9) e **preferências do aluno** (`PATCH /alunos/eu`, passo 10)
 - ✅ Trocar `src/data/mock.ts` pelas chamadas à API dentro de `src/services/`: ✅ contas (passo 3); ✅ níveis, atividades e nivelamento (passo 4, telas com "Carregando..." e "Sem conexão"); ✅ respostas, progressão e histórico (passo 5); ✅ área do professor e do responsável (passo 8). Nenhuma tela lê mais o `mock.ts`
 - ✅ Migração 004: `Atividade.textoApoio` (palavra, frase ou texto mostrado à parte do enunciado; extra em relação ao diagrama)
 - ✅ Guardar o token de login no aparelho (`expo-secure-store`; `localStorage` no navegador)
@@ -427,13 +492,13 @@ Legenda: ✅ feito · 🟡 esqueleto/parcial (só no app, com dados em memória)
 - ✅ Responsável: até 3 dicas curtas embaixo de cada pessoa acompanhada (dias de treino na semana, conteúdo para treinar junto, etapa), com "Ouvir dicas" (passo 8; sem turma nem métricas detalhadas)
 - ✅ Instituição e administrador: inscrição, aprovação com código e aprovação de professores (Passo 3.1). ✅ A instituição cria turmas e escolhe o professor de cada uma (`/instituicao/turmas`, passo 8; vê só quantos alunos, não os nomes). ⬜ Revogar aprovação ou tirar professor da instituição (não previsto)
 - ✅ Professor: corrigir manualmente uma resposta (APF 35) na tela de métricas, com observação opcional; recalcula o DesempenhoConteudo, mas **não muda a etapa** do aluno (decisão do passo 8: a subida de etapa já aconteceu ou não)
-- ⬜ Aluno: editar preferências de voz, velocidade e tamanho da fonte (APF 17)
+- ✅ Aluno: editar preferências de velocidade da voz e tamanho da letra (APF 17): "Voz e letra" (`/aluno/preferencias`, passo 10, 18/11), salvas no servidor e aplicadas na hora. A voz (`vozPreferida`) continua só pt-BR (uma voz configurada em `AZURE_VOZ`). **Sem frame no Figma**; falta a equipe abrir no Expo Go
 - 🟡 Trocar/recuperar senha (APF 18): ✅ todos os perfis trocam a própria (inclusive o aluno, desde o Passo 3.1); ✅ senha provisória para qualquer perfil pelo administrador/script; 🟡 `/esqueci-senha` pede o e-mail e diz que mandou o link de redefinição, mas **não envia nada** (MVP, sem serviço de e-mail: na prática, a senha provisória continua sendo pelo administrador). Faltam as telas no Figma
 
 ### Acessibilidade e conteúdo
-- 🟡 **Narração por voz (RNF04)** — a arquitetura trocável (`ProvedorVoz`) já existe, mas o único provedor é o `console` (o botão "Ouvir ajuda" só escreve no console). **A API de voz ainda NÃO foi definida**; o `expo-speech` será implementado como alternativa e reserva. Falta a equipe escolher a API e implementar os provedores (passo 10).
-
-  ⚠️ Ao escolher a API, conferir custo e licença da voz e revisar na APF o `ServicoTTS`.
+- ✅ **Narração por voz (RNF04)** — passo 10 (18/11). A voz passou do Piper (qualidade ruim) para a **Azure** (voz neural `pt-BR-FranciscaNeural`), testada pela equipe no celular e na web. O servidor gera o MP3 uma vez (cache em `AudioCache`), e os **MP3 vão para o git** (`server/storage/audio/`, ~20 MB): quem clona ouve a voz sem a chave. O app toca com o `expo-audio` e cai no `expo-speech` (voz do aparelho) se a rede falhar ou o áudio não existir e não houver chave. Corrigido: iPhone com a chave do silencioso ligada deixava a voz do aparelho muda. "Falando..." no `BotaoAudio`, fala para ao sair da tela, toque longo nas opções lê a opção.
+  - ⬜ Conteúdo novo (atividade nova ou texto alterado): quem tem a chave roda `npm run voz:preparar` e faz commit dos MP3.
+  - ⬜ Revisar o `ServicoTTS` na APF (agora é a Azure; custo zero no F0) no passo 15.
 - ✅ Banco real de atividades (letras, sílabas, palavras, frases, escrita, interpretação, cotidiano): 35 atividades, 7 por nível (passo 6, 14/11)
 - 🟡 O enum `TipoAtividade` do diagrama não tem tipos para **letra-som** (RF05) nem **cotidiano** (RF11). Decidido no passo 6: **não criar tipos**; RF05 = LETRA e RF11 = tema/`conteudo` de todos os tipos, sem impacto no diagrama nem na APF (ver [`docs/conteudo-pedagogico.md`](docs/conteudo-pedagogico.md)). Falta explicar isso no PDF (passo 15)
 - ⬜ Imagens das alternativas e da palavra em destaque (o Figma usa fotos, ex.: a casa em "Formar palavra"; o app usa ícones provisórios do `MaterialCommunityIcons` e ainda não mostra a imagem da palavra)
@@ -443,7 +508,7 @@ Legenda: ✅ feito · 🟡 esqueleto/parcial (só no app, com dados em memória)
 - ⬜ Revisar com leitor de tela (TalkBack/VoiceOver) e tamanho de fonte do sistema aumentado
 
 ### Qualidade, segurança e privacidade
-- 🟡 Testes automatizados: ✅ servidor com `node --test` (`npm test`, 136 testes: regras de progressão e ofensiva, rotas do passo 5, contas/aprovações/vínculos do Passo 3.1, área do professor/responsável do passo 8 e cadastro de atividades/etapas do passo 9); ⬜ testes de tela no app (`jest-expo`) no passo 12
+- 🟡 Testes automatizados: ✅ servidor com `node --test` (`npm test`, 155 testes: regras de progressão e ofensiva, rotas do passo 5, contas/aprovações/vínculos do Passo 3.1, área do professor/responsável do passo 8, cadastro de atividades/etapas do passo 9 e narração/preferências do passo 10); ✅ 12 testes da voz do app no Node (`npm run app:test`, também no `npm test`, com módulos do Expo de mentira em `src/services/voz/testes/`); ⬜ testes de tela no app (`jest-expo`) no passo 12
 - 🟡 Senha com hash no servidor (✅ scrypt) e comunicação só por HTTPS (⬜ RNF11; na demo é HTTP na rede local)
 - ⬜ Invalidar tokens antigos depois de troca/redefinição de senha (hoje valem até vencer, 30 dias) — passo 13
 - ⬜ Forçar troca da senha provisória no primeiro login (passo 13)
@@ -455,7 +520,7 @@ Legenda: ✅ feito · 🟡 esqueleto/parcial (só no app, com dados em memória)
 
 ### Documentação
 - ⬜ Atualizar a seção 15 (Prototipação) do PDF: ela diz que o protótipo tem 9 telas e que cadastro e nivelamento seriam feitos depois, mas o Figma já tem 15 telas, incluindo cadastro, nivelamento, formar palavra e ler frase
-- ⬜ Registrar no documento as decisões de stack (SQLite, API com Fastify, voz com `ProvedorVoz` + `expo-speech`; API de voz a definir) e as colunas/tabelas extras do esquema (`Atividade.ordemNivelamento`, `Atividade.textoApoio`, `AudioCache.provedor`, `Usuario.telefone`, `Usuario.nomeUsuario`, `Responsavel`, `Instituicao`, `Vinculo` e as colunas novas de `Professor`), e os perfis novos no diagrama de classes e na APF (RESPONSAVEL, INSTITUICAO; funções de aprovação e de vínculo)
+- ⬜ Registrar no documento as decisões de stack (SQLite, API com Fastify, voz com `ProvedorVoz`: Azure AI Speech no servidor + `expo-speech` de reserva; o Piper foi testado e trocado por qualidade) e as colunas/tabelas extras do esquema (`Atividade.ordemNivelamento`, `Atividade.textoApoio`, `AudioCache.provedor`, `Usuario.telefone`, `Usuario.nomeUsuario`, `Responsavel`, `Instituicao`, `Vinculo` e as colunas novas de `Professor`), e os perfis novos no diagrama de classes e na APF (RESPONSAVEL, INSTITUICAO; funções de aprovação e de vínculo)
 - ⬜ Manter o quadro Kanban (Trello) alinhado com esta lista
 
 ---

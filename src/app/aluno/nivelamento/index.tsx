@@ -12,7 +12,8 @@ import { concluirNivelamento, type RespostaDoNivelamento } from "@/services/alun
 import { mensagemDeErro } from "@/services/api";
 import { atividadesDoNivelamento } from "@/services/atividades";
 import { corrigirPerguntaDoNivelamento } from "@/services/respostas";
-import { cores, fontes, raios } from "@/theme/tokens";
+import { cores, raios, type Fontes } from "@/theme/tokens";
+import { useEstilos } from "@/context/preferencias";
 
 export default function NivelamentoPergunta() {
   const estado = useCarregar(atividadesDoNivelamento);
@@ -24,6 +25,7 @@ export default function NivelamentoPergunta() {
 }
 
 function Perguntas({ perguntas }: { perguntas: AtividadeDoAluno[] }) {
+  const styles = useEstilos(criarEstilos);
   const aluno = useAluno();
   const { entrar } = useSessao();
   const [indice, setIndice] = useState(0);
@@ -118,8 +120,9 @@ function Perguntas({ perguntas }: { perguntas: AtividadeDoAluno[] }) {
   );
 }
 
-const styles = StyleSheet.create({
-  etapa: { fontSize: fontes.corpo, color: cores.texto, fontWeight: "700", textAlign: "center" },
-  barra: { height: 12, borderRadius: raios.md, backgroundColor: cores.superficieSuave, overflow: "hidden" },
-  preenchido: { height: 12, borderRadius: raios.md, backgroundColor: cores.primaria },
-});
+const criarEstilos = (fontes: Fontes) =>
+  StyleSheet.create({
+    etapa: { fontSize: fontes.corpo, color: cores.texto, fontWeight: "700", textAlign: "center" },
+    barra: { height: 12, borderRadius: raios.md, backgroundColor: cores.superficieSuave, overflow: "hidden" },
+    preenchido: { height: 12, borderRadius: raios.md, backgroundColor: cores.primaria },
+  });

@@ -438,7 +438,7 @@ function alunoDemo(idUsuario: number, nome: string, idNivelAtual?: number): Alun
     criadoEm: agora,
     atualizadoEm: agora,
     vozPreferida: "pt-BR",
-    velocidadeVoz: 0.9,
+    velocidadeVoz: 1, // "Normal" nas preferências (passo 10); os áudios são preparados em 0.8, 1.0 e 1.2
     tamanhoFonte: 20,
     idNivelInicial: idNivelAtual === undefined ? undefined : 1,
     idNivelAtual,

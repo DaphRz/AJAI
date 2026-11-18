@@ -1,5 +1,6 @@
 import { StyleSheet, Text, TextInput, View, type TextInputProps } from "react-native";
-import { cores, fontes, raios, toqueMinimo } from "@/theme/tokens";
+import { cores, raios, toqueMinimo, type Fontes } from "@/theme/tokens";
+import { useEstilos } from "@/context/preferencias";
 
 interface Props extends TextInputProps {
   rotulo: string;
@@ -7,6 +8,7 @@ interface Props extends TextInputProps {
 
 /** Campo de texto com rótulo sempre visível (não só placeholder). */
 export function Campo({ rotulo, style, ...props }: Props) {
+  const styles = useEstilos(criarEstilos);
   return (
     <View style={styles.grupo}>
       <Text style={styles.rotulo}>{rotulo}</Text>
@@ -20,17 +22,18 @@ export function Campo({ rotulo, style, ...props }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  grupo: { gap: 8 },
-  rotulo: { fontSize: fontes.corpo, fontWeight: "700", color: cores.texto },
-  input: {
-    minHeight: toqueMinimo,
-    borderWidth: 2,
-    borderColor: cores.primaria,
-    borderRadius: raios.md,
-    paddingHorizontal: 16,
-    fontSize: fontes.corpo,
-    color: cores.texto,
-    backgroundColor: cores.superficie,
-  },
-});
+const criarEstilos = (fontes: Fontes) =>
+  StyleSheet.create({
+    grupo: { gap: 8 },
+    rotulo: { fontSize: fontes.corpo, fontWeight: "700", color: cores.texto },
+    input: {
+      minHeight: toqueMinimo,
+      borderWidth: 2,
+      borderColor: cores.primaria,
+      borderRadius: raios.md,
+      paddingHorizontal: 16,
+      fontSize: fontes.corpo,
+      color: cores.texto,
+      backgroundColor: cores.superficie,
+    },
+  });

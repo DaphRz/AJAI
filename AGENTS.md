@@ -34,7 +34,7 @@ Fontes de verdade, nesta ordem:
 - **Banco: SQLite em arquivo** (`server/data/ajai.db`), já criado com as 16 tabelas e seed (ver [Banco de dados](#banco-de-dados-sqlite)).
 - **API:** Node.js + TypeScript com **Fastify** em `server/src/` (`npm run server:dev`). Validação de entrada com esquemas JSON em **toda** rota; erros sempre `{ erro: string }` em português (lance `ErroApi` de `server/src/erros.ts`). O app chama a API **só** por `src/services/api.ts` (`chamarApi`, token no cabeçalho, erros já em mensagem amigável); login, cadastro, senha, instituições e vínculos vêm da API (passos 3 e 3.1); níveis, atividades e nivelamento também (passo 4, **sem gabarito**: a correção é do servidor); respostas, progressão e histórico também (passo 5: `POST /respostas`, `POST /nivelamento/concluir`, `GET /alunos/eu/progresso`). Área do professor e do responsável também (passo 8: `/professor/*`, `/respostas/:id/correcao`, `/responsavel/recomendacoes`); cadastro de atividades e níveis também (passo 9: `/gestao/*`, **com gabarito**, só administrador e professor aprovado; regras do gabarito em `server/src/validarAtividade.ts`); **nenhuma tela lê mais o `src/data/mock.ts`** (ele só alimenta o seed). Tela que recarrega ao voltar à aba: `useVersaoAoFocar` + `useCarregar(..., chave, { manterAnterior: true })`. Tela que espera a API: `useCarregar` (`src/hooks/`) + componente `Carregando`. Rota que exige login: `preHandler: exigirLogin("ALUNO")` de `server/src/autenticacao.ts` (`req.user` = `{ idUsuario, perfil }`); rota de professor ou instituição usa `exigirContaLiberada(...)` (também exige a conta aprovada). Rota que mostra dado de aluno a um acompanhante confere `temVinculoAceito` (`server/src/rotas/vinculos.ts`).
 - O servidor roda `.ts` direto no Node (type stripping): **sem `enum`/`namespace`** e imports relativos **com `.ts`** (ex.: `import { banco } from "../banco.ts"`). Rota nova = arquivo em `server/src/rotas/` registrado em `server/src/app.ts`. Typecheck do servidor: `npm run server:typecheck` (`npm run typecheck` faz app + servidor).
-- **Voz trocável**: o app usa a interface `ProvedorVoz` (`src/services/voz/`). A **API de voz ainda não foi definida**; `expo-speech` como alternativa e reserva. Ver [Narração por voz](#narração-por-voz-provedorvoz).
+- **Voz trocável**: o app usa a interface `ProvedorVoz` (`src/services/voz/`). A API de voz é a **Azure AI Speech** (passo 10, desde 18/11: voz neural `pt-BR-FranciscaNeural`, gerada no servidor com chave em `server/.env`); `expo-speech` como alternativa e reserva. O Piper ficou só como alternativa local (`VOZ_PROVEDOR=piper`). Ver [Narração por voz](#narração-por-voz-provedorvoz).
 
 ## Arquitetura e onde colocar cada coisa
 
@@ -50,14 +50,15 @@ Fontes de verdade, nesta ordem:
 | `src/services/narracao.ts` + `src/services/voz/` | Fachada de voz (`falar`/`pararFala`) e provedores (`ProvedorVoz`). **Telas nunca importam um provedor direto.** |
 | `server/src/` | API Fastify: `app.ts` (plugins e rotas), `banco.ts` (conexão `node:sqlite`, use `banco()`), `config.ts` (`server/.env`), `erros.ts`, `rotas/*.ts`. |
 | `server/db/` | Banco SQLite: `migrations/*.sql` (esquema), `seed.mjs` (dados iniciais, lê `src/data/mock.ts`), scripts `db:*`. |
-| `server/data/` e `server/storage/` | Arquivo do banco e áudios gerados. **Ignorados pelo git**; nunca versionar. |
+| `server/data/` | Arquivo do banco. **Ignorado pelo git**; nunca versionar. |
+| `server/storage/audio/` | MP3 da narração (Azure). **Versionados** desde 18/11, para quem clona ouvir a voz sem a chave: o servidor acha o arquivo pelo nome (hash do texto + voz + velocidade + provedor). Gerou áudio novo com `npm run voz:preparar`? Faça commit dos MP3. |
 
 ## Regras obrigatórias de acessibilidade (o público depende disso)
 
 - Toda tela do **aluno** tem um `BotaoAudio` ("Ouvir ajuda"/"Ouvir instrução") com o texto da tela (RNF04). **Exceção:** as telas de login e cadastro **não** têm "Ouvir ajuda".
 - Botões com **texto escrito**, nunca só ícone (RNF03). Área de toque ≥ `toqueMinimo` (64).
 - **Não use emojis** na interface (nem como ícone, ilustração ou enfeite). Use ícones de biblioteca: **`@expo/vector-icons`** (padrão; instale com `npx expo install @expo/vector-icons`; Ionicons, MaterialIcons, Feather...) ou `lucide-react-native`. O `react-icons` **não serve**: é só para web (DOM) e não roda no React Native. Ícone decorativo ao lado de texto: `accessibilityElementsHidden` / `importantForAccessibility="no"`. Os emojis provisórios já saíram (09/11). As figuras das alternativas (`Alternativa.ilustracao`) guardam o **nome de um ícone do `MaterialCommunityIcons`** (ex.: `"home"`), nunca emoji, até as imagens do passo 11 (`urlImagem`).
-- Texto do aluno com no mínimo `fontes.corpo` (20). Títulos e enunciados maiores.
+- Texto do aluno com no mínimo `fontes.corpo` (20). Títulos e enunciados maiores. O aluno pode aumentar a letra (passo 10): em tela do aluno e componente compartilhado, estilos com fonte usam `const criarEstilos = (fontes: Fontes) => StyleSheet.create({...})` + `const styles = useEstilos(criarEstilos)` (`src/context/preferencias.tsx`), nunca `fontes.*` direto num `StyleSheet` fixo.
 - Poucos elementos por tela, uma ação principal clara (RNF05, RNF07).
 - Mensagens curtas, positivas e sem jargão: "Muito bem!", "Vamos tentar de novo?" (RNF06, RNF15). Nunca "Erro", "Inválido", "Falha".
 - Use `accessibilityRole` e `accessibilityLabel` em elementos tocáveis.
@@ -105,8 +106,9 @@ O app **não pode depender de uma API de voz específica**. Regras:
 - Telas e componentes só chamam `falar()` / `pararFala()` de `@/services/narracao`.
 - Quem fala é o provedor ativo de `src/services/voz/index.ts` (`PROVEDOR_PADRAO`). Cada provedor implementa `ProvedorVoz` (`nome`, `falar`, `parar`) em um arquivo próprio (`provedorExpoSpeech.ts`, `provedorServidor.ts`...).
 - **Trocar de voz = criar o provedor, registrá-lo em `index.ts` e mudar `PROVEDOR_PADRAO`.** Se uma troca exigir mexer em tela ou em `BotaoAudio`, a abstração foi violada: corrija o provedor, não a tela.
-- Provedores previstos no app: `servidor` (toca áudio gerado no servidor pela API de voz escolhida, **ainda não definida**) e `expo-speech` (alternativa e reserva quando o servidor falha).
-- No servidor, a mesma ideia: interface `SintetizadorVoz`, um arquivo por serviço (o da API escolhida), escolhido por variável de ambiente; resultado em `AudioCache` (tabela, com a coluna `provedor`) e `server/storage/audio/`.
+- Provedores do app: `servidor` (**padrão**: `POST /narracao` e toca o MP3 gerado pela Azure com o `expo-audio`). Os dois que tocam som chamam `prepararModoAudio()` (`modoAudio.ts`) antes de falar, para tocar com o silencioso do iPhone ligado, `expo-speech` (alternativa e reserva quando o servidor falha) e `console` (desenvolvimento).
+- A velocidade do aluno entra pela fachada (`definirPreferenciasFala`, chamada pelo `PreferenciasProvider`): telas chamam só `falar(texto)`. O texto narrado das atividades fica em `src/services/textosNarrados.ts`, usado também pelo `npm run voz:preparar` (precisa ser o mesmo texto para achar o áudio pronto).
+- No servidor, a mesma ideia: interface `SintetizadorVoz` (`server/src/voz/`), um arquivo por serviço (`azure.ts`, padrão; `piper.ts`), escolhido por `VOZ_PROVEDOR`; resultado em `AudioCache` (tabela, com a coluna `provedor`) e `server/storage/audio/`. Sem a chave da Azure, `POST /narracao` dá 503 e o app usa a voz do aparelho. `db:reset`/`db:seed` apagam as linhas do `AudioCache`, mas os arquivos continuam valendo (o servidor os acha pelo nome).
 - Chaves de API só em `server/.env`, nunca no app (`EXPO_PUBLIC_*` vai para dentro do aplicativo e é público).
 
 ## Expo mudou — não confie na memória
@@ -131,7 +133,8 @@ npm run db:reset            # recriar o banco SQLite com os dados de demonstraç
 npm run db:query            # tabelas e contagens (aceita SQL: ver seção Banco de dados)
 npm run server:dev          # sobe a API (GET http://localhost:3333/health)
 npm run typecheck           # tipos do app + servidor
-npm test                    # testes do servidor (node --test; banco temporário)
+npm test                    # testes do servidor (node --test; banco temporário) e da voz do app (npm run app:test)
+npm run voz:preparar        # gera os áudios das atividades (precisa da chave da Azure; ver README › Narração por voz)
 ```
 
 Antes de dizer que uma tarefa terminou: rode **lint, typecheck e `npm test`** (e `npm run db:reset` se mexeu em banco ou seed) e abra o fluxo afetado no app (usuários de demonstração no README, senha `demo1234`; o servidor precisa estar rodando).

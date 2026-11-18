@@ -45,9 +45,8 @@ yarn-error.*
 server/data/*
 !server/data/.gitkeep
 
-# áudios de narração gerados pelo servidor (AudioCache)
-server/storage/audio/*
-!server/storage/audio/.gitkeep
+# Os áudios de narração (server/storage/audio/*.mp3) SÃO versionados desde 18/11: quem clona o
+# projeto ouve a voz da Azure sem precisar da chave (o servidor acha o arquivo pelo nome).
 
 # variáveis do servidor
 server/.env

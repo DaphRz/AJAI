@@ -8,7 +8,7 @@ Este arquivo é lido pelo Claude Code a cada sessão. Os arquivos abaixo são **
 ## Como trabalhar neste repositório
 
 - Antes de começar, descubra em qual **passo** de `docs/PROXIMOS_PASSOS.md` a tarefa se encaixa e siga o "Pronto quando" e as "Regras que valem para TODO prompt".
-- Respeite a stack (SQLite, Fastify, `ProvedorVoz`; a API de voz ainda não foi definida). Se a tarefa pedir o contrário, pare e pergunte.
+- Respeite a stack (SQLite, Fastify, `ProvedorVoz`; voz = Azure AI Speech no servidor, com `expo-speech` de reserva). Se a tarefa pedir o contrário, pare e pergunte.
 - Ao terminar: marque o passo (⬜ → 🟡 → ✅) em `docs/PROXIMOS_PASSOS.md`. Passo **concluído**: apague o prompt e deixe só "Feito em DD/MM" com o que foi feito (como o Passo 1). Passo **parcial**: diga "O que falta / o que fazer" e, se preciso, troque o prompt por um novo só com o que falta. Depois, atualize "Pendências" no `README.md`.
 - Para detalhes de execução e do banco, consulte o `README.md` (não é importado por ser longo).
 - **Nunca use emojis** na interface: use ícones de `@expo/vector-icons` (ou `lucide-react-native`). `react-icons` não funciona em React Native. Detalhes em AGENTS.md › Acessibilidade.

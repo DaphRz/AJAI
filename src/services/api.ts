@@ -51,9 +51,12 @@ export function quandoSessaoExpirar(funcao: (() => void) | null): void {
 
 type Metodo = "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
 
-export async function chamarApi<T>(caminho: string, opcoes: { metodo?: Metodo; corpo?: unknown } = {}): Promise<T> {
+export async function chamarApi<T>(
+  caminho: string,
+  opcoes: { metodo?: Metodo; corpo?: unknown; /** padrão 15 s (ex.: a narração espera menos) */ tempoLimiteMs?: number } = {},
+): Promise<T> {
   const controle = new AbortController();
-  const relogio = setTimeout(() => controle.abort(), TEMPO_LIMITE_MS);
+  const relogio = setTimeout(() => controle.abort(), opcoes.tempoLimiteMs ?? TEMPO_LIMITE_MS);
   const enviouToken = token !== null;
 
   let resposta: Response;

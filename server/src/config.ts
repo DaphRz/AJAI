@@ -59,4 +59,25 @@ export const config = {
   jwtValidade: process.env.JWT_VALIDADE || "30d",
   /** Tentativas de login/cadastro por IP por minuto (proteção contra adivinhar senha). */
   limiteLoginPorMinuto: numero("LIMITE_LOGIN_POR_MINUTO", 10),
+  /** Narração (passo 10). Só o computador que GERA os áudios precisa configurar a API de voz. */
+  voz: {
+    /** Sintetizador ativo ("azure" ou "piper"). Vazio = narração do servidor desligada (o app usa a voz do aparelho). */
+    provedor: (process.env.VOZ_PROVEDOR || "").trim().toLowerCase(),
+    /** Pasta dos áudios gerados (AudioCache). Padrão: server/storage/audio (fora do git). */
+    pastaAudio: resolve(process.env.VOZ_PASTA_AUDIO?.trim() || resolve(pastaServidor, "storage", "audio")),
+    /** Tempo máximo esperando a API de voz gerar um áudio. */
+    tempoLimiteMs: numero("VOZ_TEMPO_LIMITE_MS", 20000),
+    /** Chave do recurso Speech da Azure (segredo: só em server/.env). */
+    azureChave: (process.env.AZURE_SPEECH_KEY || "").trim(),
+    /** Região do recurso Speech (ex.: brazilsouth, eastus). */
+    azureRegiao: (process.env.AZURE_SPEECH_REGION || "").trim(),
+    /** Opcional: endereço completo da síntese (outro domínio ou testes). Padrão: montado pela região. */
+    azureEndpoint: (process.env.AZURE_SPEECH_ENDPOINT || "").trim(),
+    /** Voz neural pt-BR da Azure (padrão pt-BR-FranciscaNeural). */
+    azureVoz: (process.env.AZURE_VOZ || "").trim(),
+    /** Alternativa local: endereço do servidor HTTP do Piper (python3 -m piper.http_server). */
+    piperUrl: (process.env.PIPER_URL || "").trim(),
+    /** Nome da voz pt-BR do Piper (ex.: pt_BR-faber-medium). */
+    piperVoz: (process.env.PIPER_VOZ || "").trim(),
+  },
 } as const;

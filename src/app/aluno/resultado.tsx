@@ -8,9 +8,11 @@ import { StyleSheet, Text, View } from "react-native";
 import { Aviso, Botao, BotaoAudio, Tela } from "@/components";
 import { mensagemDeErro } from "@/services/api";
 import { escolherProximaAtividade, fimDaSessao } from "@/services/sessaoDeEstudo";
-import { cores, fontes } from "@/theme/tokens";
+import { cores, type Fontes } from "@/theme/tokens";
+import { useEstilos } from "@/context/preferencias";
 
 export default function Resultado() {
+  const styles = useEstilos(criarEstilos);
   const { id, correta, subiu, concluidas: concluidasParam } = useLocalSearchParams<{
     id: string;
     correta: string;
@@ -100,8 +102,9 @@ export default function Resultado() {
   );
 }
 
-const styles = StyleSheet.create({
-  centro: { flex: 1, alignItems: "center", justifyContent: "center", gap: 16, paddingVertical: 32 },
-  titulo: { fontSize: 40, fontWeight: "800", color: cores.sucesso },
-  mensagem: { fontSize: fontes.subtitulo, color: cores.texto, textAlign: "center" },
-});
+const criarEstilos = (fontes: Fontes) =>
+  StyleSheet.create({
+    centro: { flex: 1, alignItems: "center", justifyContent: "center", gap: 16, paddingVertical: 32 },
+    titulo: { fontSize: 40, fontWeight: "800", color: cores.sucesso },
+    mensagem: { fontSize: fontes.subtitulo, color: cores.texto, textAlign: "center" },
+  });

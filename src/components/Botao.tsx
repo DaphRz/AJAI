@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text } from "react-native";
-import { cores, fontes, raios, toqueMinimo } from "@/theme/tokens";
+import { useEstilos } from "@/context/preferencias";
+import { cores, raios, toqueMinimo, type Fontes } from "@/theme/tokens";
 
 type Variante = "primario" | "secundario" | "link";
 
@@ -23,6 +24,7 @@ export function Botao({
   desabilitado = false,
   rotuloAcessivel,
 }: Props) {
+  const { styles, rotulo } = useEstilos(criarEstilos);
   return (
     <Pressable
       accessibilityRole="button"
@@ -42,19 +44,25 @@ export function Botao({
   );
 }
 
-const styles = StyleSheet.create({
-  base: {
-    minHeight: toqueMinimo,
-    borderRadius: raios.md,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 20,
-  },
-  grande: { minHeight: 96, borderRadius: raios.lg },
-  apertado: { opacity: 0.7 },
-  rotulo: { fontSize: fontes.subtitulo, fontWeight: "700", textAlign: "center" },
-  rotuloGrande: { fontSize: fontes.titulo, letterSpacing: 1 },
+const criarEstilos = (fontes: Fontes) => ({
+  styles: criarBase(fontes),
+  rotulo: criarRotulo(fontes),
 });
+
+const criarBase = (fontes: Fontes) =>
+  StyleSheet.create({
+    base: {
+      minHeight: toqueMinimo,
+      borderRadius: raios.md,
+      alignItems: "center",
+      justifyContent: "center",
+      paddingHorizontal: 20,
+    },
+    grande: { minHeight: 96, borderRadius: raios.lg },
+    apertado: { opacity: 0.7 },
+    rotulo: { fontSize: fontes.subtitulo, fontWeight: "700", textAlign: "center" },
+    rotuloGrande: { fontSize: fontes.titulo, letterSpacing: 1 },
+  });
 
 const fundo = StyleSheet.create({
   primario: { backgroundColor: cores.primaria },
@@ -62,8 +70,9 @@ const fundo = StyleSheet.create({
   link: { backgroundColor: "transparent" },
 });
 
-const rotulo = StyleSheet.create({
-  primario: { color: cores.primariaTexto },
-  secundario: { color: cores.primaria },
-  link: { color: cores.primaria, fontSize: fontes.corpo },
-});
+const criarRotulo = (fontes: Fontes) =>
+  StyleSheet.create({
+    primario: { color: cores.primariaTexto },
+    secundario: { color: cores.primaria },
+    link: { color: cores.primaria, fontSize: fontes.corpo },
+  });

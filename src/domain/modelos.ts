@@ -219,7 +219,7 @@ export interface AudioCache {
   voz: string;
   velocidade: number;
   caminhoArquivo: string;
-  /** EXTRA (fora do diagrama): provedor que gerou o áudio, ex.: "google", "polly". */
+  /** EXTRA (fora do diagrama): provedor que gerou o áudio (hoje "azure", voz pt-BR-FranciscaNeural; "piper" é a alternativa local; passo 10). */
   provedor: string;
 }
 

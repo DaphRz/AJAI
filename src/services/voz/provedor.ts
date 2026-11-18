@@ -3,9 +3,9 @@
  *
  * O app só conversa com esta interface (via services/narracao.ts). Cada forma de
  * "falar" é um provedor que a implementa:
- *   - console      → provisório, só registra no console (padrão hoje)
- *   - expo-speech  → voz do aparelho, grátis e offline        (a criar: passo 10)
- *   - servidor     → toca o áudio gerado pelo servidor/AudioCache (a criar: passo 10)
+ *   - servidor     → toca o áudio da Azure gerado pelo servidor/AudioCache (PADRÃO, passo 10)
+ *   - expo-speech  → voz do aparelho, grátis e offline (alternativa e reserva do servidor)
+ *   - console      → só registra no console (desenvolvimento)
  *
  * Trocar de provedor = mudar UMA linha em services/voz/index.ts. Telas e componentes
  * (BotaoAudio etc.) nunca importam um provedor direto.

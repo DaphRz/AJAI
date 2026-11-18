@@ -1,7 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "expo-router";
+import { useCallback, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { falar } from "@/services/narracao";
-import { cores, fontes, raios, toqueMinimo } from "@/theme/tokens";
+import { useEstilos } from "@/context/preferencias";
+import { falar, pararFala } from "@/services/narracao";
+import { cores, raios, toqueMinimo, type Fontes } from "@/theme/tokens";
 
 interface Props {
   /** Texto que será narrado ao tocar. */
@@ -12,42 +15,70 @@ interface Props {
 /**
  * Cartão amarelo "Ouvir ajuda / Toque para escutar" do Figma.
  * Deve existir em todas as telas do aluno (RNF04).
+ * Enquanto fala, mostra "Falando..." (texto, não só ícone) e um toque para a fala.
+ * Sair da tela (ou o botão sumir) também para a fala.
  */
 export function BotaoAudio({ texto, titulo = "Ouvir ajuda" }: Props) {
+  const styles = useEstilos(criarEstilos);
+  const [falando, setFalando] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      return () => pararFala();
+    }, []),
+  );
+
+  async function tocar() {
+    if (falando) {
+      pararFala();
+      return;
+    }
+    setFalando(true);
+    try {
+      await falar(texto);
+    } finally {
+      // A Promise também termina quando outra fala começa ou alguém chama pararFala().
+      setFalando(false);
+    }
+  }
+
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${titulo}. Toque para escutar.`}
-      onPress={() => falar(texto)}
+      accessibilityLabel={falando ? `${titulo}. Falando. Toque para parar.` : `${titulo}. Toque para escutar.`}
+      onPress={tocar}
       style={({ pressed }) => [styles.cartao, pressed && { opacity: 0.8 }]}
     >
       <Ionicons
-        name="volume-high"
+        name={falando ? "stop-circle" : "volume-high"}
         size={36}
         color={cores.texto}
         accessibilityElementsHidden
         importantForAccessibility="no"
       />
-      <View>
-        <Text style={styles.titulo}>{titulo}</Text>
-        <Text style={styles.legenda}>Toque para escutar</Text>
+      <View style={styles.textos}>
+        <Text style={styles.titulo}>{falando ? "Falando..." : titulo}</Text>
+        <Text style={styles.legenda}>{falando ? "Toque para parar" : "Toque para escutar"}</Text>
       </View>
     </Pressable>
   );
 }
 
-const styles = StyleSheet.create({
-  cartao: {
-    minHeight: toqueMinimo + 16,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 16,
-    paddingHorizontal: 20,
-    backgroundColor: cores.audioFundo,
-    borderColor: cores.audioBorda,
-    borderWidth: 2,
-    borderRadius: raios.lg,
-  },
-  titulo: { fontSize: fontes.subtitulo, fontWeight: "700", color: cores.texto },
-  legenda: { fontSize: fontes.legenda, color: cores.texto },
-});
+const criarEstilos = (fontes: Fontes) =>
+  StyleSheet.create({
+    cartao: {
+      minHeight: toqueMinimo + 16,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 16,
+      paddingHorizontal: 20,
+      paddingVertical: 8,
+      backgroundColor: cores.audioFundo,
+      borderColor: cores.audioBorda,
+      borderWidth: 2,
+      borderRadius: raios.lg,
+    },
+    textos: { flexShrink: 1 },
+    titulo: { fontSize: fontes.subtitulo, fontWeight: "700", color: cores.texto },
+    legenda: { fontSize: fontes.legenda, color: cores.texto },
+  });
