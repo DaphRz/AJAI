@@ -23,7 +23,7 @@ export default function InicioAdmin() {
   return (
     <Tela>
       <Logo />
-      <Titulo>Administração</Titulo>
+      <Titulo compacto>Administração</Titulo>
       <Subtitulo>{usuario?.nome}</Subtitulo>
 
       <Botao titulo="Atividades" onPress={() => router.push("/admin/atividades")} />

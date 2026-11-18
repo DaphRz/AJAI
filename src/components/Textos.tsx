@@ -4,10 +4,15 @@ import { StyleSheet, Text, View } from "react-native";
 import { useEstilos } from "@/context/preferencias";
 import { familias, cores, raios, type Fontes } from "@/theme/tokens";
 
-export function Titulo({ children }: { children: ReactNode }) {
+/**
+ * Título da tela. `compacto` para título de uma palavra longa ("Acompanhamento"), que no tamanho
+ * grande não cabe num celular estreito (360 de largura) e quebra no meio da palavra. Usa a letra dos
+ * enunciados (`fontes.titulo`), em negrito.
+ */
+export function Titulo({ children, compacto = false }: { children: ReactNode; compacto?: boolean }) {
   const styles = useEstilos(criarEstilos);
   return (
-    <Text accessibilityRole="header" style={styles.titulo}>
+    <Text accessibilityRole="header" style={[styles.titulo, compacto && styles.tituloCompacto]}>
       {children}
     </Text>
   );
@@ -76,6 +81,7 @@ const criarEstilos = (fontes: Fontes) =>
     avisoSucesso: { backgroundColor: cores.superficieSuave, borderColor: cores.sucesso },
     avisoTexto: { fontSize: fontes.corpo, fontFamily: familias.seminegrito },
     titulo: { fontSize: fontes.tituloGrande, fontFamily: familias.negrito, color: cores.texto, lineHeight: Math.round(fontes.tituloGrande * 1.15) },
+    tituloCompacto: { fontSize: fontes.titulo, lineHeight: Math.round(fontes.titulo * 1.2) },
     subtitulo: { fontSize: fontes.subtitulo, fontFamily: familias.regular, color: cores.textoSuave, lineHeight: Math.round(fontes.subtitulo * 1.3) },
     corpo: { fontFamily: familias.regular, fontSize: fontes.corpo, color: cores.texto },
     logo: { flexDirection: "row", alignItems: "center", gap: 12 },

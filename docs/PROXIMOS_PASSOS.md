@@ -46,7 +46,7 @@ Legenda: ⬜ a fazer · 🟡 em andamento · ✅ feito
 | 10 | Narração por voz (Azure) e preferências — feito | 15/11 | 1 |
 | 11 | Testes automatizados — feito | 16/11 | 5, 3.1 |
 | 12 | Segurança e privacidade (LGPD) — feito | 16/11 | 3.1 |
-| 13 | Correção de bugs e polimento | 16/11 | 7, 8 |
+| 13 | Correção de bugs e polimento — em andamento | 16/11 | 7, 8 |
 | 14 | Documentação final (PDF, APF, README) | 16/11 | 13 |
 
 Em 14/11 a ordem dos passos mudou e **os passos foram renumerados na ordem de execução** (a numeração antiga de 6 a 17 não vale mais; as referências no README, no AGENTS.md e nos comentários do código foram atualizadas). Os passos 7 e 8 (home do aluno e área do professor) usam as telas provisórias, e o ajuste ao Figma foi feito em parte em 18/11 (tokens, fonte Inter, componentes, Splash, Home do aluno, ícone e splash). As telas que não têm frame no Figma não serão desenhadas: seguem o padrão das já desenhadas. O antigo passo de testes integrados e de usabilidade foi **retirado**; os casos manuais ficam no passo 11 e a correção de bugs no passo 13. Em 18/11 o passo de recursos visuais (antigo 11) e o de apresentação (antigo 16) **saíram do roteiro**, e os passos 12 a 15 viraram 11 a 14. Os prazos foram recalculados a partir de 14/11, mantendo a entrega em **17/11**; o dia 16/11 está cheio, então dividam os passos entre as pessoas (todos desenvolvem).
@@ -397,28 +397,39 @@ O "Ouvir instrução" também lê as opções. Enquanto o servidor corrige, a te
 
 ---
 
-## ⬜ Passo 13 — Correção de bugs e polimento
+## 🟡 Passo 13 — Correção de bugs e polimento
 
 **Prazo:** 16/11 · **Depende de:** passos 7 e 8
 
 **Pronto quando:** não há bug crítico ou alto aberto, `lint`, `tsc` e `npm test` passam, e o app roda do zero seguindo só o README.
 
+**Feito em 18/11 (parte que não precisa de aparelho).** A lista de problemas dos casos manuais ainda não existia, então foi feito o resto do passo:
+- **README do zero:** a árvore de trabalho foi copiada para uma pasta limpa e seguida passo a passo (`npm install` → `db:reset` → `server/.env` → `server:dev` → `/health` → login → `npx expo start --web`). Tudo funcionou; lint, typecheck, `npm test` e `npx expo export -p web` passam na cópia limpa, e a narração acha os MP3 versionados sem a chave da Azure. Corrigido no README: o seed tem **35** atividades (dizia 7).
+- **Bugs corrigidos:**
+  - `npm run db:reset` com o servidor ligado deixava a conexão presa no arquivo apagado: leituras funcionavam, mas **toda gravação dava 500** (responder atividade, salvar "Voz e letra"). Agora `banco()` (`server/src/banco.ts`) percebe que o arquivo mudou e reabre; teste novo em `server/src/banco.test.ts` (falha na versão antiga);
+  - `/esqueci-senha` dizia "Mandamos uma mensagem para o seu e-mail" sem mandar nada (contradizia o termo). Agora explica o caminho de verdade: pedir ajuda ao professor, à escola ou a quem acompanha, e a equipe do AJAI cria uma senha provisória;
+  - faltava o `expo-asset` (exigido pelo `expo-audio`; o `expo-doctor` acusava e o app pode fechar num build fora do Expo Go): instalado com `npx expo install`.
+- **Auditoria de acessibilidade** (pelo código em todas as telas e no navegador com Playwright, celular de 360 e 390): todos os tocáveis têm `accessibilityRole` e rótulo; ícones decorativos escondidos; "Ouvir ajuda" em toda tela do aluno; alvos ≥ 64; contraste do texto ≥ 4,4:1 em todas as combinações dos tokens; toda tela rola. Corrigidos: `lineHeight: 32` fixo no texto de interpretação (com letra "Muito grande", 34, as linhas se sobrepunham); rótulos de 16 no progresso do aluno (agora `fontes.corpo`); tamanhos soltos de 13–14 na área do professor (agora `fontes.legenda`); título "Acompanhamento" quebrando no meio da palavra ("Acompanhament / o") e "Administração" no limite: `Titulo compacto` (28).
+- **TODOs:** os três do código saíram. `/esqueci-senha` foi corrigido; a tela "Etapa sem atividades" e os testes de voz no jest-expo foram para "Trabalhos futuros" do README (seção nova). As outras ocorrências de "TODO" são a palavra "TODOS".
+- **Testes:** `npm test` = 204 no servidor (2 novos), 12 da voz e 6 de tela; lint e typecheck passam.
+
+**O que falta / o que fazer:**
+- **Executar os casos manuais** de [`docs/testes/casos-de-teste.md`](testes/casos-de-teste.md) (CT-01 a CT-54) em 1 Android e 1 iPhone (ou web), anotar o "resultado obtido" e montar a lista de problemas por gravidade;
+- **leitor de tela de verdade:** TalkBack (Android) e VoiceOver (iPhone) em todas as telas, conferindo que cada botão é lido com o rótulo certo;
+- **fonte do sistema no máximo** (Ajustes do aparelho) nas telas do aluno e do professor, procurando texto cortado;
+- **Android simples/antigo:** tempo de abertura, de resposta e narração sem travar;
+- **decidir com o UX/UI** um nome mais curto para a aba "Acompanhamento" (em telas de 360 aparece "Acompan..."; o leitor de tela lê inteiro);
+- corrigir o que aparecer, um commit por problema, e rodar lint, typecheck e `npm test` de novo.
+
 ```text
-Leia AGENTS.md e a lista de problemas abaixo (achados ao executar os casos de docs/testes/casos-de-teste.md, do passo 11, em pelo menos 1 Android e 1 iPhone ou web):
-<colar lista priorizada>
-Corrija na ordem de gravidade, um commit por problema, citando o ID do problema.
-Não adicione funcionalidades novas. Depois:
-- rode lint, typecheck e testes;
-- siga o README do zero numa pasta limpa (clone → install → servidor → app) e
-  corrija qualquer passo que não funcione;
-- auditoria de acessibilidade em TODAS as telas (aluno, professor, administrador): leitor
-  de tela (TalkBack e VoiceOver) lendo todos os botões com o rótulo certo, fonte do sistema
-  aumentada sem cortar texto, contraste das cores, alvo de toque >= 64, botão de áudio em
-  toda tela do aluno; liste o que encontrou e corrija;
-- teste em um Android simples/antigo (a persona usa celular modesto): tempo de abertura
-  e de resposta aceitáveis, sem travar ao narrar;
-- procure TODOs no código (`grep -rn TODO src server`) e, para cada um, resolva ou
-  mova para a seção "Trabalhos futuros" do README.
+Leia AGENTS.md. O passo 13 já teve a parte sem aparelho feita em 18/11 (README do zero,
+auditoria de acessibilidade pelo código, TODOs). Falta só corrigir a lista abaixo, achada ao
+executar docs/testes/casos-de-teste.md em Android e iPhone/web, com TalkBack/VoiceOver,
+fonte do sistema no máximo e um Android simples:
+<colar lista priorizada, com o ID do caso (CT-xx)>
+Corrija na ordem de gravidade, um commit por problema, citando o ID.
+Não adicione funcionalidades novas. Depois rode lint, typecheck e npm test,
+marque o passo 13 como ✅ e atualize "Pendências" no README.
 ```
 
 ---

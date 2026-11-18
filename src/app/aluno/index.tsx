@@ -50,7 +50,7 @@ export default function HomeAluno() {
           try {
             const proxima = await escolherProximaAtividade();
             if (proxima === undefined) {
-              // TODO: tela própria de "nível sem atividades" (o Figma tem o frame).
+              // Etapa sem atividade ativa: aviso simples. A tela própria (frame do Figma) está em README › Trabalhos futuros.
               setAviso("Esta etapa ainda não tem atividades. Fale com seu professor.");
             } else {
               router.push({ pathname: "/aluno/atividade/[id]", params: { id: String(proxima), concluidas: "0" } });

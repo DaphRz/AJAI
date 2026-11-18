@@ -2,7 +2,7 @@
 // Testes da narração do app (passo 10, item 11), no Node: `npm run app:test` (também roda no `npm test`).
 // expo-speech, expo-audio, expo-constants e react-native são trocados por versões de mentira
 // (testes/falsos/, ligadas por testes/carregador.mjs). A rede é um `fetch` de mentira.
-// TODO (passo 11): passar para o jest-expo quando ele for configurado.
+// Levar estes testes para o jest-expo é opcional (README › Trabalhos futuros).
 import assert from "node:assert/strict";
 import { afterEach, beforeEach, describe, it } from "node:test";
 import { definirPreferenciasFala, falar, pararFala } from "../narracao";

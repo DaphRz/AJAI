@@ -162,7 +162,7 @@ function ConteudoProgresso({
 
 const criarEstilos = (fontes: Fontes) =>
   StyleSheet.create({
-    rotulo: { fontSize: fontes.legenda, color: cores.textoSuave, fontFamily: familias.seminegrito },
+    rotulo: { fontSize: fontes.corpo, color: cores.textoSuave, fontFamily: familias.seminegrito },
     texto: { fontFamily: familias.regular, fontSize: fontes.corpo, color: cores.texto, flexShrink: 1 },
     valor: { fontSize: fontes.tituloGrande, fontFamily: familias.extranegrito, color: cores.primaria },
     destaque: { fontSize: fontes.subtitulo, fontFamily: familias.extranegrito, color: cores.primaria, flexShrink: 1 },
@@ -172,7 +172,7 @@ const criarEstilos = (fontes: Fontes) =>
     etapaAtual: { backgroundColor: cores.superficie, borderWidth: 2, borderColor: cores.primaria },
     etapaTextos: { flexShrink: 1 },
     etapaNome: { fontSize: fontes.corpo, fontFamily: familias.negrito, color: cores.texto },
-    etapaStatus: { fontSize: fontes.legenda, color: cores.textoSuave, fontFamily: familias.seminegrito },
+    etapaStatus: { fontSize: fontes.corpo, color: cores.textoSuave, fontFamily: familias.seminegrito },
     numeros: { flexDirection: "row", gap: 12 },
     coluna: { flex: 1 },
     barra: { height: 16, borderRadius: 8, backgroundColor: cores.superficieSuave, overflow: "hidden" },

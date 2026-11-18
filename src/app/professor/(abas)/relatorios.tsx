@@ -160,5 +160,5 @@ const styles = StyleSheet.create({
   conteudo: { gap: 4, paddingVertical: 6 },
   trilho: { height: 10, borderRadius: 5, backgroundColor: cores.atencaoFundo, overflow: "hidden" },
   preenchido: { height: "100%", backgroundColor: cores.primaria },
-  aviso: { fontFamily: familias.regular, fontSize: 14, color: cores.textoSuave, textAlign: "center" },
+  aviso: { fontFamily: familias.regular, fontSize: fontes.legenda, color: cores.textoSuave, textAlign: "center" },
 });

@@ -129,7 +129,7 @@ Base legal (LGPD, para o PDF do passo 14): o tratamento se apoia no **consentime
 ### O que ficou pendente
 
 - ⬜ **HTTPS (RNF11):** na demo a API roda em HTTP na rede local. Em produção, servir por HTTPS (proxy reverso com certificado) e definir `CORS_ORIGEM` (hoje `*`).
-- ⬜ **`/esqueci-senha` diz "E-mail enviado" sem enviar nada** (TODO antigo do MVP, segue o Figma). Contradiz o termo ("A equipe do AJAI cria uma senha provisória") e confunde quem esqueceu a senha. Sugestão para o passo 13: trocar o texto por "Peça uma senha provisória ao seu professor ou à sua escola" até existir envio de e-mail.
+- ✅ **`/esqueci-senha` dizia "E-mail enviado" sem enviar nada.** Corrigido no passo 13 (18/11): a tela agora diz para pedir ajuda ao professor, à escola ou a quem acompanha, e que a equipe do AJAI cria uma senha provisória, igual ao termo. O envio de e-mail ficou em "Trabalhos futuros" no README.
 - ⬜ **Contato para pedidos da LGPD:** o termo manda falar com o professor ou a escola. Falta a equipe definir um **e-mail de contato do AJAI** (encarregado de dados) e acrescentar no termo e no PDF.
 - ⬜ **Apagar pelo app:** hoje só pelo script. Uma rota "Apagar minha conta" (com confirmação e áudio) fica para depois da entrega.
 - ⬜ **Narrações com o primeiro nome** (saudação da home, comemoração): vão para a Azure e o MP3 fica em `server/storage/audio/`, que é **versionado**. Antes de cada commit dos áudios, confira que só entram os gerados pelo `npm run voz:preparar` (em 18/11 havia 419 MP3 no git para 414 preparados: confira os 5 a mais) ou separe as narrações pessoais numa pasta fora do git.

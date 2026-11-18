@@ -45,7 +45,7 @@ npm install
 npm run db:reset
 ```
 
-Cria o arquivo `server/data/ajai.db` com as 16 tabelas e os dados de demonstração (5 níveis, 7 atividades, 4 alunos, 2 professores, 1 responsável, 2 instituições, 1 administrador). Não precisa instalar nada além do Node. **Cada pessoa gera o seu**: o arquivo não vai para o git. Detalhes e comandos: [Banco de dados](#banco-de-dados-sqlite).
+Cria o arquivo `server/data/ajai.db` com as 16 tabelas e os dados de demonstração (5 níveis, 35 atividades, 4 alunos, 2 professores, 1 responsável, 2 instituições, 1 administrador). Não precisa instalar nada além do Node. **Cada pessoa gera o seu**: o arquivo não vai para o git. Detalhes e comandos: [Banco de dados](#banco-de-dados-sqlite).
 
 ### 5. Subir o servidor (API)
 
@@ -173,6 +173,7 @@ npm test                 # testes do servidor e do app (voz e telas)
 
 - **"Project is incompatible with this version of Expo Go"** → atualize o Expo Go no celular.
 - **QR code não conecta** → mesma Wi-Fi ou `--tunnel`.
+- **Rodei `npm run db:reset` com o servidor ligado** → não precisa reiniciar: o servidor percebe que o arquivo do banco mudou e abre o novo (passo 13; antes, toda gravação dava "Algo deu errado no servidor").
 - **Erro estranho depois de trocar de branch** → `npx expo start -c`; se não resolver, apague `node_modules` e rode `npm install` de novo.
 
 ---
@@ -433,7 +434,7 @@ O roteiro completo até a entrega, com prazo, critério de pronto e **um prompt 
 | 10 | Narração por voz (Azure) e preferências — ✅ | 15/11 |
 | 11 | Testes automatizados — ✅ | 16/11 |
 | 12 | Segurança e privacidade (LGPD) — ✅ | 16/11 |
-| 13 | Correção de bugs e polimento | 16/11 |
+| 13 | Correção de bugs e polimento — 🟡 | 16/11 |
 | 14 | Documentação final | 16/11 |
 
 A ordem de execução é a da tabela (em 14/11 os passos foram renumerados na ordem de execução e o antigo passo de testes de usabilidade saiu; em 18/11 saíram os passos de recursos visuais e de apresentação, e os passos 12 a 15 viraram 11 a 14).
@@ -471,7 +472,7 @@ Legenda: ✅ feito · 🟡 esqueleto/parcial (só no app, com dados em memória)
 - ✅ Registro de frequência / "Ofensiva – dias seguidos" (RF15): calculada no servidor (`calcularOfensiva` e `frequenciaRecente` em `server/src/progressao.ts`, fuso America/Sao_Paulo, com testes) e mostrada na home e no progresso com texto encorajador (passo 7)
 - 🟡 Continuidade do aprendizado (RF22): o CONTINUAR abre uma **sessão de 5 atividades** seguidas (acertos); depois de um acerto vai direto para a próxima, e só no fim do bloco oferece "Voltar ao início" ou "Continuar treinando" (`services/sessaoDeEstudo.ts`, `ATIVIDADES_POR_SESSAO`). A próxima atividade vem do servidor (`GET /alunos/eu/progresso`), então continua certa entre aberturas do app
 - ⬜ Executar os casos manuais ([`docs/testes/casos-de-teste.md`](docs/testes/casos-de-teste.md), 54 casos: 49 do passo 11 e 5 do passo 12) em Android e iPhone/web (passo 13)
-- ⬜ Correção de bugs residuais
+- 🟡 Correção de bugs residuais (passo 13, 18/11): corrigidos o `db:reset` com o servidor ligado (gravações davam 500), o `/esqueci-senha` que dizia ter mandado e-mail, a falta do `expo-asset` (exigido pelo `expo-audio`), o texto de interpretação cortado com letra "Muito grande", textos de 16 no progresso do aluno e o título "Acompanhamento" quebrando no meio da palavra. Faltam os casos manuais em aparelho de verdade
 - ⬜ Documentação final (passo 14; entrega **17/11**)
 
 ### Backend e dados (bloqueia quase tudo acima)
@@ -495,7 +496,7 @@ Legenda: ✅ feito · 🟡 esqueleto/parcial (só no app, com dados em memória)
 - ✅ Instituição e administrador: inscrição, aprovação com código e aprovação de professores (Passo 3.1). ✅ A instituição cria turmas e escolhe o professor de cada uma (`/instituicao/turmas`, passo 8; vê só quantos alunos, não os nomes). ⬜ Revogar aprovação ou tirar professor da instituição (não previsto)
 - ✅ Professor: corrigir manualmente uma resposta (APF 35) na tela de métricas, com observação opcional; recalcula o DesempenhoConteudo, mas **não muda a etapa** do aluno (decisão do passo 8: a subida de etapa já aconteceu ou não)
 - ✅ Aluno: editar preferências de velocidade da voz e tamanho da letra (APF 17): "Voz e letra" (`/aluno/preferencias`, passo 10, 18/11), salvas no servidor e aplicadas na hora. A voz (`vozPreferida`) continua só pt-BR (uma voz configurada em `AZURE_VOZ`). **Sem frame no Figma**; falta a equipe abrir no Expo Go
-- 🟡 Trocar/recuperar senha (APF 18): ✅ todos os perfis trocam a própria (inclusive o aluno, desde o Passo 3.1); ✅ senha provisória para qualquer perfil pelo administrador/script, com troca obrigatória ao entrar (passo 12); 🟡 `/esqueci-senha` pede o e-mail e diz que mandou o link de redefinição, mas **não envia nada** (MVP, sem serviço de e-mail: na prática, a senha provisória continua sendo pelo administrador). Isso contradiz o termo de uso: **sugestão para o passo 13**, trocar o texto por "Peça uma senha provisória ao seu professor ou à sua escola". Faltam as telas no Figma
+- ✅ Trocar/recuperar senha (APF 18): todos os perfis trocam a própria (inclusive o aluno, desde o Passo 3.1); senha provisória para qualquer perfil pelo administrador/script, com troca obrigatória ao entrar (passo 12); `/esqueci-senha` explica esse caminho (passo 13: antes dizia que mandava um e-mail sem mandar nada). Recuperar por e-mail está em "Trabalhos futuros". Faltam as telas no Figma
 
 ### Acessibilidade e conteúdo
 - ✅ **Narração por voz (RNF04)** — passo 10 (18/11). A voz passou do Piper (qualidade ruim) para a **Azure** (voz neural `pt-BR-FranciscaNeural`), testada pela equipe no celular e na web. O servidor gera o MP3 uma vez (cache em `AudioCache`), e os **MP3 vão para o git** (`server/storage/audio/`, ~20 MB): quem clona ouve a voz sem a chave. O app toca com o `expo-audio` e cai no `expo-speech` (voz do aparelho) se a rede falhar ou o áudio não existir e não houver chave. Corrigido: iPhone com a chave do silencioso ligada deixava a voz do aparelho muda. "Falando..." no `BotaoAudio`, fala para ao sair da tela, toque longo nas opções lê a opção.
@@ -508,7 +509,7 @@ Legenda: ✅ feito · 🟡 esqueleto/parcial (só no app, com dados em memória)
 - ✅ Fonte Inter carregada (`@expo-google-fonts/inter`), aplicada por `familias` dos tokens (18/11)
 - ✅ Ícone do app, ícone adaptativo do Android, splash e favicon com o símbolo do AJAI do Figma (18/11; gerados por `assets/fonte/gerar-icones.py`). ⬜ Conferir num build (no Expo Go aparece o ícone do Expo Go)
 - 🟡 Ajuste ao Figma: ✅ tokens, componentes, Splash e Home do aluno; ⬜ comparar os outros 45 frames (o plano gratuito do Figma limitou a leitura pelo MCP) e criar a tela "Nível sem atividades"
-- ⬜ Revisar com leitor de tela (TalkBack/VoiceOver) e tamanho de fonte do sistema aumentado
+- 🟡 Auditoria de acessibilidade (passo 13, 18/11, pelo código e no navegador): ✅ todo elemento tocável tem `accessibilityRole` e rótulo; ✅ ícones decorativos escondidos do leitor de tela; ✅ toda tela do aluno tem "Ouvir ajuda"/"Ouvir instrução"; ✅ alvos de toque ≥ 64 (botões, campos, opções, peças); ✅ contraste do texto ≥ 4,4:1 em todas as combinações dos tokens (o verde `sucesso` sobre `superficieSuave`, 4,4:1, só aparece em texto negrito); ✅ toda tela rola, então letra maior não corta texto; corrigidos: `lineHeight` fixo no texto de interpretação, rótulos de 16 no progresso do aluno (agora 20), tamanhos soltos de 13–14 na área do professor (agora `fontes.legenda`) e o título "Acompanhamento" quebrando no meio da palavra em telas de 360. ⬜ **Falta com aparelho de verdade:** passar o TalkBack e o VoiceOver em todas as telas, aumentar a fonte do sistema no máximo e testar num Android simples (abertura, resposta e narração). ⬜ Na barra de abas do professor, "Acompanhamento" aparece cortado ("Acompan...") em telas estreitas (o leitor de tela lê inteiro); decidir com o UX/UI um nome mais curto. Rótulos do gráfico de barras continuam em 12–13 (barras de 44 de largura)
 
 ### Qualidade, segurança e privacidade
 - ✅ Testes automatizados (passo 11, 18/11): servidor com `node --test` (186 testes: correção, progressão e ofensiva, rotas do passo 5, contas/aprovações/vínculos, autorização e gabarito ausente em todas as rotas do aluno, área do professor/responsável, cadastro de atividades/etapas e narração); 12 testes da voz do app no Node; testes de tela com `jest-expo` (alternativa certa → "Muito bem!", errada → "Quase lá!"). Tudo no `npm test`. ⬜ Mais testes de tela, se der tempo (nivelamento, home)
@@ -526,6 +527,19 @@ Legenda: ✅ feito · 🟡 esqueleto/parcial (só no app, com dados em memória)
 - ⬜ Atualizar a seção 15 (Prototipação) do PDF: ela diz que o protótipo tem 9 telas e que cadastro e nivelamento seriam feitos depois, mas o Figma já tem 47 frames (18/11), incluindo cadastro, nivelamento, formar palavra, ler frase e a área do professor
 - ⬜ Registrar no documento as decisões de stack (SQLite, API com Fastify, voz com `ProvedorVoz`: Azure AI Speech no servidor + `expo-speech` de reserva; o Piper foi testado e trocado por qualidade) e as colunas/tabelas extras do esquema (`Atividade.ordemNivelamento`, `Atividade.textoApoio`, `AudioCache.provedor`, `Usuario.telefone`, `Usuario.nomeUsuario`, `Responsavel`, `Instituicao`, `Vinculo` e as colunas novas de `Professor`), e os perfis novos no diagrama de classes e na APF (RESPONSAVEL, INSTITUICAO; funções de aprovação e de vínculo)
 - ⬜ Manter o quadro Kanban (Trello) alinhado com esta lista
+
+### Dependências
+- ✅ `expo-asset` instalado (passo 13): o `expo-doctor` acusava que faltava (é exigido pelo `expo-audio`; sem ele o app pode fechar num build fora do Expo Go). Depois de `git pull`, rode `npm install`
+- ⬜ O `expo-doctor` aponta 10 pacotes do Expo com versão de correção (patch/minor) um pouco atrás do SDK 58 (`expo`, `expo-router`, `expo-web-browser`...). Não atualizados às vésperas da entrega; depois dela, `npx expo install --fix` e testar de novo
+
+## Trabalhos futuros
+
+O que ficou de fora do MVP de propósito (inclusive os antigos `// TODO:` do código, retirados no passo 13):
+
+- **Recuperar a senha por e-mail:** precisa de um serviço de envio de e-mail. Até lá, `/esqueci-senha` orienta a pedir uma senha provisória (administrador ou `npm run usuario:senha`).
+- **Tela "Etapa sem atividades"** para o aluno (o Figma tem o frame). Hoje a home mostra o aviso "Esta etapa ainda não tem atividades. Fale com seu professor." (`src/app/aluno/index.tsx`).
+- **Testes da voz do app no jest-expo:** hoje rodam no `node --test` com módulos de mentira (`src/services/voz/voz.test.ts`); funcionam, então a troca é opcional.
+- Apagar a conta pelo app, revogar aprovação de professor ou instituição e as outras pendências do passo 12 listadas em [`docs/privacidade.md`](docs/privacidade.md).
 
 ---
 

@@ -219,7 +219,7 @@ const styles = StyleSheet.create({
   valor: { fontSize: fontes.titulo, fontFamily: familias.extranegrito, color: cores.primaria },
   item: { fontFamily: familias.regular, fontSize: fontes.corpo, color: cores.texto },
   legenda: { fontFamily: familias.regular, fontSize: fontes.legenda, color: cores.textoSuave },
-  aviso: { fontFamily: familias.regular, fontSize: 14, color: cores.textoSuave, textAlign: "center" },
+  aviso: { fontFamily: familias.regular, fontSize: fontes.legenda, color: cores.textoSuave, textAlign: "center" },
   selo: { alignSelf: "flex-start", borderRadius: raios.md, paddingHorizontal: 10, paddingVertical: 4 },
   seloCerta: { backgroundColor: cores.superficieSuave },
   seloErrada: { backgroundColor: cores.atencaoFundo },

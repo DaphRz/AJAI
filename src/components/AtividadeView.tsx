@@ -367,7 +367,7 @@ const criarEstilos = (fontes: Fontes) =>
       backgroundColor: cores.superficie,
     },
     frase: { fontSize: fontes.titulo, fontFamily: familias.negrito, color: cores.texto, textAlign: "center" },
-    texto: { fontFamily: familias.regular, fontSize: fontes.subtitulo, color: cores.texto, lineHeight: 32 },
+    texto: { fontFamily: familias.regular, fontSize: fontes.subtitulo, color: cores.texto, lineHeight: Math.round(fontes.subtitulo * 1.35) },
     // Figma "Opção de imagem": 120 de altura, padding 12, imagem de 108 × 96.
     alternativa: {
       minHeight: 120,
